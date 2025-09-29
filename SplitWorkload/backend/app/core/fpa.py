@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict
 
-from app.models.domain import RequirementRecord
+from SplitWorkload.backend.app.models.domain import RequirementRecord
 
 _TRANSACTION_KEYWORDS = {
     "ei": {"录入", "输入", "新增", "提交", "导入", "采集"},

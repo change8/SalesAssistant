@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from .framework import DEFAULT_FRAMEWORK, FrameworkCategory
 from .llm import LLMClient
@@ -16,7 +16,7 @@ class TenderLLMAnalyzer:
     def __init__(
         self,
         llm: LLMClient,
-        categories: List[FrameworkCategory] | None = None,
+        categories: Optional[List[FrameworkCategory]] = None,
     ) -> None:
         self.llm = llm
         self.categories = categories or DEFAULT_FRAMEWORK

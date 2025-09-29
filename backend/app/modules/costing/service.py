@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Dict, Iterable, Tuple
+from typing import Dict, Iterable, Optional, Tuple
 
 from SplitWorkload.backend.app.models.api import AnalysisResponse, ConstraintConfig
 from SplitWorkload.backend.app.services.workload_service import WorkloadService
@@ -32,7 +32,7 @@ ROLE_KEYS = {
 class CostEstimator:
     """Derive role-based workload and cost estimations from workload analysis."""
 
-    def __init__(self, workload_service: WorkloadService | None = None) -> None:
+    def __init__(self, workload_service: Optional[WorkloadService] = None) -> None:
         self._workload_service = workload_service or WorkloadService()
 
     def estimate(
@@ -59,7 +59,7 @@ class CostEstimator:
             payload["model"] = "qwen3-max"
         return ConstraintConfig(**payload)
 
-    def _merge_rates(self, custom_rates: Dict[str, float] | None) -> Dict[str, float]:
+    def _merge_rates(self, custom_rates: Optional[Dict[str, float]]) -> Dict[str, float]:
         rates = DEFAULT_RATES.copy()
         if custom_rates:
             for key, value in custom_rates.items():

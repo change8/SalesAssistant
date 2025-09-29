@@ -10,8 +10,8 @@ from urllib.parse import quote
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 
-from app.models.api import AnalyzeRequest, AnalysisResponse
-from app.services.workload_service import WorkloadService
+from SplitWorkload.backend.app.models.api import AnalyzeRequest, AnalysisResponse
+from SplitWorkload.backend.app.services.workload_service import WorkloadService
 
 router = APIRouter()
 service = WorkloadService()

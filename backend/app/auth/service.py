@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from typing import Optional
 
 import jwt
 from passlib.context import CryptContext
@@ -31,11 +32,11 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def get_user_by_phone(db: Session, phone: str) -> models.User | None:
+def get_user_by_phone(db: Session, phone: str) -> Optional[models.User]:
     return db.query(models.User).filter(models.User.phone == phone).first()
 
 
-def get_user_by_id(db: Session, user_id: int) -> models.User | None:
+def get_user_by_id(db: Session, user_id: int) -> Optional[models.User]:
     return db.get(models.User, user_id)
 
 
@@ -62,7 +63,7 @@ def authenticate_user(db: Session, phone: str, password: str) -> models.User:
     return user
 
 
-def create_access_token(*, subject: int, expires_minutes: int | None = None) -> tuple[str, int]:
+def create_access_token(*, subject: int, expires_minutes: Optional[int] = None) -> tuple[str, int]:
     expire_minutes = expires_minutes or settings.jwt_access_token_expires_minutes
     expire_delta = timedelta(minutes=expire_minutes)
     expire_time = datetime.now(tz=timezone.utc) + expire_delta

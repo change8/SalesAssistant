@@ -6,7 +6,7 @@ from typing import Dict, List, Optional
 
 import pandas as pd
 
-from app.models.domain import RequirementRecord, SheetPayload
+from SplitWorkload.backend.app.models.domain import RequirementRecord, SheetPayload
 
 _PROJECT_KEYWORDS = {"project", "项目", "模块", "所属"}
 _REQUIREMENT_KEYWORDS = {

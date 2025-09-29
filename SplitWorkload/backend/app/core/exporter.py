@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from io import BytesIO
-from typing import Iterable
+from typing import Iterable, Optional
 
 from openpyxl import Workbook
 from openpyxl.utils import get_column_letter
 
-from app.models.api import AnalysisResponse, SheetResult
+from SplitWorkload.backend.app.models.api import AnalysisResponse, SheetResult
 
 _ROLES: Iterable[str] = ("product", "frontend", "backend", "test", "ops")
 
@@ -87,7 +87,7 @@ class ExcelExporter:
             worksheet.column_dimensions[column].width = min(max_length + 2, 60)
 
 
-def _format_decimal(value: float | None) -> str:
+def _format_decimal(value: Optional[float]) -> str:
     if value is None:
         return ""
     return f"{float(value):.1f}"

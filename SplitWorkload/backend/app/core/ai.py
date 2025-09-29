@@ -2,10 +2,15 @@ from __future__ import annotations
 
 from typing import Dict, Iterable, Optional
 
-from app.core.fpa import analyze_with_nesma_framework
-from app.core.llm_client import LLMNotConfiguredError, LLMResponseFormatError, LLMResult, QwenLLMClient
-from app.models.api import ConstraintConfig
-from app.models.domain import RequirementAllocation, RequirementRecord
+from SplitWorkload.backend.app.core.fpa import analyze_with_nesma_framework
+from SplitWorkload.backend.app.core.llm_client import (
+    LLMNotConfiguredError,
+    LLMResponseFormatError,
+    LLMResult,
+    QwenLLMClient,
+)
+from SplitWorkload.backend.app.models.api import ConstraintConfig
+from SplitWorkload.backend.app.models.domain import RequirementAllocation, RequirementRecord
 
 _ROLE_KEYWORDS: Dict[str, Iterable[str]] = {
     "backend": ["api", "接口", "数据库", "service", "数据", "算法", "后端"],
@@ -23,7 +28,7 @@ class AIRequirementAnalyzer:
 
     def __init__(
         self,
-        model: str | None = None,
+        model: Optional[str] = None,
         *,
         llm_client: Optional[QwenLLMClient] = None,
     ) -> None:
@@ -111,7 +116,7 @@ class AIRequirementAnalyzer:
         }
         return self._ensure_roles(allocation)
 
-    def _score_roles(self, text: str | None) -> Dict[str, float]:
+    def _score_roles(self, text: Optional[str]) -> Dict[str, float]:
         scores: Dict[str, float] = {role: 0.0 for role in _ROLE_KEYWORDS}
         if not text:
             return scores

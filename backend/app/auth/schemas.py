@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 
 class UserBase(BaseModel):
     phone: str = Field(..., example="13800000000")
-    full_name: str | None = None
+    full_name: Optional[str] = None
 
 
 class UserCreate(UserBase):

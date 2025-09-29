@@ -7,7 +7,7 @@ from typing import Any, Dict, Optional
 import httpx
 from cachetools import LRUCache
 
-from app.core.config import Settings, get_settings
+from SplitWorkload.backend.app.core.config import Settings, get_settings
 
 
 class LLMNotConfiguredError(RuntimeError):

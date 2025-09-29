@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Dict, Iterable, List
+from typing import Dict, Iterable, List, Optional
 
-from app.models.api import ConstraintConfig
-from app.models.domain import RequirementAllocation, SheetAllocation, SheetPayload
+from SplitWorkload.backend.app.models.api import ConstraintConfig
+from SplitWorkload.backend.app.models.domain import RequirementAllocation, SheetAllocation, SheetPayload
 
 _STANDARD_ROLES: Iterable[str] = ("product", "frontend", "backend", "test", "ops")
 
@@ -60,7 +60,11 @@ class AllocationOptimizer:
 
         return adjusted
 
-    def _build_summary(self, allocations: List[RequirementAllocation], limit: float | None) -> Dict[str, object]:
+    def _build_summary(
+        self,
+        allocations: List[RequirementAllocation],
+        limit: Optional[float],
+    ) -> Dict[str, object]:
         by_role: Dict[str, float] = {role: 0.0 for role in _STANDARD_ROLES}
         for item in allocations:
             for role, value in item.allocation.items():

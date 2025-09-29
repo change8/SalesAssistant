@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from typing import List
+from typing import List, Optional
 
-from app.core.ai import AIRequirementAnalyzer
-from app.core.allocation import AllocationOptimizer
-from app.core.excel import ExcelParser
-from app.core.exporter import ExcelExporter
-from app.models.api import (
+from SplitWorkload.backend.app.core.ai import AIRequirementAnalyzer
+from SplitWorkload.backend.app.core.allocation import AllocationOptimizer
+from SplitWorkload.backend.app.core.excel import ExcelParser
+from SplitWorkload.backend.app.core.exporter import ExcelExporter
+from SplitWorkload.backend.app.models.api import (
     AnalysisResponse,
     ConstraintConfig,
     RequirementResult,
@@ -14,7 +14,7 @@ from app.models.api import (
     SheetResult,
     SheetSummary,
 )
-from app.models.domain import RequirementAllocation, SheetAllocation, SheetPayload
+from SplitWorkload.backend.app.models.domain import RequirementAllocation, SheetAllocation, SheetPayload
 
 
 class WorkloadService:
@@ -22,10 +22,10 @@ class WorkloadService:
 
     def __init__(
         self,
-        excel_parser: ExcelParser | None = None,
-        ai_analyzer: AIRequirementAnalyzer | None = None,
-        optimizer: AllocationOptimizer | None = None,
-        exporter: ExcelExporter | None = None,
+        excel_parser: Optional[ExcelParser] = None,
+        ai_analyzer: Optional[AIRequirementAnalyzer] = None,
+        optimizer: Optional[AllocationOptimizer] = None,
+        exporter: Optional[ExcelExporter] = None,
     ) -> None:
         self._excel_parser = excel_parser or ExcelParser()
         self._ai_analyzer = ai_analyzer or AIRequirementAnalyzer()

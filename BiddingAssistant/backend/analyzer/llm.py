@@ -85,7 +85,11 @@ class LLMClient:
             return self._call_azure_summary(rule, evidences)
         raise NotImplementedError(f"LLM provider '{self.provider}' not implemented")
 
-    def analyze_framework(self, text: str, categories: List[FrameworkCategory] | None = None) -> Dict[str, Any]:
+    def analyze_framework(
+        self,
+        text: str,
+        categories: Optional[List[FrameworkCategory]] = None,
+    ) -> Dict[str, Any]:
         selected = categories or DEFAULT_FRAMEWORK
         provider = (self.provider or "stub").lower()
         if provider in {"stub", "mock"}:

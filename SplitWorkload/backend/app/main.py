@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from app.api.routes import router as api_router
+from SplitWorkload.backend.app.api.routes import router as api_router
 
 
 def create_app() -> FastAPI:
