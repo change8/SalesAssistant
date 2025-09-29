@@ -1,0 +1,72 @@
+<view class="card">
+  <view class="title">粘贴招标文本</view>
+  <textarea placeholder="粘贴文本..." bindinput="onInput" value="{{input}}"
+    style="width:100%;height:320rpx;margin-top:16rpx;border:1px solid #eee;padding:12rpx;border-radius:6rpx;" />
+  <view style="margin-top:16rpx;display:flex;gap:16rpx;">
+    <button class="btn" bindtap="onAnalyze" loading="{{loading}}">分析</button>
+    <button bindtap="onFillDemo">填充示例</button>
+  </view>
+</view>
+
+<view class="card" wx:if="{{status}}">
+  <view class="title">状态</view>
+  <text>{{status}}</text>
+  <text wx:if="{{jobId}}">任务ID：{{jobId}}</text>
+</view>
+
+<view class="card" wx:if="{{result.summary}}">
+  <view class="title">整体概述</view>
+  <view class="summary-text">{{result.summary}}</view>
+</view>
+
+<view class="card" wx:if="{{result.tabs && result.tabs.length}}">
+  <view class="tab-nav">
+    <view wx:for="{{result.tabs}}" wx:key="id" class="tab-btn {{item.id === activeTabId ? 'active' : ''}}" data-id="{{item.id}}" bindtap="onSwitchTab">
+      {{item.title}}（{{item.items.length}}）
+    </view>
+  </view>
+  <view class="tab-body">
+    <block wx:if="{{currentItems.length}}">
+      <block wx:for="{{currentItems}}" wx:key="_index" wx:for-index="idx" wx:for-item="item">
+        <view class="tab-item">
+          <view class="item-header">
+            <text class="item-title">{{item.title}}</text>
+            <text class="priority {{item.priority}}">{{item.priorityLabel}}</text>
+          </view>
+          <view class="item-info" wx:if="{{item.why_important}}">
+            <text class="label">为何重要：</text>{{item.why_important}}
+          </view>
+          <view class="item-info" wx:if="{{item.guidance}}">
+            <text class="label">行动建议：</text>{{item.guidance}}
+          </view>
+          <view class="item-info" wx:if="{{item.details && activeTabId !== 'bid_timeline'}}">
+            <text class="label">补充说明：</text>{{item.details}}
+          </view>
+          <view class="item-info" wx:if="{{activeTabId === 'bid_timeline' && item.milestone}}">
+            <text class="label">关键节点：</text>{{item.milestone}}
+          </view>
+          <view class="item-info" wx:if="{{activeTabId === 'bid_timeline' && item.date}}">
+            <text class="label">时间：</text>{{item.date}}
+          </view>
+          <view class="excerpt" wx:if="{{item.source_excerpt}}">{{item.source_excerpt}}</view>
+          <view class="actions">
+            <button wx:if="{{hasSource && item.source_start !== null && item.source_start !== undefined}}" class="source-btn" data-tab="{{activeTabId}}" data-index="{{idx}}" bindtap="onViewSource">查看原文</button>
+            <view class="source-disabled" wx:else>{{hasSource ? '缺少原文索引' : '原文暂不可用'}}</view>
+          </view>
+        </view>
+      </block>
+    </block>
+    <view class="empty" wx:else>该分类暂无模型输出，建议人工确认。</view>
+  </view>
+</view>
+
+<view class="snippet-mask" wx:if="{{snippetVisible}}">
+  <view class="snippet-dialog">
+    <view class="snippet-header">
+      <text class="snippet-title">{{snippetTitle}}</text>
+      <text class="snippet-close" bindtap="onCloseSnippet">×</text>
+    </view>
+    <view class="snippet-meta">{{snippetMeta}}</view>
+    <rich-text class="snippet-content" nodes="{{snippetContent}}"></rich-text>
+  </view>
+</view>

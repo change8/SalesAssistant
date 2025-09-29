@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>投标助手 - Web 原型</title>
+    <link rel="stylesheet" href="/web/static/styles.css" />
+  </head>
+  <body>
+    <header class="nav">
+      <h1>投标助手</h1>
+      <p>上传 PDF/Word/TXT，快速提取要点与风险。</p>
+    </header>
+
+    <main class="layout">
+      <section class="panel intake">
+        <h2>上传标书</h2>
+        <div class="upload-card">
+          <input type="file" id="fileInput" accept=".pdf,.docx,.txt,.text,.md" />
+          <label for="fileInput" class="upload-btn">选择文件</label>
+          <p id="fileName" class="file-name">尚未选择文件</p>
+          <small>允许上传 PDF、Word、TXT 等文本文件，推荐文件大小 &lt; 30MB。</small>
+        </div>
+
+        <details class="text-toggle">
+          <summary>或粘贴招标文本（辅助方式）</summary>
+          <textarea id="textInput" placeholder="直接粘贴招标正文，适用于临时补充或者快速测试场景"></textarea>
+        </details>
+
+        <div class="actions">
+          <button id="analyzeBtn">开始分析</button>
+          <button id="clearBtn" class="secondary">清空</button>
+        </div>
+
+        <div id="progress" class="progress hidden"><span class="spinner"></span><span id="progressText">处理中...</span></div>
+        <div id="status" class="status hidden"></div>
+      </section>
+
+      <section class="panel">
+        <h2>分析结果</h2>
+        <div id="summary" class="summary"></div>
+        <div id="results" class="results"></div>
+      </section>
+    </main>
+
+    <div id="snippetModal" class="modal hidden">
+      <div class="modal-dialog">
+        <header class="modal-header">
+          <h3 id="modalTitle">原文片段</h3>
+          <button id="modalClose" type="button" aria-label="关闭">×</button>
+        </header>
+        <div class="modal-body">
+          <div class="modal-meta" id="modalMeta"></div>
+          <pre id="modalContext"></pre>
+        </div>
+      </div>
+    </div>
+
+    <script src="/web/static/main.js" defer></script>
+  </body>
+</html>

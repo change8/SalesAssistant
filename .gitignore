@@ -1,0 +1,23 @@
+# Python
+autopep8.cfg
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual env
+.venv/
+
+# Environment / database / cache
+.env
+sales_assistant.db
+*.sqlite3
+
+# macOS
+.DS_Store
+
+# Node / frontend cache
+node_modules/
+
+# Misc
+*.log

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>销售助手统一平台</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header class="page-header">
+        <h1>销售助手统一平台</h1>
+        <p>投标分析 · 工时拆分 · 成本预估，一站式服务。</p>
+      </header>
+
+      <section id="auth-section" class="card">
+        <h2>账号登录</h2>
+        <form id="login-form" class="form-grid">
+          <label>
+            手机号
+            <input type="tel" id="login-phone" name="phone" placeholder="请输入手机号" required />
+          </label>
+          <label>
+            密码
+            <input type="password" id="login-password" name="password" placeholder="密码" required />
+          </label>
+          <button type="submit">登录</button>
+        </form>
+
+        <details class="register-box">
+          <summary>没有账号？展开注册</summary>
+          <form id="register-form" class="form-grid">
+            <label>
+              手机号
+              <input type="tel" id="register-phone" name="phone" placeholder="请输入手机号" required />
+            </label>
+            <label>
+              姓名（可选）
+              <input type="text" id="register-name" name="full_name" placeholder="姓名或昵称" />
+            </label>
+            <label>
+              密码
+              <input type="password" id="register-password" name="password" placeholder="至少 6 位" required />
+            </label>
+            <button type="submit">注册并登录</button>
+          </form>
+        </details>
+        <div id="auth-message" class="info"></div>
+      </section>
+
+      <section id="app-section" class="hidden">
+        <div class="topbar card">
+          <div>
+            <span id="user-info"></span>
+            <button id="logout-btn" class="link-btn">退出登录</button>
+          </div>
+          <nav class="tabs">
+            <button class="tab-btn active" data-target="tender-tab">投标助手</button>
+            <button class="tab-btn" data-target="workload-tab">工时拆分</button>
+            <button class="tab-btn" data-target="costing-tab">成本预估</button>
+          </nav>
+        </div>
+
+        <div id="tender-tab" class="tab-panel card">
+          <h2>投标助手</h2>
+          <div class="two-column">
+            <form id="tender-text-form" class="form-block">
+              <h3>粘贴文本分析</h3>
+              <textarea id="tender-text" rows="8" placeholder="粘贴招标文本"></textarea>
+              <button type="submit">分析文本</button>
+            </form>
+
+            <form id="tender-file-form" class="form-block">
+              <h3>上传文件分析</h3>
+              <input type="file" id="tender-file" accept=".txt,.pdf,.doc,.docx" />
+              <button type="submit">上传并分析</button>
+            </form>
+          </div>
+          <div id="tender-result" class="result-box"></div>
+        </div>
+
+        <div id="workload-tab" class="tab-panel card hidden">
+          <h2>工时拆分</h2>
+          <form id="workload-form" class="form-grid">
+            <label>
+              Excel 功能清单
+              <input type="file" id="workload-file" accept=".xlsx,.xls" required />
+            </label>
+            <label>
+              分配策略
+              <select id="workload-strategy">
+                <option value="balanced">均衡</option>
+                <option value="conservative">保守</option>
+                <option value="aggressive">激进</option>
+              </select>
+            </label>
+            <label>
+              全局人月上限（可选）
+              <input type="number" id="workload-limit" step="0.1" min="0" placeholder="默认取 Excel 合计" />
+            </label>
+            <button type="submit">开始拆分</button>
+          </form>
+          <div id="workload-result" class="result-box"></div>
+        </div>
+
+        <div id="costing-tab" class="tab-panel card hidden">
+          <h2>成本预估</h2>
+          <form id="costing-form" class="form-grid">
+            <label>
+              Excel 功能清单
+              <input type="file" id="costing-file" accept=".xlsx,.xls" required />
+            </label>
+            <div class="rates-grid">
+              <h3>角色人月费率（元）</h3>
+              <label>架构师 <input type="number" step="100" id="rate-architect" /></label>
+              <label>项目经理 <input type="number" step="100" id="rate-project_manager" /></label>
+              <label>产品设计 <input type="number" step="100" id="rate-product_design" /></label>
+              <label>后端开发 <input type="number" step="100" id="rate-backend_dev" /></label>
+              <label>前端开发 <input type="number" step="100" id="rate-frontend_dev" /></label>
+              <label>测试 <input type="number" step="100" id="rate-qa" /></label>
+              <label>实施 <input type="number" step="100" id="rate-implementation" /></label>
+            </div>
+            <div class="ratio-grid">
+              <label>
+                架构师人月系数（相对技术人月）
+                <input type="number" step="0.01" id="ratio-architect" />
+              </label>
+              <label>
+                项目经理人月系数（相对总人月）
+                <input type="number" step="0.01" id="ratio-project_manager" />
+              </label>
+            </div>
+            <button type="submit">计算成本</button>
+          </form>
+          <div id="costing-result" class="result-box"></div>
+        </div>
+      </section>
+    </div>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
