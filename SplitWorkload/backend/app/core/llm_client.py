@@ -18,7 +18,7 @@ class LLMResponseFormatError(RuntimeError):
     """Raised when the LLM response cannot be parsed into the expected schema."""
 
 
-@dataclass(slots=True)
+@dataclass
 class LLMResult:
     allocations: Dict[str, float]
     analysis: Optional[str]

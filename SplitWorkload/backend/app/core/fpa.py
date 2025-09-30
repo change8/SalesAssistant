@@ -31,7 +31,7 @@ _COMPLEXITY_LEVELS = [
 ]
 
 
-@dataclass(slots=True)
+@dataclass
 class FPAInsight:
     function_type: str
     data_complexity: str

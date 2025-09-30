@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 
-@dataclass(slots=True)
+@dataclass
 class RequirementRecord:
     """Normalized requirement information extracted from the spreadsheet."""
 
@@ -14,7 +14,7 @@ class RequirementRecord:
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
-@dataclass(slots=True)
+@dataclass
 class SheetPayload:
     """Container for sheet-level inputs and metadata."""
 
@@ -24,7 +24,7 @@ class SheetPayload:
     metadata: Dict[str, Any] = field(default_factory=dict)
 
 
-@dataclass(slots=True)
+@dataclass
 class RequirementAllocation:
     """Represents an allocation outcome for a single requirement."""
 
@@ -33,7 +33,7 @@ class RequirementAllocation:
     analysis: Optional[str] = None
 
 
-@dataclass(slots=True)
+@dataclass
 class SheetAllocation:
     """Allocation outcomes for an entire sheet."""
 
