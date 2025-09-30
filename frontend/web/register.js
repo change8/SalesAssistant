@@ -60,6 +60,11 @@ form?.addEventListener('submit', async (event) => {
     pwdInput?.focus();
     return;
   }
+  if (password.length > 64) {
+    setMessage('密码长度不能超过 64 位', 'error');
+    pwdInput?.focus();
+    return;
+  }
   if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
     setMessage('密码需包含字母和数字', 'error');
     pwdInput?.focus();

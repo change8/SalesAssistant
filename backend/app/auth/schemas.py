@@ -37,8 +37,8 @@ class UserCreate(UserBase):
         password = value.strip()
         if len(password) < 8:
             raise ValueError("密码至少需要 8 位")
-        if len(password) > 128:
-            raise ValueError("密码长度不能超过 128 位")
+        if len(password) > 64:
+            raise ValueError("密码长度不能超过 64 位")
         if not re.search(r"[A-Za-z]", password) or not re.search(r"[0-9]", password):
             raise ValueError("密码需同时包含字母和数字")
         return password

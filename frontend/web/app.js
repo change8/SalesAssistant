@@ -214,6 +214,11 @@ function bindAuthForms() {
       pwdInput?.focus();
       return;
     }
+    if (password.length > 64) {
+      setAuthMessage('密码长度不能超过 64 位', 'error');
+      pwdInput?.focus();
+      return;
+    }
 
     setAuthMessage('登录中...', 'info');
     const payload = { phone, password };

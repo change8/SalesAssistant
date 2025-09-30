@@ -24,8 +24,15 @@ class UserAlreadyExistsError(Exception):
     """Raised when trying to create a user with an existing phone number."""
 
 
+class PasswordPolicyError(Exception):
+    """Raised when a password does not meet backend hashing requirements."""
+
+
 def hash_password(password: str) -> str:
-    return pwd_context.hash(password)
+    try:
+        return pwd_context.hash(password)
+    except ValueError as exc:  # passlib raises ValueError for unsupported passwords
+        raise PasswordPolicyError("密码不符合安全要求，请检查长度和复杂度") from exc
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
