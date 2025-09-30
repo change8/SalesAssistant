@@ -144,6 +144,27 @@ button:hover {
   color: #4f6cff;
 }
 
+.auth-footer {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.9rem;
+}
+
+.auth-footer .link-btn {
+  margin-left: 0;
+  padding: 0;
+}
+
+.auth-footer .info,
+.auth-footer .error,
+.auth-footer .success {
+  margin-top: 0;
+  flex: 1;
+}
+
 .error {
   color: #d64545;
 }
@@ -168,11 +189,6 @@ button:hover {
   gap: 0.8rem;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   margin: 1rem 0;
-}
-
-.register-box summary {
-  cursor: pointer;
-  color: #4f6cff;
 }
 
 @media (max-width: 680px) {

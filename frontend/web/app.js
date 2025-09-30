@@ -20,6 +20,8 @@ const authMessage = document.getElementById('auth-message');
 const userInfoEl = document.getElementById('user-info');
 const logoutBtn = document.getElementById('logout-btn');
 
+const PHONE_PATTERN = /^1[3-9]\d{9}$/;
+
 const tenderResult = document.getElementById('tender-result');
 const workloadResult = document.getElementById('workload-result');
 const costingResult = document.getElementById('costing-result');
@@ -97,6 +99,13 @@ async function safeError(response) {
     const payload = await response.json();
     if (typeof payload?.detail === 'string') {
       return payload.detail;
+    }
+    if (Array.isArray(payload?.detail) && payload.detail.length > 0) {
+      const first = payload.detail[0];
+      const msg = first?.msg || first?.message;
+      if (typeof msg === 'string') {
+        return msg;
+      }
     }
     return JSON.stringify(payload);
   } catch (error) {
@@ -187,15 +196,27 @@ function renderResult(target, data) {
 
 function bindAuthForms() {
   const loginForm = document.getElementById('login-form');
-  const registerForm = document.getElementById('register-form');
 
   loginForm?.addEventListener('submit', async (event) => {
     event.preventDefault();
+    const phoneInput = document.getElementById('login-phone');
+    const pwdInput = document.getElementById('login-password');
+    const phone = phoneInput?.value.trim() || '';
+    const password = pwdInput?.value || '';
+
+    if (!PHONE_PATTERN.test(phone)) {
+      setAuthMessage('请输入 11 位有效手机号', 'error');
+      phoneInput?.focus();
+      return;
+    }
+    if (password.length === 0) {
+      setAuthMessage('请输入密码', 'error');
+      pwdInput?.focus();
+      return;
+    }
+
     setAuthMessage('登录中...', 'info');
-    const payload = {
-      phone: document.getElementById('login-phone').value.trim(),
-      password: document.getElementById('login-password').value,
-    };
+    const payload = { phone, password };
     try {
       const response = await fetch(`${API_BASE}/api/auth/login`, {
         method: 'POST',
@@ -212,41 +233,6 @@ function bindAuthForms() {
     } catch (error) {
       console.error(error);
       setAuthMessage(error.message || '登录失败', 'error');
-    }
-  });
-
-  registerForm?.addEventListener('submit', async (event) => {
-    event.preventDefault();
-    setAuthMessage('注册中...', 'info');
-    const payload = {
-      phone: document.getElementById('register-phone').value.trim(),
-      password: document.getElementById('register-password').value,
-      full_name: document.getElementById('register-name').value.trim() || null,
-    };
-    try {
-      const response = await fetch(`${API_BASE}/api/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!response.ok) {
-        throw new Error(await safeError(response));
-      }
-      const loginResp = await fetch(`${API_BASE}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: payload.phone, password: payload.password }),
-      });
-      if (!loginResp.ok) {
-        throw new Error(await safeError(loginResp));
-      }
-      const data = await loginResp.json();
-      saveToken(data.access_token, data.expires_in);
-      setAuthMessage('注册成功，已自动登录', 'success');
-      await fetchProfile();
-    } catch (error) {
-      console.error(error);
-      setAuthMessage(error.message || '注册失败', 'error');
     }
   });
 }
