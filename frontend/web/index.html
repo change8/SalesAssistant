@@ -47,20 +47,8 @@
 
         <div id="tender-tab" class="tab-panel card">
           <h2>投标助手</h2>
-          <div class="two-column">
-            <form id="tender-text-form" class="form-block">
-              <h3>粘贴文本分析</h3>
-              <textarea id="tender-text" rows="8" placeholder="粘贴招标文本"></textarea>
-              <button type="submit">分析文本</button>
-            </form>
-
-            <form id="tender-file-form" class="form-block">
-              <h3>上传文件分析</h3>
-              <input type="file" id="tender-file" accept=".txt,.pdf,.doc,.docx" />
-              <button type="submit">上传并分析</button>
-            </form>
-          </div>
-          <div id="tender-result" class="result-box"></div>
+          <p class="tab-description">以下为投标助手原版界面，登录后可上传标书或粘贴文本进行分析。</p>
+          <iframe src="bidding/index.html" class="bidding-frame" title="投标助手"></iframe>
         </div>
 
         <div id="workload-tab" class="tab-panel card hidden">

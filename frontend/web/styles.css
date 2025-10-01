@@ -144,6 +144,30 @@ button:hover {
   color: #4f6cff;
 }
 
+
+.tab-description {
+  margin-bottom: 1rem;
+  color: #4b5878;
+}
+
+.bidding-frame {
+  width: 100%;
+  min-height: 700px;
+  border: none;
+  border-radius: 12px;
+  box-shadow: 0 8px 18px rgba(20, 32, 75, 0.08);
+  background-color: #fff;
+}
+
+.bidding-frame::-webkit-scrollbar {
+  width: 8px;
+}
+
+.bidding-frame::-webkit-scrollbar-thumb {
+  background-color: rgba(120, 130, 165, 0.3);
+  border-radius: 999px;
+}
+
 .auth-footer {
   margin-top: 1rem;
   display: flex;
