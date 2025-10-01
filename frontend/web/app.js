@@ -21,6 +21,12 @@ const userInfoEl = document.getElementById('user-info');
 const logoutBtn = document.getElementById('logout-btn');
 
 const PHONE_PATTERN = /^1[3-9]\d{9}$/;
+const PRIORITY_LABELS = {
+  critical: '极高优先级',
+  high: '高优先级',
+  medium: '中优先级',
+  low: '关注即可',
+};
 
 const tenderResult = document.getElementById('tender-result');
 const workloadResult = document.getElementById('workload-result');
@@ -194,6 +200,183 @@ function renderResult(target, data) {
   target.textContent = JSON.stringify(data, null, 2);
 }
 
+function renderTenderResult(container, payload) {
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (typeof payload === 'string') {
+    container.textContent = payload;
+    return;
+  }
+
+  if (!payload || typeof payload !== 'object') {
+    container.textContent = '暂无结果';
+    return;
+  }
+
+  const job = payload.result ? payload : { result: payload };
+  const result = job.result || {};
+
+  const metaRow = document.createElement('div');
+  metaRow.className = 'tender-meta';
+
+  const statusText = (job.status || 'completed').toUpperCase();
+  const status = document.createElement('span');
+  status.className = `status-pill status-${(job.status || 'completed').toLowerCase()}`;
+  status.textContent = statusText;
+  metaRow.appendChild(status);
+
+  if (job.source) {
+    const source = document.createElement('span');
+    source.textContent = job.source === 'file' ? '来源：文件上传' : '来源：粘贴文本';
+    metaRow.appendChild(source);
+  }
+  if (job.filename) {
+    const name = document.createElement('span');
+    name.textContent = `文件：${job.filename}`;
+    metaRow.appendChild(name);
+  }
+  if (job.text_length) {
+    const length = document.createElement('span');
+    length.textContent = `文本长度：${job.text_length}`;
+    metaRow.appendChild(length);
+  }
+  container.appendChild(metaRow);
+
+  const summaryBlock = document.createElement('div');
+  summaryBlock.className = 'tender-summary';
+  summaryBlock.textContent = result.summary || '模型未提供整体概述，可参考下方分类提示。';
+  container.appendChild(summaryBlock);
+
+  if (job.metadata?.raw_response === 'heuristic' || result.raw_response === 'heuristic') {
+    const warning = document.createElement('div');
+    warning.className = 'tender-warning';
+    warning.textContent = '当前展示的是启发式结果，建议配置大模型后再次分析。';
+    container.appendChild(warning);
+  }
+
+  const tabs = Array.isArray(result.tabs) ? result.tabs : [];
+  if (!tabs.length) {
+    const empty = document.createElement('div');
+    empty.className = 'tender-empty';
+    empty.textContent = '暂无分类结果，建议人工核查。';
+    container.appendChild(empty);
+    appendRawJson(container, payload);
+    return;
+  }
+
+  tabs.forEach((tab) => {
+    if (!tab || typeof tab !== 'object') return;
+    const section = document.createElement('section');
+    section.className = 'tender-tab';
+
+    const header = document.createElement('header');
+    header.className = 'tender-tab-header';
+    const title = document.createElement('h3');
+    title.textContent = tab.title || tab.id || '分类';
+    header.appendChild(title);
+    const count = document.createElement('span');
+    count.className = 'count-pill';
+    const itemsCount = Array.isArray(tab.items) ? tab.items.length : 0;
+    count.textContent = itemsCount.toString();
+    header.appendChild(count);
+    section.appendChild(header);
+
+    if (tab.summary) {
+      const summary = document.createElement('p');
+      summary.className = 'tender-tab-summary';
+      summary.textContent = tab.summary;
+      section.appendChild(summary);
+    }
+
+    const itemsContainer = document.createElement('div');
+    itemsContainer.className = 'tender-items';
+    const items = Array.isArray(tab.items) ? tab.items : [];
+    if (!items.length) {
+      const hint = document.createElement('div');
+      hint.className = 'tender-empty';
+      hint.textContent = '该分类暂无模型输出，建议人工确认。';
+      itemsContainer.appendChild(hint);
+    } else {
+      items.forEach((item) => {
+        const card = buildTenderItemCard(item);
+        itemsContainer.appendChild(card);
+      });
+    }
+    section.appendChild(itemsContainer);
+    container.appendChild(section);
+  });
+
+  appendRawJson(container, payload);
+}
+
+function buildTenderItemCard(item) {
+  const card = document.createElement('article');
+  card.className = 'tender-item';
+
+  const header = document.createElement('header');
+  header.className = 'tender-item-header';
+  const title = document.createElement('h4');
+  title.textContent = firstNonEmpty(item, ['title', 'requirement', 'headline', 'name', 'event']) || '要点';
+  header.appendChild(title);
+  const priorityLabel = PRIORITY_LABELS[(item.priority || item.severity || '').toLowerCase()];
+  if (priorityLabel) {
+    const pill = document.createElement('span');
+    pill.className = `priority-pill ${(item.priority || item.severity || 'medium').toLowerCase()}`;
+    pill.textContent = priorityLabel;
+    header.appendChild(pill);
+  }
+  card.appendChild(header);
+
+  const body = document.createElement('div');
+  body.className = 'tender-item-body';
+  appendInfoRow(body, '为何重要', firstNonEmpty(item, ['why_important', 'reason', 'summary', 'description']));
+  appendInfoRow(body, '行动建议', firstNonEmpty(item, ['guidance', 'recommendation', 'action']));
+  appendInfoRow(body, '补充说明', firstNonEmpty(item, ['details', 'note', 'impact']));
+  appendInfoRow(body, '原文节选', firstNonEmpty(item, ['source_excerpt', 'evidence']));
+  card.appendChild(body);
+
+  return card;
+}
+
+function appendInfoRow(container, label, value) {
+  if (!value || String(value).trim() === '') return;
+  const row = document.createElement('div');
+  row.className = 'tender-info-row';
+  const labelEl = document.createElement('span');
+  labelEl.className = 'label';
+  labelEl.textContent = label;
+  const valueEl = document.createElement('p');
+  valueEl.className = 'value';
+  valueEl.textContent = value;
+  row.appendChild(labelEl);
+  row.appendChild(valueEl);
+  container.appendChild(row);
+}
+
+function firstNonEmpty(source, keys) {
+  if (!source) return '';
+  for (const key of keys) {
+    const value = source[key];
+    if (typeof value === 'string' && value.trim()) {
+      return value.trim();
+    }
+  }
+  return '';
+}
+
+function appendRawJson(container, data) {
+  const details = document.createElement('details');
+  details.className = 'raw-json-block';
+  const summary = document.createElement('summary');
+  summary.textContent = '查看原始 JSON';
+  details.appendChild(summary);
+  const pre = document.createElement('pre');
+  pre.textContent = JSON.stringify(data, null, 2);
+  details.appendChild(pre);
+  container.appendChild(details);
+}
+
 function bindAuthForms() {
   const loginForm = document.getElementById('login-form');
 
@@ -251,7 +434,7 @@ function bindTenderForms() {
     tenderResult.textContent = '分析中...';
     const text = document.getElementById('tender-text').value;
     if (!text.trim()) {
-      renderResult(tenderResult, '请输入文本');
+      renderTenderResult(tenderResult, '请输入文本');
       return;
     }
     try {
@@ -260,10 +443,10 @@ function bindTenderForms() {
         method: 'POST',
         body: JSON.stringify(payload),
       });
-      renderResult(tenderResult, data);
+      renderTenderResult(tenderResult, data);
     } catch (error) {
       console.error(error);
-      renderResult(tenderResult, error.message || '分析失败');
+      renderTenderResult(tenderResult, error.message || '分析失败');
     }
   });
 
@@ -282,10 +465,10 @@ function bindTenderForms() {
         method: 'POST',
         body: formData,
       });
-      renderResult(tenderResult, data);
+      renderTenderResult(tenderResult, data);
     } catch (error) {
       console.error(error);
-      renderResult(tenderResult, error.message || '分析失败');
+      renderTenderResult(tenderResult, error.message || '分析失败');
     }
   });
 }
