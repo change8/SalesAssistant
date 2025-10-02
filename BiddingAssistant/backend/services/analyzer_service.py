@@ -35,7 +35,6 @@ class AnalysisService:
         self,
         source: str,
         *,
-        owner_id: Optional[int] = None,
         filename: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
     ) -> AnalysisJobRecord:
@@ -43,7 +42,6 @@ class AnalysisService:
             job_id=str(uuid.uuid4()),
             status="pending",
             source=source,
-            owner_id=owner_id,
             filename=filename,
             metadata=metadata or {},
             created_at=time.time(),
@@ -106,13 +104,12 @@ class AnalysisService:
     def submit_text(
         self,
         *,
-        owner_id: Optional[int] = None,
         text: str,
         filename: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
         async_runner: Optional[Any] = None,
     ) -> AnalysisJobRecord:
-        job = self.create_job(source="text", owner_id=owner_id, filename=filename, metadata=metadata)
+        job = self.create_job(source="text", filename=filename, metadata=metadata)
         if async_runner:
             async_runner(self.process_text, job.job_id, text, metadata)
             stored = self.store.get(job.job_id)
@@ -124,13 +121,12 @@ class AnalysisService:
         self,
         file_obj,
         *,
-        owner_id: Optional[int] = None,
         filename: Optional[str] = None,
         content_type: Optional[str] = None,
         metadata: Optional[Dict[str, Any]] = None,
         async_runner: Optional[Any] = None,
     ) -> AnalysisJobRecord:
-        job = self.create_job(source="file", owner_id=owner_id, filename=filename, metadata=metadata)
+        job = self.create_job(source="file", filename=filename, metadata=metadata)
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
             tmp.write(file_obj.read())
             tmp_path = tmp.name
@@ -148,28 +144,22 @@ class AnalysisService:
                 pass
 
     # ---------------------------------------------------------------- Public read
-    def serialize_job(self, job_id: str, *, owner_id: Optional[int] = None, include_result: bool = True) -> Dict[str, Any]:
+    def serialize_job(self, job_id: str, *, include_result: bool = True) -> Dict[str, Any]:
         job = self.store.get(job_id)
-        if not job or (owner_id is not None and job.owner_id != owner_id):
+        if not job:
             raise KeyError(job_id)
         data = self._serialize_job_record(job, include_result=include_result)
         return data
 
-    def list_jobs(self, *, owner_id: Optional[int] = None) -> Dict[str, Any]:
-        if owner_id is not None:
-            jobs_iterable = self.store.list_by_owner(owner_id)
-        else:
-            jobs_iterable = self.store.list()
+    def list_jobs(self) -> Dict[str, Any]:
+        jobs_iterable = self.store.list()
         jobs = [
             self._serialize_job_record(j, include_result=False)
             for j in sorted(jobs_iterable, key=lambda x: x.created_at, reverse=True)
         ]
         return {"jobs": jobs}
 
-    def delete_job(self, job_id: str, *, owner_id: Optional[int] = None) -> bool:
-        job = self.store.get(job_id)
-        if not job or (owner_id is not None and job.owner_id != owner_id):
-            return False
+    def delete_job(self, job_id: str) -> bool:
         return self.store.delete(job_id)
 
     # ---------------------------------------------------------------- Internal
@@ -180,7 +170,6 @@ class AnalysisService:
             "status": job.status,
             "source": job.source,
             "filename": job.filename,
-            "owner_id": job.owner_id,
             "text_length": job.text_length,
             "created_at": job.created_at,
             "started_at": job.started_at,
@@ -196,14 +185,12 @@ class AnalysisService:
     def get_source_snippet(
         self,
         job_id: str,
-        *,
-        owner_id: Optional[int] = None,
         start: int,
         end: Optional[int] = None,
         window: int = 120,
     ) -> Dict[str, Any]:
         job = self.store.get(job_id)
-        if not job or job.source_text is None or (owner_id is not None and job.owner_id != owner_id):
+        if not job or job.source_text is None:
             raise KeyError(job_id)
         text = job.source_text
         length = len(text)

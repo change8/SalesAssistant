@@ -16,7 +16,6 @@ class AnalysisJobRecord:
     job_id: str
     status: str
     source: str
-    owner_id: Optional[int] = None
     filename: Optional[str] = None
     text_length: int = 0
     created_at: float = 0.0
@@ -61,11 +60,6 @@ class InMemoryJobStore:
     def list(self) -> List[AnalysisJobRecord]:
         with self._lock:
             return list(self._jobs.values())
-
-    # Ownership helpers ----------------------------------------------------
-    def list_by_owner(self, owner_id: int) -> List[AnalysisJobRecord]:
-        with self._lock:
-            return [job for job in self._jobs.values() if job.owner_id == owner_id]
 
     # Helpers --------------------------------------------------------------
     def __len__(self) -> int:  # pragma: no cover - convenience

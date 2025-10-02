@@ -374,6 +374,7 @@ async function analyzeFile(file) {
   els.analyze.disabled = true
   const resp = await fetch(`${API_BASE}/analyze/file`, {
     method: 'POST',
+    headers: mergeHeaders(),
     body: form
   })
   await handleJobResponse(resp)
