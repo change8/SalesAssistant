@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import logging
-from difflib import SequenceMatcher
 from typing import Any, Dict, Iterable, List, Optional
 
 try:
@@ -14,7 +13,7 @@ except Exception:  # pragma: no cover - optional dependency
 
 from .adaptive_prompt import build_adaptive_prompt
 from .framework import DEFAULT_FRAMEWORK, FrameworkCategory
-from .retrieval import HeuristicRetriever, TextSegment, split_text_into_segments
+from .retrieval import split_text_into_segments
 
 logger = logging.getLogger(__name__)
 
@@ -46,10 +45,21 @@ class LLMClient:
         self.base_url = base_url
         self.timeout = timeout
         self.options = kwargs
-        self._heuristic = HeuristicRetriever()
         self._no_proxy = {"http": None, "https": None}
 
     # ------------------------------------------------------------------ public
+    def _request_timeout(self) -> Optional[float]:
+        """Return a requests-compatible timeout, treating <=0 as wait-forever."""
+
+        value = self.timeout
+        try:
+            numeric = float(value) if value is not None else None
+        except (TypeError, ValueError):
+            numeric = None
+        if numeric is None or numeric <= 0:
+            return None
+        return numeric
+
     def semantic_locate(
         self,
         text: str,
@@ -59,7 +69,7 @@ class LLMClient:
     ) -> Optional[List[Dict[str, Any]]]:
         provider = (self.provider or "stub").lower()
         if provider in {"stub", "mock"}:
-            return self._heuristic_semantic(text, hints, segments)
+            raise RuntimeError("LLM 未配置，无法执行语义定位")
         if provider in {"openai", "openai_compatible"}:
             return self._call_openai(text, hints, rule, segments)
         if provider in {"azure_openai", "azure"}:
@@ -70,15 +80,7 @@ class LLMClient:
     def summarize_rule(self, rule: Dict[str, Any], evidences: List[Dict[str, Any]]) -> Dict[str, Any]:
         provider = (self.provider or "stub").lower()
         if provider in {"stub", "mock"}:
-            items = []
-            for ev in evidences:
-                text = (ev.get("snippet") or ev.get("evidence") or "").strip()
-                if not text:
-                    continue
-                items.append({"requirement": text, "evidence": text})
-                if len(items) >= 5:
-                    break
-            return {"summary": rule.get("description"), "items": items}
+            raise RuntimeError("LLM 未配置，无法生成条款摘要")
         if provider in {"openai", "openai_compatible"}:
             return self._call_openai_summary(rule, evidences)
         if provider in {"azure_openai", "azure"}:
@@ -93,7 +95,7 @@ class LLMClient:
         selected = categories or DEFAULT_FRAMEWORK
         provider = (self.provider or "stub").lower()
         if provider in {"stub", "mock"}:
-            return self._heuristic_framework(text, selected)
+            raise RuntimeError("LLM 未配置，无法执行框架分析")
         if provider in {"openai", "openai_compatible"}:
             return self._call_openai_framework(text, selected)
         if provider in {"azure_openai", "azure"}:
@@ -104,53 +106,12 @@ class LLMClient:
         prompt_payload = build_adaptive_prompt(text)
         provider = (self.provider or "stub").lower()
         if provider in {"stub", "mock"}:
-            return self._heuristic_adaptive(text)
+            raise RuntimeError("LLM 未配置，无法执行自适应分析")
         if provider in {"openai", "openai_compatible"}:
             return self._call_openai_adaptive(prompt_payload)
         if provider in {"azure_openai", "azure"}:
             return self._call_azure_adaptive(prompt_payload)
         raise NotImplementedError(f"LLM provider '{self.provider}' not implemented")
-
-    # ----------------------------------------------------------------- helpers
-    def _heuristic_semantic(
-        self,
-        text: str,
-        hints: Iterable[str],
-        segments: Optional[Iterable[Any]] = None,
-    ) -> List[Dict[str, Any]]:
-        if segments is None:
-            segments = self._heuristic.locate_candidates(text, hints)
-        results: List[Dict[str, Any]] = []
-        for seg in segments:
-            if isinstance(seg, TextSegment):
-                start = seg.start
-                length = seg.length
-                evidence = seg.text
-                score = seg.score
-            else:
-                start = getattr(seg, "start", 0)
-                length = getattr(seg, "length", 0)
-                evidence = getattr(seg, "text", "") or getattr(seg, "evidence", "")
-                score = getattr(seg, "score", 0.0)
-                if not evidence and length:
-                    evidence = text[start : start + length]
-            if not evidence:
-                continue
-            if not score:
-                hints_lower = [h.lower() for h in hints if h]
-                score = max(
-                    (SequenceMatcher(a=evidence.lower(), b=h).ratio() for h in hints_lower),
-                    default=0.0,
-                )
-            results.append(
-                {
-                    "start": start,
-                    "length": length or len(evidence),
-                    "evidence": evidence,
-                    "score": float(score),
-                }
-            )
-        return results
 
     # ---------------------------------------------------------------- requests
     def _call_openai(
@@ -175,12 +136,19 @@ class LLMClient:
                 {"role": "user", "content": prompt},
             ],
             "temperature": 0,
+            "response_format": {"type": "json_object"},
         }
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
-        response = requests.post(url, headers=headers, json=payload, timeout=self.timeout, proxies=self._no_proxy)
+        response = requests.post(
+            url,
+            headers=headers,
+            json=payload,
+            timeout=self._request_timeout(),
+            proxies=self._no_proxy,
+        )
         response.raise_for_status()
         data = response.json()
         content = data["choices"][0]["message"]["content"]
@@ -206,12 +174,19 @@ class LLMClient:
                 {"role": "user", "content": prompt},
             ],
             "temperature": 0,
+            "response_format": {"type": "json_object"},
         }
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
-        response = requests.post(url, headers=headers, json=payload, timeout=self.timeout, proxies=self._no_proxy)
+        response = requests.post(
+            url,
+            headers=headers,
+            json=payload,
+            timeout=self._request_timeout(),
+            proxies=self._no_proxy,
+        )
         response.raise_for_status()
         data = response.json()
         content = data["choices"][0]["message"]["content"]
@@ -231,41 +206,66 @@ class LLMClient:
         if system_prompt:
             assembled_messages.append({"role": "system", "content": system_prompt})
         assembled_messages.extend(messages)
-        payload = {
-            "model": model,
-            "messages": assembled_messages,
-            "temperature": 0,
-            "stream": False,
-        }
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
-        try:
-            response = requests.post(
-                url,
-                headers=headers,
-                json=payload,
-                timeout=self.timeout,
-                proxies=self._no_proxy,
-            )
-            response.raise_for_status()
-            data = response.json()
-            content = data["choices"][0]["message"]["content"]
-            parsed = self._parse_adaptive_response(content)
-            parsed.setdefault("raw_response", content)
-            return parsed
-        except (requests.Timeout, requests.ReadTimeout) as exc:
-            logger.warning("Adaptive LLM timeout: %s", exc)
-            fallback = self._heuristic_adaptive(prompt_payload.get("raw_text", ""))
-            fallback.setdefault("raw_response", "timeout")
-            return fallback
-        except requests.HTTPError as exc:
-            body = exc.response.text if exc.response is not None else ""
-            logger.warning("Adaptive LLM HTTPError (%s): %s", exc, body)
-            fallback = self._heuristic_adaptive(prompt_payload.get("raw_text", ""))
-            fallback.setdefault("raw_response", body)
-            return fallback
+
+        base_messages = assembled_messages
+        retry_messages = base_messages
+        # If the first attempt returns invalid JSON, prepend an explicit instruction and retry once.
+        extra_instruction = {
+            "role": "system",
+            "content": (
+                "上一次回答未能生成合法 JSON。请严格按照 JSON 对象输出，"
+                "禁止出现代码块、额外说明或未转义的引号，确保能被 json.loads 正常解析。"
+            ),
+        }
+
+        for attempt in range(2):
+            payload = {
+                "model": model,
+                "messages": retry_messages,
+                "temperature": 0,
+                "stream": False,
+                "response_format": {"type": "json_object"},
+            }
+            try:
+                response = requests.post(
+                    url,
+                    headers=headers,
+                    json=payload,
+                    timeout=self._request_timeout(),
+                    proxies=self._no_proxy,
+                )
+                response.raise_for_status()
+                data = response.json()
+                content = data["choices"][0]["message"]["content"]
+                parsed = self._parse_adaptive_response(content)
+                parsed.setdefault("raw_response", content)
+                return parsed
+            except RuntimeError as exc:
+                message = str(exc)
+                if (
+                    "LLM 响应解析失败" in message
+                    and attempt == 0
+                ):
+                    logger.warning("Adaptive response parse failed once, retrying with stricter JSON instructions")
+                    retry_messages = [extra_instruction] + base_messages
+                    continue
+                raise
+            except (requests.Timeout, requests.ReadTimeout) as exc:
+                logger.warning("Adaptive LLM timeout: %s", exc)
+                raise RuntimeError("LLM 请求超时，请检查网络或稍后再试") from exc
+            except requests.HTTPError as exc:
+                status = exc.response.status_code if exc.response is not None else "?"
+                body = exc.response.text if exc.response is not None else ""
+                summary = (body or str(exc)).strip().splitlines()[0][:200]
+                logger.warning("Adaptive LLM HTTPError (status %s): %s", status, summary)
+                raise RuntimeError(f"LLM 请求失败 (HTTP {status}): {summary}") from exc
+            except requests.RequestException as exc:
+                logger.warning("Adaptive LLM request error: %s", exc)
+                raise RuntimeError(f"LLM 请求异常: {exc}") from exc
 
     def _call_azure(
         self,
@@ -294,7 +294,13 @@ class LLMClient:
             "api-key": api_key,
             "Content-Type": "application/json",
         }
-        response = requests.post(url, headers=headers, json=payload, timeout=self.timeout, proxies=self._no_proxy)
+        response = requests.post(
+            url,
+            headers=headers,
+            json=payload,
+            timeout=self._request_timeout(),
+            proxies=self._no_proxy,
+        )
         response.raise_for_status()
         data = response.json()
         content = data["choices"][0]["message"]["content"]
@@ -325,7 +331,13 @@ class LLMClient:
             "api-key": api_key,
             "Content-Type": "application/json",
         }
-        response = requests.post(url, headers=headers, json=payload, timeout=self.timeout, proxies=self._no_proxy)
+        response = requests.post(
+            url,
+            headers=headers,
+            json=payload,
+            timeout=self._request_timeout(),
+            proxies=self._no_proxy,
+        )
         response.raise_for_status()
         data = response.json()
         content = data["choices"][0]["message"]["content"]
@@ -360,7 +372,7 @@ class LLMClient:
                 url,
                 headers=headers,
                 json=payload,
-                timeout=self.timeout,
+                timeout=self._request_timeout(),
                 proxies=self._no_proxy,
             )
             response.raise_for_status()
@@ -370,15 +382,16 @@ class LLMClient:
             return parsed
         except (requests.Timeout, requests.ReadTimeout) as exc:
             logger.warning("Azure adaptive timeout: %s", exc)
-            fallback = self._heuristic_adaptive(prompt_payload.get("raw_text", ""))
-            fallback.setdefault("raw_response", "timeout")
-            return fallback
+            raise RuntimeError("Azure LLM 请求超时，请检查网络或稍后再试") from exc
         except requests.HTTPError as exc:
+            status = exc.response.status_code if exc.response is not None else "?"
             body = exc.response.text if exc.response is not None else ""
-            logger.warning("Azure adaptive HTTPError (%s): %s", exc, body)
-            fallback = self._heuristic_adaptive(prompt_payload.get("raw_text", ""))
-            fallback.setdefault("raw_response", body)
-            return fallback
+            summary = (body or str(exc)).strip().splitlines()[0][:200]
+            logger.warning("Azure adaptive HTTPError (status %s): %s", status, summary)
+            raise RuntimeError(f"Azure LLM 请求失败 (HTTP {status}): {summary}") from exc
+        except requests.RequestException as exc:
+            logger.warning("Azure adaptive request error: %s", exc)
+            raise RuntimeError(f"Azure LLM 请求异常: {exc}") from exc
 
     # ---------------------------------------------------------------- parsing
     def _build_semantic_prompt(
@@ -523,36 +536,18 @@ class LLMClient:
 
     def _parse_adaptive_response(self, content: str) -> Dict[str, Any]:
         if not content or not str(content).strip():
-            return {"summary": "", "tabs": self._default_adaptive_tabs()}
+            raise RuntimeError("LLM 响应为空，无法解析分析结果")
         try:
             parsed = json.loads(content)
             if not isinstance(parsed, dict):
-                return {"summary": "", "tabs": self._default_adaptive_tabs()}
+                raise RuntimeError("LLM 响应格式异常，期待 JSON 对象")
             summary = str(parsed.get("summary") or "").strip()
             tabs = self._normalise_adaptive_tabs(parsed.get("tabs"))
             return {"summary": summary, "tabs": tabs}
         except Exception as exc:
-            logger.warning("Failed to parse adaptive response: %s", exc, exc_info=True)
-            return {"summary": "", "tabs": self._default_adaptive_tabs()}
-
-    def _heuristic_framework(self, text: str, categories: List[FrameworkCategory]) -> Dict[str, Any]:
-        segments = split_text_into_segments(text, max_chars=800)
-        result_categories = []
-        for cat in categories:
-            snippets = [seg.text for seg in segments if any(keyword in seg.text for keyword in cat.title.split("/"))]
-            items = []
-            for snippet in snippets[:5]:
-                items.append(
-                    {
-                        "title": cat.title,
-                        "description": snippet[:200],
-                        "evidence": snippet[:400],
-                        "recommendation": "",
-                        "severity": cat.severity,
-                    }
-                )
-            result_categories.append({"id": cat.id, "title": cat.title, "items": items, "summary": cat.description})
-        return {"categories": result_categories, "timeline": {"milestones": [], "remark": ""}, "raw_response": "heuristic"}
+            snippet = content[:800].replace('\n', ' ')
+            logger.warning("Failed to parse adaptive response: %s; raw snippet: %s", exc, snippet)
+            raise RuntimeError(f"LLM 响应解析失败: {exc}") from exc
 
     def _call_openai_framework(
         self,
@@ -574,6 +569,7 @@ class LLMClient:
                 {"role": "user", "content": prompt},
             ],
             "temperature": 0,
+            "response_format": {"type": "json_object"},
         }
         headers = {
             "Authorization": f"Bearer {api_key}",
@@ -584,7 +580,7 @@ class LLMClient:
                 url,
                 headers=headers,
                 json=payload,
-                timeout=self.timeout,
+                timeout=self._request_timeout(),
                 proxies=self._no_proxy,
             )
             response.raise_for_status()
@@ -592,12 +588,18 @@ class LLMClient:
             result = self._parse_framework_response(content)
             result.setdefault("raw_response", content)
             return result
+        except (requests.Timeout, requests.ReadTimeout) as exc:
+            logger.warning("Framework LLM timeout: %s", exc)
+            raise RuntimeError("LLM 请求超时，请检查网络或稍后再试") from exc
         except requests.HTTPError as exc:
+            status = exc.response.status_code if exc.response is not None else "?"
             body = exc.response.text if exc.response is not None else ""
-            logger.warning("LLM HTTPError (%s): %s", exc, body)
-            fallback = self._heuristic_framework(text, categories)
-            fallback.setdefault("raw_response", body)
-            return fallback
+            summary = (body or str(exc)).strip().splitlines()[0][:200]
+            logger.warning("Framework LLM HTTPError (status %s): %s", status, summary)
+            raise RuntimeError(f"LLM 请求失败 (HTTP {status}): {summary}") from exc
+        except requests.RequestException as exc:
+            logger.warning("Framework LLM request error: %s", exc)
+            raise RuntimeError(f"LLM 请求异常: {exc}") from exc
 
     def _call_azure_framework(
         self,
@@ -625,18 +627,30 @@ class LLMClient:
             "Content-Type": "application/json",
         }
         try:
-            response = requests.post(url, headers=headers, json=payload, timeout=self.timeout, proxies=self._no_proxy)
+            response = requests.post(
+                url,
+                headers=headers,
+                json=payload,
+                timeout=self._request_timeout(),
+                proxies=self._no_proxy,
+            )
             response.raise_for_status()
             content = response.json()["choices"][0]["message"]["content"]
             result = self._parse_framework_response(content)
             result.setdefault("raw_response", content)
             return result
+        except (requests.Timeout, requests.ReadTimeout) as exc:
+            logger.warning("Azure framework LLM timeout: %s", exc)
+            raise RuntimeError("Azure LLM 请求超时，请检查网络或稍后再试") from exc
         except requests.HTTPError as exc:
+            status = exc.response.status_code if exc.response is not None else "?"
             body = exc.response.text if exc.response is not None else ""
-            logger.warning("Azure LLM HTTPError (%s): %s", exc, body)
-            fallback = self._heuristic_framework(text, categories)
-            fallback.setdefault("raw_response", body)
-            return fallback
+            summary = (body or str(exc)).strip().splitlines()[0][:200]
+            logger.warning("Azure framework LLM HTTPError (status %s): %s", status, summary)
+            raise RuntimeError(f"Azure LLM 请求失败 (HTTP {status}): {summary}") from exc
+        except requests.RequestException as exc:
+            logger.warning("Azure framework LLM request error: %s", exc)
+            raise RuntimeError(f"Azure LLM 请求异常: {exc}") from exc
 
     def _build_framework_prompt(self, text: str, categories: List[FrameworkCategory]) -> str:
         framework = [
@@ -743,24 +757,3 @@ class LLMClient:
         except Exception as exc:
             logger.warning("Failed to parse framework response: %s", exc, exc_info=True)
             return {"categories": [], "timeline": {"milestones": [], "remark": ""}, "raw_response": content}
-
-    def _heuristic_adaptive(self, text: str) -> Dict[str, Any]:
-        snippet = (text or "")[:200].strip()
-        total_len = len(text or "")
-        tabs: List[Dict[str, Any]] = []
-        for tab_id, title in ADAPTIVE_TAB_SPECS:
-            items: List[Dict[str, Any]] = []
-            if snippet and tab_id == "hard_requirements":
-                items.append(
-                    {
-                        "title": "请人工核对硬性要求",
-                        "why_important": "自动分析失败，启发式仅提供原文开头片段，请人工核查是否存在废标风险。",
-                        "guidance": "逐条核对资质、保证金、关键节点等硬性条款，必要时组织复核。",
-                        "priority": "medium",
-                        "source_excerpt": snippet,
-                        "source_start": 0,
-                        "source_end": min(len(snippet), total_len),
-                    }
-                )
-            tabs.append({"id": tab_id, "title": title, "items": items})
-        return {"summary": "自动摘要失败，以下为启发式抽取结果。", "tabs": tabs, "raw_response": "heuristic"}

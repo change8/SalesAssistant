@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>销售助手统一平台</title>
     <link rel="stylesheet" href="./styles.css" />
-    <link rel="stylesheet" href="./bidding/styles.css" />
   </head>
   <body>
     <div class="container">
@@ -48,8 +47,57 @@
 
         <div id="tender-tab" class="tab-panel card">
           <h2>投标助手</h2>
-          <p class="tab-description">以下为投标助手原版界面，登录后可上传标书或粘贴文本进行分析。</p>
-          <iframe src="bidding/index.html" class="bidding-frame" title="投标助手"></iframe>
+          <div class="bidding-assistant">
+            <div class="layout">
+              <section class="panel intake">
+                <div class="panel-header">
+                  <h3>上传标书</h3>
+                  <p>支持 PDF / Word / TXT，推荐文件小于 30MB，可选粘贴文本辅助分析。</p>
+                </div>
+                <div class="upload-card">
+                  <input type="file" id="fileInput" accept=".pdf,.docx,.txt,.text,.md" />
+                  <label for="fileInput" class="upload-btn">选择文件</label>
+                  <p id="fileName" class="file-name">尚未选择文件</p>
+                  <small>提示：上传后会自动生成分析任务，可在右侧查看模型输出。</small>
+                </div>
+
+                <details class="text-toggle">
+                  <summary>或粘贴招标文本（辅助方式）</summary>
+                  <textarea id="textInput" placeholder="直接粘贴正文，用于快速测试或补充说明"></textarea>
+                </details>
+
+                <div class="actions">
+                  <button id="analyzeBtn">开始分析</button>
+                  <button id="clearBtn" class="secondary">清空</button>
+                </div>
+
+                <div id="progress" class="progress hidden">
+                  <span class="spinner"></span>
+                  <span id="progressText">处理中...</span>
+                </div>
+                <div id="status" class="status hidden"></div>
+              </section>
+
+              <section class="panel results-panel">
+                <h3>分析结果</h3>
+                <div id="summary" class="summary"></div>
+                <div id="results" class="results"></div>
+              </section>
+            </div>
+
+            <div id="snippetModal" class="modal hidden">
+              <div class="modal-dialog">
+                <header class="modal-header">
+                  <h3 id="modalTitle">原文片段</h3>
+                  <button id="modalClose" type="button" aria-label="关闭">×</button>
+                </header>
+                <div class="modal-body">
+                  <div class="modal-meta" id="modalMeta"></div>
+                  <pre id="modalContext"></pre>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div id="workload-tab" class="tab-panel card hidden">
