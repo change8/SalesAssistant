@@ -14,6 +14,7 @@ from backend.app.core.database import init_db
 from backend.app.modules.bidding.app import get_bidding_subapp
 from backend.app.modules.costing.router import router as costing_router
 from backend.app.modules.workload.router import router as workload_router
+from backend.app.tasks.router import router as tasks_router
 
 
 def create_app() -> FastAPI:
@@ -31,6 +32,7 @@ def create_app() -> FastAPI:
 
     api_prefix = settings.api_v1_prefix.rstrip("/")
     app.include_router(auth_router, prefix=api_prefix)
+    app.include_router(tasks_router, prefix=api_prefix)
     bidding_subapp = get_bidding_subapp()
     app.mount(f"{api_prefix}/bidding", bidding_subapp)
     app.include_router(workload_router, prefix=f"{api_prefix}/workload")
