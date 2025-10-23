@@ -1,0 +1,78 @@
+page {
+  background: #f5f6fa;
+  font-size: 28rpx;
+  color: #1f2a44;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 20rpx;
+  padding: 32rpx;
+  margin: 24rpx;
+  box-shadow: 0 12rpx 30rpx rgba(51, 102, 255, 0.08);
+}
+
+.btn {
+  margin-top: 40rpx;
+  background: #3366ff;
+  color: #fff;
+  border-radius: 50rpx;
+}
+
+.section-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  margin-bottom: 16rpx;
+}
+
+.input-label {
+  font-size: 28rpx;
+  color: #4b5878;
+  margin-bottom: 8rpx;
+}
+
+.input-box {
+  background: #f2f5fb;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  margin-bottom: 24rpx;
+}
+
+.tab-bar {
+  display: flex;
+  justify-content: space-between;
+  margin: 24rpx;
+}
+
+.tab-item {
+  flex: 1;
+  text-align: center;
+  padding: 20rpx 10rpx;
+  margin: 0 10rpx;
+  border-radius: 14rpx;
+  background: #ebf0ff;
+  color: #4b5bd5;
+}
+
+.tab-item.active {
+  background: #3366ff;
+  color: #fff;
+}
+
+.task-list {
+  margin: 24rpx;
+}
+
+.task-item {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 26rpx;
+  margin-bottom: 20rpx;
+  box-shadow: 0 8rpx 24rpx rgba(15, 30, 65, 0.05);
+}
+
+.task-status {
+  font-size: 24rpx;
+  color: #667099;
+  margin-top: 10rpx;
+}

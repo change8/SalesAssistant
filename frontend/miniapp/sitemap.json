@@ -1,0 +1,9 @@
+{
+  "desc": "sales assistant miniapp sitemap",
+  "rules": [
+    {
+      "action": "allow",
+      "page": "*"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "pages": [
+    "pages/login/login",
+    "pages/home/home"
+  ],
+  "window": {
+    "navigationBarTitleText": "销售助手",
+    "navigationBarBackgroundColor": "#3366FF",
+    "navigationBarTextStyle": "white",
+    "backgroundTextStyle": "light"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

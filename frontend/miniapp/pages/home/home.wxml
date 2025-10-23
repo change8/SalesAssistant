@@ -1,0 +1,77 @@
+<view class="tab-bar">
+  <view class="tab-item {{activeTab==='bidding'?'active':''}}" data-tab="bidding" bindtap="onSwitchTab">标书分析</view>
+  <view class="tab-item {{activeTab==='workload'?'active':''}}" data-tab="workload" bindtap="onSwitchTab">工时拆分</view>
+  <view class="tab-item {{activeTab==='costing'?'active':''}}" data-tab="costing" bindtap="onSwitchTab">成本估算</view>
+  <view class="tab-item {{activeTab==='tasks'?'active':''}}" data-tab="tasks" bindtap="onSwitchTab">任务队列</view>
+</view>
+
+<block wx:if="{{activeTab==='bidding'}}">
+  <view class="card">
+    <view class="section-title">上传标书</view>
+    <button type="primary" class="btn" loading="{{biddingUploading}}" bindtap="onPickBiddingFile">选择文件并分析</button>
+    <view wx:if="{{biddingStatus}}" class="task-status">{{biddingStatus}}</view>
+    <view wx:if="{{biddingResult.summary}}" class="card" style="margin:24rpx 0;">
+      <view class="section-title">分析摘要</view>
+      <text>{{biddingResult.summary}}</text>
+    </view>
+    <view wx:if="{{biddingResult.tabs && biddingResult.tabs.length}}">
+      <block wx:for="{{biddingResult.tabs}}" wx:key="id">
+        <view class="card">
+          <view class="section-title">{{item.title}} ({{item.items.length}})</view>
+          <block wx:for="{{item.items}}" wx:key="index">
+            <view style="margin-bottom:18rpx;">
+              <text style="font-weight:600;">{{item2.title || item2.milestone || '要点'}}</text>
+              <view>{{item2.summary || item2.description || ''}}</view>
+            </view>
+          </block>
+        </view>
+      </block>
+    </view>
+  </view>
+</block>
+
+<block wx:if="{{activeTab==='workload'}}">
+  <view class="card">
+    <view class="section-title">工时拆分</view>
+    <button type="primary" class="btn" loading="{{workloadUploading}}" bindtap="onPickWorkloadFile">选择 Excel 并提交</button>
+    <view wx:if="{{workloadStatus}}" class="task-status">{{workloadStatus}}</view>
+    <view wx:if="{{workloadResult}}" class="card">
+      <view class="section-title">结果摘要</view>
+      <text>{{workloadResult}}</text>
+    </view>
+  </view>
+</block>
+
+<block wx:if="{{activeTab==='costing'}}">
+  <view class="card">
+    <view class="section-title">成本测算</view>
+    <button type="primary" class="btn" loading="{{costingUploading}}" bindtap="onPickCostingFile">选择 Excel 并提交</button>
+    <view wx:if="{{costingStatus}}" class="task-status">{{costingStatus}}</view>
+    <view wx:if="{{costingResult}}" class="card">
+      <view class="section-title">结果摘要</view>
+      <text>{{costingResult}}</text>
+    </view>
+  </view>
+</block>
+
+<block wx:if="{{activeTab==='tasks'}}">
+  <view class="card">
+    <view class="section-title">任务列表</view>
+    <button class="btn" bindtap="onRefreshTasks">刷新任务</button>
+  </view>
+  <view class="task-list">
+    <block wx:if="{{!tasks.length}}">
+      <view class="task-item">
+        <text>暂无任务，提交分析后会出现在这里。</text>
+      </view>
+    </block>
+    <block wx:for="{{tasks}}" wx:key="id">
+      <view class="task-item">
+        <view style="font-size:30rpx;font-weight:600;">{{item.task_type_label}} · #{{item.id}}</view>
+        <view class="task-status">状态：{{item.status}}</view>
+        <view class="task-status">创建时间：{{item.created_at}}</view>
+        <view wx:if="{{item.error_message}}" class="task-status" style="color:#ff4d4f;">错误：{{item.error_message}}</view>
+      </view>
+    </block>
+  </view>
+</block>
