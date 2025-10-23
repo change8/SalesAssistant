@@ -14,6 +14,24 @@
 
 ---
 
+## 部署快速开始
+
+```bash
+# 首次（在服务器）
+git clone https://github.com/change8/SalesAssistant.git
+cd SalesAssistant
+sudo SA_DOMAIN=saleassisstant.chat SA_ADMIN_EMAIL=you@example.com ./deploy.sh
+
+# 更新
+sudo ./update.sh
+```
+
+部署脚本会安装依赖、配置 systemd + nginx、申请 Let's Encrypt 证书并启动服务。更多细节、DNS/HTTPS/微信小程序配置请参考 `ops/docs/deployment.md`。
+
+若需自动化部署，仓库内置 GitHub Actions 工作流 `.github/workflows/deploy.yml`，在 Push 到 `main` 后会执行 `sudo ./update.sh`（需在仓库 Secrets 写入服务器 SSH 信息）。
+
+---
+
 ## 架构概览
 ```
 SalesAssistant/
