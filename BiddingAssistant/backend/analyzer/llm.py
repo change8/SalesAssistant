@@ -60,6 +60,18 @@ class LLMClient:
             return None
         return numeric
 
+    def _openai_endpoint(self, path: str = "chat/completions") -> str:
+        """Resolve OpenAI-compatible endpoints, appending path when omitted."""
+
+        cleaned_path = path.lstrip("/")
+        base = (self.base_url or "").strip()
+        if not base:
+            return f"https://api.openai.com/v1/{cleaned_path}"
+        base = base.rstrip("/")
+        if base.endswith(cleaned_path):
+            return base
+        return f"{base}/{cleaned_path}"
+
     def semantic_locate(
         self,
         text: str,
@@ -126,7 +138,7 @@ class LLMClient:
         api_key = self.api_key or self.options.get("api_key")
         if not api_key:
             raise RuntimeError("缺少 OpenAI API key")
-        url = self.base_url or "https://api.openai.com/v1/chat/completions"
+        url = self._openai_endpoint()
         model = self.model or self.options.get("model") or "gpt-4o-mini"
         prompt = self._build_semantic_prompt(text, hints, rule, segments)
         payload = {
@@ -164,7 +176,7 @@ class LLMClient:
         api_key = self.api_key or self.options.get("api_key")
         if not api_key:
             raise RuntimeError("缺少 OpenAI API key")
-        url = self.base_url or "https://api.openai.com/v1/chat/completions"
+        url = self._openai_endpoint()
         model = self.model or self.options.get("model") or "gpt-4o-mini"
         prompt = self._build_summary_prompt(rule, evidences)
         payload = {
@@ -198,7 +210,7 @@ class LLMClient:
         api_key = self.api_key or self.options.get("api_key")
         if not api_key:
             raise RuntimeError("缺少 OpenAI API key")
-        url = self.base_url or "https://api.openai.com/v1/chat/completions"
+        url = self._openai_endpoint()
         model = self.model or self.options.get("model") or "gpt-4o-mini"
         system_prompt = prompt_payload.get("system")
         messages = prompt_payload.get("messages") or []
@@ -559,7 +571,7 @@ class LLMClient:
         api_key = self.api_key or self.options.get("api_key")
         if not api_key:
             raise RuntimeError("缺少 OpenAI API key")
-        url = self.base_url or "https://api.openai.com/v1/chat/completions"
+        url = self._openai_endpoint()
         model = self.model or self.options.get("model") or "gpt-4o-mini"
         prompt = self._build_framework_prompt(text, categories)
         payload = {

@@ -81,3 +81,33 @@ class Token(BaseModel):
 class TokenPayload(BaseModel):
     sub: int
     exp: int
+
+
+class PasswordResetRequest(BaseModel):
+    phone: str
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, value: str) -> str:
+        return UserBase.validate_phone(value)
+
+
+class PasswordResetToken(BaseModel):
+    reset_token: str
+    expires_at: datetime
+
+
+class PasswordResetConfirm(BaseModel):
+    phone: str
+    reset_token: str = Field(..., min_length=10, max_length=160)
+    new_password: str = Field(..., min_length=8, max_length=128)
+
+    @field_validator("phone")
+    @classmethod
+    def validate_confirm_phone(cls, value: str) -> str:
+        return UserBase.validate_phone(value)
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password(cls, value: str) -> str:
+        return UserCreate.validate_password(value)

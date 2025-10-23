@@ -13,6 +13,7 @@ from backend.app.core.config import settings
 from backend.app.core.database import init_db
 from backend.app.modules.bidding.app import get_bidding_subapp
 from backend.app.modules.costing.router import router as costing_router
+from backend.app.modules.tasks.router import router as tasks_router
 from backend.app.modules.workload.router import router as workload_router
 
 
@@ -35,6 +36,7 @@ def create_app() -> FastAPI:
     app.mount(f"{api_prefix}/bidding", bidding_subapp)
     app.include_router(workload_router, prefix=f"{api_prefix}/workload")
     app.include_router(costing_router, prefix=f"{api_prefix}/costing")
+    app.include_router(tasks_router, prefix=api_prefix)
 
     frontend_dir = Path(__file__).resolve().parent.parent.parent / "frontend" / "web"
     if frontend_dir.exists():

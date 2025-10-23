@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>找回密码 · 销售助手</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header class="page-header">
+        <h1>找回密码</h1>
+        <p>申请重置令牌，设置新的登录密码。</p>
+      </header>
+
+      <section class="card">
+        <form id="reset-request-form" class="form-grid">
+          <label>
+            手机号
+            <input type="tel" id="reset-phone" name="phone" placeholder="请输入注册手机号" autocomplete="tel" required />
+          </label>
+          <button type="submit">发送找回请求</button>
+          <span id="reset-request-message" class="info"></span>
+        </form>
+      </section>
+
+      <section class="card">
+        <form id="reset-confirm-form" class="form-grid">
+          <label>
+            手机号
+            <input type="tel" id="reset-confirm-phone" name="phone" placeholder="请输入注册手机号" autocomplete="tel" required />
+          </label>
+          <label>
+            重置令牌
+            <input type="text" id="reset-token" name="reset_token" placeholder="请输入收到的令牌" required />
+          </label>
+          <label>
+            新密码
+            <input type="password" id="reset-password" name="password" placeholder="至少 8 位且包含字母和数字" autocomplete="new-password" required />
+          </label>
+          <label>
+            确认新密码
+            <input type="password" id="reset-password-confirm" name="password_confirm" placeholder="再次输入新密码" autocomplete="new-password" required />
+          </label>
+          <button type="submit">重置密码并登录</button>
+          <span id="reset-confirm-message" class="info"></span>
+        </form>
+        <div class="auth-links" style="margin-top: 1rem;">
+          <a class="link-btn" href="index.html">返回登录</a>
+        </div>
+      </section>
+    </div>
+    <script type="module" src="./forgot.js"></script>
+  </body>
+</html>

@@ -28,7 +28,10 @@
         </form>
         <div class="auth-footer">
           <span id="auth-message" class="info"></span>
-          <a class="link-btn" href="register.html">没有账号？去注册</a>
+          <div class="auth-links">
+            <a class="link-btn" href="register.html">没有账号？去注册</a>
+            <a class="link-btn" href="forgot.html">忘记密码</a>
+          </div>
         </div>
       </section>
 
@@ -42,6 +45,7 @@
             <button class="tab-btn active" data-target="tender-tab">投标助手</button>
             <button class="tab-btn" data-target="workload-tab">工时拆分</button>
             <button class="tab-btn" data-target="costing-tab">成本预估</button>
+            <button class="tab-btn" data-target="tasks-tab">任务中心</button>
           </nav>
         </div>
 
@@ -154,6 +158,31 @@
             <button type="submit">计算成本</button>
           </form>
           <div id="costing-result" class="result-box"></div>
+        </div>
+
+        <div id="tasks-tab" class="tab-panel card hidden">
+          <h2>任务中心</h2>
+          <div class="task-toolbar">
+            <label>
+              任务分类
+              <select id="task-filter">
+                <option value="all">全部任务</option>
+                <option value="bidding_analysis">标书分析</option>
+                <option value="workload_analysis">工时拆分</option>
+                <option value="costing_estimate">成本预估</option>
+              </select>
+            </label>
+            <div class="task-actions">
+              <button id="task-refresh-btn" type="button">刷新</button>
+              <button id="task-toggle-history" type="button" data-mode="history">查看历史任务</button>
+            </div>
+          </div>
+          <div class="task-layout">
+            <div class="task-list" id="task-list"></div>
+            <div class="task-detail" id="task-detail">
+              <p class="muted">选择任务以查看详情</p>
+            </div>
+          </div>
         </div>
       </section>
     </div>

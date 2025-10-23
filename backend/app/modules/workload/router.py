@@ -7,13 +7,18 @@ import json
 from typing import Optional
 from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
+from sqlalchemy.orm import Session
 
-from SplitWorkload.backend.app.models.api import AnalyzeRequest, AnalysisResponse
+from SplitWorkload.backend.app.models.api import AnalyzeRequest, ConstraintConfig
 from SplitWorkload.backend.app.services.workload_service import WorkloadService
 
 from backend.app.core import dependencies
+from backend.app.core.database import SessionLocal
+from backend.app.modules.tasks import schemas as task_schemas
+from backend.app.modules.tasks.schemas import TaskType
+from backend.app.modules.tasks.service import TaskService
 
 router = APIRouter(tags=["workload"])
 
@@ -41,9 +46,41 @@ def _build_export_filename(original: Optional[str]) -> str:
     return f"{stem}_analysis.xlsx"
 
 
-@router.post("/analyze", response_model=AnalysisResponse)
+def _serialize_task(task) -> task_schemas.TaskDetail:
+    return task_schemas.TaskDetail.model_validate(task)
+
+
+def _run_workload_task(
+    task_id: int,
+    filename: str,
+    file_bytes: bytes,
+    config_payload: dict,
+) -> None:
+    db = SessionLocal()
+    service = TaskService(db)
+    try:
+        service.mark_running(task_id)
+        response = _service.process_workbook(
+            file_bytes=file_bytes,
+            filename=filename,
+            config=ConstraintConfig(**config_payload),
+        )
+        service.mark_succeeded(
+            task_id,
+            result_payload=response.model_dump(),
+            description=f"工时拆分 · {filename}",
+        )
+    except Exception as exc:  # pragma: no cover - runtime safeguard
+        service.mark_failed(task_id, str(exc))
+    finally:
+        db.close()
+
+
+@router.post("/analyze", response_model=task_schemas.TaskDetail)
 async def analyze_workbook(
+    background_tasks: BackgroundTasks,
     current_user=Depends(dependencies.get_current_user),
+    db: Session = Depends(dependencies.get_db),
     file: UploadFile = File(..., description="Excel 功能清单"),
     config: Optional[str] = Form(None, description="JSON 配置"),
 ):
@@ -52,11 +89,17 @@ async def analyze_workbook(
     if not file_bytes:
         raise HTTPException(status_code=400, detail="上传文件为空")
 
-    return _service.process_workbook(
-        file_bytes=file_bytes,
-        filename=file.filename or "uploaded.xlsx",
-        config=request_model.config,
+    filename = file.filename or "uploaded.xlsx"
+    config_payload = request_model.config.model_dump()
+    task_service = TaskService(db)
+    task = task_service.create_task(
+        owner_id=current_user.id,
+        task_type=TaskType.WORKLOAD,
+        description=f"工时拆分 · {filename}",
+        request_payload={"filename": filename, "config": config_payload},
     )
+    background_tasks.add_task(_run_workload_task, task.id, filename, file_bytes, config_payload)
+    return _serialize_task(task)
 
 
 @router.post("/export")

@@ -30,6 +30,17 @@ const PRIORITY_LABELS = {
 
 const workloadResult = document.getElementById('workload-result');
 const costingResult = document.getElementById('costing-result');
+const taskListEl = document.getElementById('task-list');
+const taskDetailEl = document.getElementById('task-detail');
+const taskFilterEl = document.getElementById('task-filter');
+const taskRefreshBtn = document.getElementById('task-refresh-btn');
+const taskToggleHistoryBtn = document.getElementById('task-toggle-history');
+
+let taskViewMode = 'active';
+let taskPollingTimer = null;
+let currentTaskFilter = 'all';
+let selectedTaskId = null;
+let cachedTasks = [];
 
 function setAuthMessage(message, type = 'info') {
   if (!authMessage) return;
@@ -128,6 +139,9 @@ function showAuth() {
   appSection.classList.add('hidden');
   authSection.classList.remove('hidden');
   userInfoEl.textContent = '';
+  stopTaskPolling();
+  if (taskListEl) taskListEl.innerHTML = '';
+  renderTaskDetail(null);
 }
 
 async function fetchProfile() {
@@ -142,18 +156,33 @@ async function fetchProfile() {
   }
 }
 
+function setActiveTab(targetId) {
+  document.querySelectorAll('.tab-panel').forEach((panel) => {
+    panel.classList.toggle('hidden', panel.id !== targetId);
+  });
+  if (targetId === 'tasks-tab') {
+    startTaskPolling();
+  } else {
+    stopTaskPolling();
+    selectedTaskId = null;
+    renderTaskDetail(null);
+  }
+}
+
 function initTabs() {
   const buttons = document.querySelectorAll('.tab-btn');
   buttons.forEach((btn) => {
     btn.addEventListener('click', () => {
+      if (btn.classList.contains('active')) return;
       buttons.forEach((b) => b.classList.remove('active'));
       btn.classList.add('active');
-      const targetId = btn.dataset.target;
-      document.querySelectorAll('.tab-panel').forEach((panel) => {
-        panel.classList.toggle('hidden', panel.id !== targetId);
-      });
+      setActiveTab(btn.dataset.target);
     });
   });
+
+  const activeButton = document.querySelector('.tab-btn.active');
+  const initialTarget = activeButton ? activeButton.dataset.target : 'tender-tab';
+  setActiveTab(initialTarget);
 }
 
 function fillDefaultRates() {
@@ -197,6 +226,208 @@ function renderResult(target, data) {
     return;
   }
   target.textContent = JSON.stringify(data, null, 2);
+}
+
+function formatTaskType(type) {
+  switch (type) {
+    case 'bidding_analysis':
+      return '标书分析';
+    case 'workload_analysis':
+      return '工时拆分';
+    case 'costing_estimate':
+      return '成本预估';
+    default:
+      return type || '任务';
+  }
+}
+
+function formatTaskStatus(status) {
+  switch (status) {
+    case 'pending':
+      return '排队中';
+    case 'running':
+      return '处理中';
+    case 'succeeded':
+      return '已完成';
+    case 'failed':
+      return '失败';
+    default:
+      return status || '未知';
+  }
+}
+
+function formatDateTime(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.valueOf())) return String(value);
+  return `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+}
+
+function renderTaskList(tasks = []) {
+  if (!taskListEl) return;
+  cachedTasks = tasks;
+  taskListEl.innerHTML = '';
+  if (!tasks.length) {
+    renderTaskDetail(null);
+    const empty = document.createElement('div');
+    empty.className = 'task-item';
+    empty.innerHTML = '<span class=\"muted\">暂无任务，提交分析后这里会显示进度。</span>';
+    taskListEl.appendChild(empty);
+    return;
+  }
+
+  tasks.forEach((task) => {
+    const item = document.createElement('div');
+    item.className = `task-item${task.id === selectedTaskId ? ' active' : ''}`;
+    item.dataset.taskId = task.id;
+
+    const title = document.createElement('div');
+    title.className = 'task-title';
+    title.textContent = `${formatTaskType(task.task_type)} · #${task.id}`;
+    item.appendChild(title);
+
+    const meta = document.createElement('div');
+    meta.className = 'task-meta';
+    const status = document.createElement('span');
+    status.className = `task-status ${task.status}`;
+    status.textContent = formatTaskStatus(task.status);
+    meta.appendChild(status);
+
+    if (task.created_at) {
+      const created = document.createElement('span');
+      created.textContent = `创建 ${formatDateTime(task.created_at)}`;
+      meta.appendChild(created);
+    }
+    if (task.finished_at) {
+      const finished = document.createElement('span');
+      finished.textContent = `完成 ${formatDateTime(task.finished_at)}`;
+      meta.appendChild(finished);
+    }
+    if (task.error_message && task.status === 'failed') {
+      const err = document.createElement('span');
+      err.textContent = task.error_message.slice(0, 80);
+      meta.appendChild(err);
+    }
+    item.appendChild(meta);
+
+    item.addEventListener('click', () => {
+      selectTask(task.id);
+    });
+
+    taskListEl.appendChild(item);
+  });
+}
+
+function renderTaskDetail(task) {
+  if (!taskDetailEl) return;
+  if (!task) {
+    taskDetailEl.innerHTML = '<p class=\"muted\">选择任务以查看详情</p>';
+    return;
+  }
+  const statusLabel = formatTaskStatus(task.status);
+  const detailParts = [];
+  detailParts.push(`<h3>${formatTaskType(task.task_type)} · #${task.id}</h3>`);
+  detailParts.push(
+    `<p class=\"task-meta\">状态 <span class=\"task-status ${task.status}\">${statusLabel}</span> · 创建 ${formatDateTime(
+      task.created_at,
+    )}${task.finished_at ? ` · 完成 ${formatDateTime(task.finished_at)}` : ''}</p>`,
+  );
+  if (task.error_message) {
+    detailParts.push(`<p class=\"task-meta\" style=\"color:#c42828;\">${task.error_message}</p>`);
+  }
+  if (task.result_payload) {
+    const pretty = JSON.stringify(task.result_payload, null, 2);
+    detailParts.push(`<pre>${pretty}</pre>`);
+  } else if (task.status === 'failed') {
+    detailParts.push('<p class=\"muted\">任务失败，未生成可用结果。</p>');
+  } else {
+    detailParts.push('<p class=\"muted\">任务仍在处理中，稍后再试。</p>');
+  }
+  taskDetailEl.innerHTML = detailParts.join('');
+}
+
+async function selectTask(taskId) {
+  selectedTaskId = taskId;
+  renderTaskList(cachedTasks);
+  try {
+    const task = await authFetch(`/api/tasks/${taskId}`);
+    renderTaskDetail(task);
+  } catch (error) {
+    console.error('加载任务详情失败', error);
+    renderTaskDetail(null);
+  }
+}
+
+async function loadTasks(options = {}) {
+  const { silent = false } = options;
+  if (!taskListEl) return;
+  try {
+    const params = new URLSearchParams();
+    params.set('limit', taskViewMode === 'history' ? 50 : 20);
+    if (currentTaskFilter && currentTaskFilter !== 'all') {
+      params.set('task_type', currentTaskFilter);
+    }
+    const endpoint = taskViewMode === 'history' ? `/api/tasks/history?${params}` : `/api/tasks?${params}`;
+    const data = await authFetch(endpoint);
+    const items = Array.isArray(data?.items) ? data.items : [];
+    renderTaskList(items);
+    if (selectedTaskId && !items.some((item) => item.id === selectedTaskId)) {
+      if (taskViewMode === 'active') {
+        selectedTaskId = null;
+        renderTaskDetail(null);
+      }
+    }
+  } catch (error) {
+    if (!silent) console.error('加载任务列表失败', error);
+  }
+}
+
+function stopTaskPolling() {
+  if (taskPollingTimer) {
+    clearInterval(taskPollingTimer);
+    taskPollingTimer = null;
+  }
+}
+
+function startTaskPolling() {
+  if (!taskListEl) return;
+  stopTaskPolling();
+  loadTasks();
+  if (taskViewMode === 'active') {
+    taskPollingTimer = setInterval(() => loadTasks({ silent: true }), 5000);
+  }
+}
+
+function showTaskCreatedMessage(target, task) {
+  if (!target || !task) return;
+  target.innerHTML = '';
+  const wrapper = document.createElement('div');
+  wrapper.className = 'task-created';
+  const taskLabel = `${formatTaskType(task.task_type || '')} · #${task.id}`;
+  wrapper.innerHTML = `<strong>任务已创建</strong><span>${taskLabel} 已进入队列，可在“任务中心”查看进度。</span>`;
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'link-btn';
+  button.textContent = '打开任务中心';
+  button.addEventListener('click', () => {
+    const tasksBtn = document.querySelector('.tab-btn[data-target=\"tasks-tab\"]');
+    if (tasksBtn) {
+      tasksBtn.click();
+    }
+    if (taskViewMode === 'history') {
+      taskViewMode = 'active';
+      if (taskToggleHistoryBtn) {
+        taskToggleHistoryBtn.dataset.mode = 'history';
+        taskToggleHistoryBtn.textContent = '查看历史任务';
+      }
+    }
+    selectedTaskId = task.id;
+    setTimeout(() => {
+      selectTask(task.id);
+    }, 200);
+  });
+  wrapper.appendChild(button);
+  target.appendChild(wrapper);
 }
 
 function bindAuthForms() {
@@ -255,7 +486,7 @@ function bindWorkloadForm() {
       form.reportValidity();
       return;
     }
-    workloadResult.textContent = '分析中...';
+    workloadResult.textContent = '任务创建中...';
     const file = document.getElementById('workload-file').files?.[0];
     if (!file) {
       renderResult(workloadResult, '请上传 Excel 文件');
@@ -274,11 +505,14 @@ function bindWorkloadForm() {
     formData.append('file', file);
     formData.append('config', JSON.stringify(payload));
     try {
-      const data = await authFetch('/api/workload/analyze', {
+      const task = await authFetch('/api/workload/analyze', {
         method: 'POST',
         body: formData,
       });
-      renderResult(workloadResult, data);
+      showTaskCreatedMessage(workloadResult, task);
+      if (task && task.id) {
+        selectedTaskId = task.id;
+      }
     } catch (error) {
       console.error(error);
       renderResult(workloadResult, error.message || '拆分失败');
@@ -294,7 +528,7 @@ function bindCostingForm() {
       form.reportValidity();
       return;
     }
-    costingResult.textContent = '计算中...';
+    costingResult.textContent = '任务创建中...';
     const file = document.getElementById('costing-file').files?.[0];
     if (!file) {
       renderResult(costingResult, '请上传 Excel 文件');
@@ -313,11 +547,14 @@ function bindCostingForm() {
     formData.append('file', file);
     formData.append('config', JSON.stringify(payload));
     try {
-      const data = await authFetch('/api/costing/analyze', {
+      const task = await authFetch('/api/costing/analyze', {
         method: 'POST',
         body: formData,
       });
-      renderResult(costingResult, data);
+      showTaskCreatedMessage(costingResult, task);
+      if (task && task.id) {
+        selectedTaskId = task.id;
+      }
     } catch (error) {
       console.error(error);
       renderResult(costingResult, error.message || '计算失败');
@@ -332,12 +569,42 @@ function bindLogout() {
   });
 }
 
+function bindTaskControls() {
+  taskFilterEl?.addEventListener('change', () => {
+    currentTaskFilter = taskFilterEl.value || 'all';
+    loadTasks();
+  });
+
+  taskRefreshBtn?.addEventListener('click', () => {
+    loadTasks();
+  });
+
+  taskToggleHistoryBtn?.addEventListener('click', () => {
+    if (taskViewMode === 'active') {
+      taskViewMode = 'history';
+      taskToggleHistoryBtn.textContent = '返回进行中';
+      taskToggleHistoryBtn.dataset.mode = 'active';
+    } else {
+      taskViewMode = 'active';
+      taskToggleHistoryBtn.textContent = '查看历史任务';
+      taskToggleHistoryBtn.dataset.mode = 'history';
+    }
+    if (document.getElementById('tasks-tab')?.classList.contains('hidden')) {
+      stopTaskPolling();
+      loadTasks();
+    } else {
+      startTaskPolling();
+    }
+  });
+}
+
 function init() {
   fillDefaultRates();
   bindAuthForms();
   bindWorkloadForm();
   bindCostingForm();
   bindLogout();
+  bindTaskControls();
   initTabs();
 
   const token = readToken();
