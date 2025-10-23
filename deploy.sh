@@ -37,7 +37,11 @@ else
 fi
 
 ${PKG_MGR} -y update
-${PKG_MGR} install -y epel-release
+if ${PKG_MGR} install -y epel-release >/dev/null 2>&1; then
+  echo "[deploy] epel-release installed."
+else
+  echo "[deploy] (warning) epel-release not available for this OS, continuing without it."
+fi
 
 REQUIRED_PACKAGES=(
   git
