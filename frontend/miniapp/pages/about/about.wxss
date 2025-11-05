@@ -7,3 +7,12 @@
   font-size: 30rpx;
   color: #1f2a44;
 }
+
+.icp {
+  margin-top: 32rpx;
+  padding-top: 20rpx;
+  border-top: 1px solid #e3e8ff;
+  font-size: 26rpx;
+  color: #7b85a6;
+  text-align: center;
+}

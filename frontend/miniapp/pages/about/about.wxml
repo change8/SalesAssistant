@@ -1,4 +1,7 @@
 <view class="card about-card">
   <view class="section-title">关于项目</view>
   <text class="about-text">军哥太忙了，我先顶一下</text>
+  <view class="icp">
+    <text>ICP 备案：京ICP备2025147783号</text>
+  </view>
 </view>
