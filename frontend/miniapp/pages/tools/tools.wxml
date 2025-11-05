@@ -1,0 +1,54 @@
+<view class="tool-grid">
+  <view class="tool-item {{activeTool==='bidding'?'active':''}}" data-tool="bidding" bindtap="onSelectTool">
+    <view class="tool-title">标书分析</view>
+    <view class="tool-sub">上传标书提炼要点</view>
+  </view>
+  <view class="tool-item {{activeTool==='workload'?'active':''}}" data-tool="workload" bindtap="onSelectTool">
+    <view class="tool-title">工时拆分</view>
+    <view class="tool-sub">Excel 功能拆解</view>
+  </view>
+  <view class="tool-item {{activeTool==='costing'?'active':''}}" data-tool="costing" bindtap="onSelectTool">
+    <view class="tool-title">成本预估</view>
+    <view class="tool-sub">测算人力费用</view>
+  </view>
+  <view class="tool-item" data-tool="tasks" bindtap="onSelectTool">
+    <view class="tool-title">任务中心</view>
+    <view class="tool-sub">查看任务进度</view>
+  </view>
+</view>
+
+<block wx:if="{{activeTool==='bidding'}}">
+  <view class="card">
+    <view class="section-title">上传标书</view>
+    <button type="primary" class="btn" loading="{{biddingUploading}}" bindtap="onPickBiddingFile">选择文件并分析</button>
+    <view wx:if="{{biddingStatus}}" class="task-status">{{biddingStatus}}</view>
+    <view wx:if="{{biddingResult.summary}}" class="card nested-card">
+      <view class="section-title">分析摘要</view>
+      <text>{{biddingResult.summary}}</text>
+    </view>
+  </view>
+</block>
+
+<block wx:if="{{activeTool==='workload'}}">
+  <view class="card">
+    <view class="section-title">工时拆分</view>
+    <button type="primary" class="btn" loading="{{workloadUploading}}" bindtap="onPickWorkloadFile">选择 Excel 并提交</button>
+    <view wx:if="{{workloadStatus}}" class="task-status">{{workloadStatus}}</view>
+    <view wx:if="{{workloadResult}}" class="card nested-card">
+      <view class="section-title">结果摘要</view>
+      <text>{{workloadResult}}</text>
+    </view>
+  </view>
+</block>
+
+<block wx:if="{{activeTool==='costing'}}">
+  <view class="card">
+    <view class="section-title">成本测算</view>
+    <button type="primary" class="btn" loading="{{costingUploading}}" bindtap="onPickCostingFile">选择 Excel 并提交</button>
+    <view wx:if="{{costingStatus}}" class="task-status">{{costingStatus}}</view>
+    <view wx:if="{{costingResult}}" class="card nested-card">
+      <view class="section-title">结果摘要</view>
+      <text>{{costingResult}}</text>
+    </view>
+  </view>
+</block>

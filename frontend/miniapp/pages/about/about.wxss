@@ -1,0 +1,9 @@
+.about-card {
+  margin: 40rpx 24rpx;
+}
+
+.about-text {
+  display: block;
+  font-size: 30rpx;
+  color: #1f2a44;
+}

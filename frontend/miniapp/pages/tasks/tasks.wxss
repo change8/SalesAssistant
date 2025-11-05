@@ -1,0 +1,55 @@
+.task-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24rpx;
+}
+
+.mode-switch {
+  display: flex;
+  background: #e8edff;
+  border-radius: 999rpx;
+  overflow: hidden;
+}
+
+.mode-item {
+  padding: 16rpx 40rpx;
+  font-size: 26rpx;
+  color: #4b5878;
+}
+
+.mode-item.active {
+  background: #3366ff;
+  color: #ffffff;
+}
+
+.refresh-btn {
+  margin-left: 20rpx;
+}
+
+.task-title {
+  font-size: 30rpx;
+  font-weight: 600;
+}
+
+.task-meta {
+  margin-top: 10rpx;
+  font-size: 24rpx;
+  color: #667099;
+}
+
+.task-desc {
+  margin-top: 12rpx;
+  color: #4b5878;
+}
+
+.task-error {
+  margin-top: 12rpx;
+  color: #ff4d4f;
+}
+
+.empty {
+  text-align: center;
+  color: #9aa4c4;
+  margin-top: 120rpx;
+}

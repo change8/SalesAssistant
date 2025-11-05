@@ -128,3 +128,17 @@ def reset_password(db: Session, phone: str, token: str, new_password: str) -> mo
     db.commit()
     db.refresh(user)
     return user
+
+
+def change_password(db: Session, user_id: int, current_password: str, new_password: str) -> models.User:
+    user = get_user_by_id(db, user_id)
+    if not user:
+        raise AuthenticationError("账号不存在")
+    if not verify_password(current_password, user.password_hash):
+        raise AuthenticationError("当前密码不正确")
+
+    user.password_hash = hash_password(new_password)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user

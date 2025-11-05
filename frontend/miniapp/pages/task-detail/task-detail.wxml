@@ -1,0 +1,23 @@
+<view class="card">
+  <view class="section-title">任务概览</view>
+  <view class="detail-row"><text class="label">编号</text><text>#{{task ? task.id : '--'}}</text></view>
+  <view class="detail-row"><text class="label">类型</text><text>{{task ? task.task_type : '--'}}</text></view>
+  <view class="detail-row"><text class="label">状态</text><text>{{task ? task.status : '--'}}</text></view>
+  <view class="detail-row"><text class="label">描述</text><text>{{task && task.description ? task.description : '--'}}</text></view>
+  <view class="detail-row"><text class="label">创建时间</text><text>{{task ? task.created_at : '--'}}</text></view>
+  <view class="detail-row"><text class="label">开始时间</text><text>{{task && task.started_at ? task.started_at : '--'}}</text></view>
+  <view class="detail-row"><text class="label">结束时间</text><text>{{task && task.finished_at ? task.finished_at : '--'}}</text></view>
+  <view wx:if="{{task && task.error_message}}" class="error">错误：{{task.error_message}}</view>
+</view>
+
+<view class="card" wx:if="{{requestJson}}">
+  <view class="section-title">请求参数</view>
+  <text class="mono">{{requestJson}}</text>
+  <button class="btn" size="mini" bindtap="onCopyRequest">复制请求</button>
+</view>
+
+<view class="card" wx:if="{{resultJson}}">
+  <view class="section-title">任务结果</view>
+  <text class="mono">{{resultJson}}</text>
+  <button class="btn" size="mini" bindtap="onCopyResult">复制结果</button>
+</view>

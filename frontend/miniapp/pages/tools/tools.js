@@ -1,10 +1,10 @@
-const { request, getToken } = require('../../utils/request');
+const { getToken } = require('../../utils/request');
 
 const POLL_INTERVAL = 2500;
 
 Page({
   data: {
-    activeTab: 'bidding',
+    activeTool: 'bidding',
     biddingUploading: false,
     biddingStatus: '',
     biddingResult: {},
@@ -13,30 +13,28 @@ Page({
     workloadResult: '',
     costingUploading: false,
     costingStatus: '',
-    costingResult: '',
-    tasks: []
+    costingResult: ''
   },
   onShow() {
     if (!getToken()) {
-      wx.redirectTo({ url: '/pages/login/login' });
+      wx.navigateTo({ url: '/pages/login/login' });
       return;
     }
-    wx.setNavigationBarTitle({ title: '销售助手' });
-    this.onRefreshTasks();
+    wx.setNavigationBarTitle({ title: '工具中心' });
   },
-  onSwitchTab(e) {
-    const tab = e.currentTarget.dataset.tab;
-    this.setData({ activeTab: tab });
-    if (tab === 'tasks') {
-      this.onRefreshTasks();
+  onSelectTool(e) {
+    const { tool } = e.currentTarget.dataset;
+    if (tool === 'tasks') {
+      wx.switchTab({ url: '/pages/tasks/tasks' });
+      return;
     }
+    this.setData({ activeTool: tool });
   },
   async onPickBiddingFile() {
     try {
       const res = await wx.chooseMessageFile({ count: 1, type: 'file' });
       if (!res.tempFiles?.length) return;
-      const file = res.tempFiles[0];
-      this.uploadBiddingFile(file);
+      this.uploadBiddingFile(res.tempFiles[0]);
     } catch (error) {
       wx.showToast({ title: '未选择文件', icon: 'none' });
     }
@@ -50,12 +48,16 @@ Page({
       url: `${apiBase}/bidding/analyze/file?async_mode=true`,
       filePath: file.path,
       name: 'file',
-      header: {
-        Authorization: `Bearer ${token}`
-      },
-      formData: {},
+      header: { Authorization: `Bearer ${token}` },
       success: (res) => {
         try {
+          if (res.statusCode >= 400) {
+            const payload = JSON.parse(res.data || '{}');
+            const message = payload.detail || payload.error || '分析失败';
+            this.setData({ biddingStatus: message, biddingResult: {} });
+            wx.showToast({ title: message.toString(), icon: 'none' });
+            return;
+          }
           const data = JSON.parse(res.data || '{}');
           if (data.job_id) {
             this.setData({ biddingStatus: '模型处理中，请稍候...' });
@@ -86,9 +88,7 @@ Page({
     const apiBase = app.globalData.apiBase;
     wx.request({
       url: `${apiBase}/bidding/jobs/${jobId}`,
-      header: {
-        Authorization: `Bearer ${token}`
-      },
+      header: { Authorization: `Bearer ${token}` },
       success: (res) => {
         if (res.statusCode === 200) {
           const data = res.data;
@@ -97,10 +97,8 @@ Page({
               biddingResult: data.result || {},
               biddingStatus: '分析完成 ✅'
             });
-            this.onRefreshTasks();
           } else if (data.status === 'failed') {
             this.setData({ biddingStatus: data.error || '分析失败' });
-            this.onRefreshTasks();
           } else {
             this.setData({ biddingStatus: '模型处理中...' });
             setTimeout(() => this.pollBiddingJob(jobId), POLL_INTERVAL);
@@ -132,19 +130,22 @@ Page({
       url: `${apiBase}/workload/analyze`,
       filePath: file.path,
       name: 'file',
-      header: {
-        Authorization: `Bearer ${token}`
-      },
-      formData: {},
+      header: { Authorization: `Bearer ${token}` },
       success: (res) => {
         try {
+          if (res.statusCode >= 400) {
+            const payload = JSON.parse(res.data || '{}');
+            const message = payload.detail || payload.error || '提交失败';
+            this.setData({ workloadStatus: message, workloadResult: '' });
+            wx.showToast({ title: message.toString(), icon: 'none' });
+            return;
+          }
           const data = JSON.parse(res.data || '{}');
           if (data.id) {
             this.setData({
               workloadStatus: `任务 #${data.id} 已提交，状态：${data.status}`,
-              workloadResult: '请在任务队列中查看详细结果。'
+              workloadResult: '请到任务页面查看详细结果。'
             });
-            this.onRefreshTasks();
           } else {
             this.setData({ workloadStatus: '任务提交成功', workloadResult: JSON.stringify(data) });
           }
@@ -180,19 +181,22 @@ Page({
       url: `${apiBase}/costing/analyze`,
       filePath: file.path,
       name: 'file',
-      header: {
-        Authorization: `Bearer ${token}`
-      },
-      formData: {},
+      header: { Authorization: `Bearer ${token}` },
       success: (res) => {
         try {
+          if (res.statusCode >= 400) {
+            const payload = JSON.parse(res.data || '{}');
+            const message = payload.detail || payload.error || '提交失败';
+            this.setData({ costingStatus: message, costingResult: '' });
+            wx.showToast({ title: message.toString(), icon: 'none' });
+            return;
+          }
           const data = JSON.parse(res.data || '{}');
           if (data.id) {
             this.setData({
               costingStatus: `任务 #${data.id} 已提交，状态：${data.status}`,
-              costingResult: '请在任务队列中查看详细结果。'
+              costingResult: '请到任务页面查看详细结果。'
             });
-            this.onRefreshTasks();
           } else {
             this.setData({ costingStatus: '任务提交成功', costingResult: JSON.stringify(data) });
           }
@@ -209,32 +213,5 @@ Page({
         this.setData({ costingUploading: false });
       }
     });
-  },
-  async onRefreshTasks() {
-    try {
-      const data = await request({
-        url: '/tasks',
-        method: 'GET'
-      });
-      const items = (data.items || []).map((item) => ({
-        ...item,
-        task_type_label: this.mapTaskType(item.task_type)
-      }));
-      this.setData({ tasks: items });
-    } catch (error) {
-      console.error(error);
-    }
-  },
-  mapTaskType(type) {
-    switch (type) {
-      case 'bidding_analysis':
-        return '标书分析';
-      case 'workload_analysis':
-        return '工时拆分';
-      case 'costing_estimate':
-        return '成本估算';
-      default:
-        return type || '任务';
-    }
   }
 });

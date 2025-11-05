@@ -1,7 +1,8 @@
 App({
   globalData: {
     token: '',
-    apiBase: ''
+    apiBase: '',
+    userInfo: null
   },
   onLaunch() {
     try {
@@ -13,6 +14,10 @@ App({
     const storedToken = wx.getStorageSync('sa_token');
     if (storedToken) {
       this.globalData.token = storedToken;
+    }
+    const storedUser = wx.getStorageSync('sa_user');
+    if (storedUser) {
+      this.globalData.userInfo = storedUser;
     }
   }
 });

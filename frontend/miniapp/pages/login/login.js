@@ -1,4 +1,4 @@
-const { request, setToken } = require('../../utils/request');
+const { request, setToken, getToken } = require('../../utils/request');
 
 Page({
   data: {
@@ -8,6 +8,10 @@ Page({
   },
   onShow() {
     wx.setNavigationBarTitle({ title: '账号登录' });
+    const token = getToken();
+    if (token) {
+      wx.switchTab({ url: '/pages/tools/tools' });
+    }
   },
   onPhoneInput(e) {
     this.setData({ phone: e.detail.value.trim() });
@@ -34,11 +38,14 @@ Page({
       });
       setToken(data.access_token);
       wx.showToast({ title: '登录成功', icon: 'success' });
-      wx.redirectTo({ url: '/pages/home/home' });
+      wx.switchTab({ url: '/pages/tools/tools' });
     } catch (error) {
       console.error(error);
     } finally {
       this.setData({ loading: false });
     }
+  },
+  onGoRegister() {
+    wx.navigateTo({ url: '/pages/register/register' });
   }
 });

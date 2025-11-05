@@ -1,0 +1,27 @@
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+  color: #4b5878;
+}
+
+.detail-row .label {
+  font-weight: 600;
+  color: #1f2a44;
+}
+
+.mono {
+  display: block;
+  white-space: pre-wrap;
+  font-family: Menlo, Consolas, monospace;
+  background: #f2f5fb;
+  border-radius: 12rpx;
+  padding: 20rpx;
+  margin-bottom: 20rpx;
+  color: #1f2a44;
+}
+
+.error {
+  margin-top: 20rpx;
+  color: #ff4d4f;
+}

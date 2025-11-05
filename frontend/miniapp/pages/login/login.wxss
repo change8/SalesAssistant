@@ -1,3 +1,15 @@
 .btn {
   margin-top: 40rpx;
 }
+
+.helper {
+  margin-top: 30rpx;
+  text-align: center;
+  color: #666;
+  font-size: 26rpx;
+}
+
+.helper .link {
+  color: #3366ff;
+  margin-left: 10rpx;
+}

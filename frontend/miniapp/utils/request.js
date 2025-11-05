@@ -13,6 +13,13 @@ function setToken(token) {
   wx.setStorageSync('sa_token', token);
 }
 
+function clearToken() {
+  app.globalData.token = '';
+  wx.removeStorageSync('sa_token');
+  app.globalData.userInfo = null;
+  wx.removeStorageSync('sa_user');
+}
+
 function request(options) {
   const token = getToken();
   return new Promise((resolve, reject) => {
@@ -28,8 +35,7 @@ function request(options) {
       timeout: options.timeout || 60000,
       success(res) {
         if (res.statusCode === 401) {
-          setToken('');
-          wx.removeStorageSync('sa_token');
+          clearToken();
           wx.showToast({ title: '登录失效，请重新登录', icon: 'none' });
           wx.redirectTo({ url: '/pages/login/login' });
           reject(res);
@@ -54,5 +60,6 @@ function request(options) {
 module.exports = {
   request,
   getToken,
-  setToken
+  setToken,
+  clearToken
 };

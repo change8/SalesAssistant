@@ -68,3 +68,25 @@ def reset_password(
 
     token, expires_in = service.create_access_token(subject=user.id)
     return schemas.Token(access_token=token, expires_in=expires_in)
+
+
+@router.post("/change-password", response_model=schemas.Token)
+def change_password(
+    payload: schemas.PasswordChange,
+    current_user=Depends(dependencies.get_current_user),
+    db: Session = Depends(dependencies.get_db),
+):
+    try:
+        user = service.change_password(
+            db,
+            user_id=current_user.id,
+            current_password=payload.current_password,
+            new_password=payload.new_password,
+        )
+    except service.AuthenticationError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except service.PasswordPolicyError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    token, expires_in = service.create_access_token(subject=user.id)
+    return schemas.Token(access_token=token, expires_in=expires_in)
