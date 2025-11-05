@@ -24,10 +24,6 @@ Page({
   },
   onSelectTool(e) {
     const { tool } = e.currentTarget.dataset;
-    if (tool === 'tasks') {
-      wx.switchTab({ url: '/pages/tasks/tasks' });
-      return;
-    }
     this.setData({ activeTool: tool });
   },
   async onPickBiddingFile() {
