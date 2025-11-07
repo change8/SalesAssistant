@@ -105,14 +105,54 @@ class AnalysisService:
         filename: Optional[str] = None,
         content_type: Optional[str] = None,
     ) -> AnalysisJobRecord:
+        logger.info(
+            "process_file_upload start job=%s filename=%s content_type=%s path=%s",
+            job_id,
+            filename or "",
+            content_type or "",
+            path,
+        )
         text, meta = extract_text_from_file(path, filename=filename, content_type=content_type)
-        if not text.strip():
-            self.store.update(job_id, status="failed", error="未能从文件中提取文本或文本为空", completed_at=time.time())
+        metadata = meta or {}
+        if not text:
+            debug_bits = []
+            detected = metadata.get("detected_type")
+            if detected:
+                debug_bits.append(f"检测类型：{detected}")
+            size_hint = metadata.get("byte_size")
+            if size_hint:
+                debug_bits.append(f"文件大小：{size_hint} 字节")
+            if metadata.get("fallback"):
+                debug_bits.append(f"fallback：{metadata['fallback']}")
+            if metadata.get("ocr_used"):
+                debug_bits.append("OCR 已尝试")
+            extra = f"（{'，'.join(debug_bits)}）" if debug_bits else ""
+            error_message = f"未能从文件中提取文本或文本为空{extra}"
+            logger.error(
+                "process_file_upload failed job=%s filename=%s meta=%s",
+                job_id,
+                filename or "",
+                metadata,
+            )
+            self.store.update(
+                job_id,
+                status="failed",
+                error=error_message,
+                metadata=metadata,
+                completed_at=time.time(),
+            )
             job = self.store.get(job_id)
             assert job is not None
             self._notify(job.job_id)
             return job
-        metadata = meta or {}
+        metadata["extracted_text_length"] = str(len(text))
+        logger.info(
+            "process_file_upload success job=%s filename=%s length=%s meta=%s",
+            job_id,
+            filename or "",
+            metadata["extracted_text_length"],
+            metadata,
+        )
         if filename and "filename" not in metadata:
             metadata["filename"] = filename
         return self.process_text(job_id, text, metadata=metadata)
@@ -147,18 +187,15 @@ class AnalysisService:
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
             tmp.write(file_obj.read())
             tmp_path = tmp.name
+        if async_runner:
+            async_runner(self._process_file_async, job.job_id, tmp_path, filename, content_type)
+            stored = self.store.get(job.job_id)
+            assert stored is not None
+            return stored
         try:
-            if async_runner:
-                async_runner(self.process_file_upload, job.job_id, tmp_path, filename, content_type)
-                stored = self.store.get(job.job_id)
-                assert stored is not None
-                return stored
             return self.process_file_upload(job.job_id, tmp_path, filename, content_type)
         finally:
-            try:
-                os.unlink(tmp_path)
-            except FileNotFoundError:
-                pass
+            self._safe_unlink(tmp_path)
 
     # ---------------------------------------------------------------- Public read
     def serialize_job(self, job_id: str, *, include_result: bool = True) -> Dict[str, Any]:
@@ -248,6 +285,26 @@ class AnalysisService:
             "context_end": context_end,
             "length": length,
         }
+
+    # ---------------------------------------------------------------- Internals
+    def _process_file_async(
+        self,
+        job_id: str,
+        path: str,
+        filename: Optional[str],
+        content_type: Optional[str],
+    ) -> None:
+        try:
+            self.process_file_upload(job_id, path, filename, content_type)
+        finally:
+            self._safe_unlink(path)
+
+    @staticmethod
+    def _safe_unlink(path: str) -> None:
+        try:
+            os.unlink(path)
+        except FileNotFoundError:
+            pass
 
 
 def background_runner(background_tasks, func, *args, **kwargs):

@@ -1,6 +1,12 @@
-const { getToken } = require('../../utils/request');
+const { getToken, clearToken } = require('../../utils/request');
 
 const POLL_INTERVAL = 2500;
+
+function handleUnauthorized() {
+  clearToken();
+  wx.showToast({ title: '登录状态已失效，请重新登录', icon: 'none' });
+  wx.redirectTo({ url: '/pages/login/login' });
+}
 
 Page({
   data: {
@@ -46,6 +52,11 @@ Page({
       name: 'file',
       header: { Authorization: `Bearer ${token}` },
       success: (res) => {
+        if (res.statusCode === 401) {
+          handleUnauthorized();
+          this.setData({ biddingStatus: '' });
+          return;
+        }
         try {
           if (res.statusCode >= 400) {
             const payload = JSON.parse(res.data || '{}');
@@ -86,6 +97,11 @@ Page({
       url: `${apiBase}/bidding/jobs/${jobId}`,
       header: { Authorization: `Bearer ${token}` },
       success: (res) => {
+        if (res.statusCode === 401) {
+          handleUnauthorized();
+          this.setData({ biddingStatus: '' });
+          return;
+        }
         if (res.statusCode === 200) {
           const data = res.data;
           if (data.status === 'completed') {
@@ -128,6 +144,11 @@ Page({
       name: 'file',
       header: { Authorization: `Bearer ${token}` },
       success: (res) => {
+        if (res.statusCode === 401) {
+          handleUnauthorized();
+          this.setData({ workloadStatus: '' });
+          return;
+        }
         try {
           if (res.statusCode >= 400) {
             const payload = JSON.parse(res.data || '{}');
@@ -179,6 +200,11 @@ Page({
       name: 'file',
       header: { Authorization: `Bearer ${token}` },
       success: (res) => {
+        if (res.statusCode === 401) {
+          handleUnauthorized();
+          this.setData({ costingStatus: '' });
+          return;
+        }
         try {
           if (res.statusCode >= 400) {
             const payload = JSON.parse(res.data || '{}');
