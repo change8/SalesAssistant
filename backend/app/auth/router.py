@@ -47,9 +47,8 @@ def login_wechat_user(
     try:
         user = service.login_with_wechat(
             db,
-            code=payload.code,
-            encrypted_data=payload.encrypted_data,
-            iv=payload.iv,
+            login_code=payload.login_code,
+            phone_code=payload.phone_code,
         )
     except service.AuthenticationError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
