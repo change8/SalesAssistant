@@ -3,13 +3,16 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Optional
+from typing import TYPE_CHECKING, List, Optional
 
 from sqlalchemy import Boolean, DateTime, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.app.common.models import TimestampMixin
 from backend.app.core.database import Base
+
+if TYPE_CHECKING:
+    from backend.app.tasks.models import Task
 
 
 class User(TimestampMixin, Base):
@@ -24,3 +27,6 @@ class User(TimestampMixin, Base):
     reset_token_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     wechat_openid: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, unique=True, index=True)
     wechat_unionid: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, unique=True)
+
+    # Relationships
+    tasks: Mapped[List["Task"]] = relationship("Task", back_populates="user", lazy="select")
