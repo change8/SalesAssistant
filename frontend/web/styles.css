@@ -167,6 +167,16 @@ button:hover {
   padding: 0;
 }
 
+.auth-links {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.auth-links .link-btn {
+  margin-left: 0;
+}
+
 .auth-footer .info,
 .auth-footer .error,
 .auth-footer .success {
@@ -198,6 +208,142 @@ button:hover {
 .status-pill.status-processing {
   background: #fff6d8;
   color: #c77d16;
+}
+
+.task-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.task-toolbar label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: #44506d;
+}
+
+.task-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.task-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.task-list {
+  border: 1px solid #d4d9e6;
+  border-radius: 10px;
+  background: #f8f9ff;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.task-item {
+  padding: 0.85rem 1rem;
+  border-bottom: 1px solid #e1e5f4;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.task-item:last-child {
+  border-bottom: none;
+}
+
+.task-item.active {
+  background: rgba(79, 108, 255, 0.12);
+}
+
+.task-title {
+  font-weight: 600;
+  color: #1f2a44;
+  font-size: 0.95rem;
+}
+
+.task-meta {
+  font-size: 0.82rem;
+  color: #57607a;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.task-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.task-status.pending,
+.task-status.running {
+  background: #fff4cf;
+  color: #a16a00;
+}
+
+.task-status.succeeded {
+  background: #e6f7f1;
+  color: #0a7a53;
+}
+
+.task-status.failed {
+  background: #ffe8e6;
+  color: #c42828;
+}
+
+.task-detail {
+  border: 1px solid #d4d9e6;
+  border-radius: 10px;
+  background: #fff;
+  padding: 1rem;
+  min-height: 320px;
+  overflow: auto;
+}
+
+.task-detail pre {
+  white-space: pre-wrap;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 0.88rem;
+  color: #1f2a44;
+}
+
+.muted {
+  color: #7a88a8;
+  font-size: 0.9rem;
+}
+
+.task-created {
+  background: #f0f4ff;
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: #1f2a44;
+}
+
+.task-created strong {
+  font-size: 0.95rem;
+}
+
+.task-created .link-btn {
+  margin-left: 0;
+}
+
+@media (max-width: 900px) {
+  .task-layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 .status-pill.status-failed {

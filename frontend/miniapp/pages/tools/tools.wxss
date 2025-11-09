@@ -1,0 +1,46 @@
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220rpx, 1fr));
+  gap: 20rpx;
+  padding: 24rpx;
+}
+
+.tool-item {
+  background: #ffffff;
+  border-radius: 20rpx;
+  padding: 32rpx 24rpx;
+  box-shadow: 0 12rpx 30rpx rgba(51, 102, 255, 0.08);
+  color: #4b5878;
+}
+
+.tool-item.active {
+  background: #3366ff;
+  color: #ffffff;
+}
+
+.tool-title {
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.tool-sub {
+  margin-top: 12rpx;
+  font-size: 24rpx;
+  opacity: 0.82;
+}
+
+.nested-card {
+  margin-top: 24rpx;
+}
+
+.task-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 24rpx;
+  margin-bottom: 12rpx;
+  color: #4b5878;
+}
+
+.task-time {
+  color: #9aa4c4;
+}

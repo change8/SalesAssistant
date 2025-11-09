@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
-from sqlalchemy import Boolean, Integer, String
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
+from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional
+
+from sqlalchemy import Boolean, DateTime, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from backend.app.common.models import TimestampMixin
 from backend.app.core.database import Base
@@ -22,6 +23,10 @@ class User(TimestampMixin, Base):
     full_name: Mapped[Optional[str]] = mapped_column(String(120), nullable=True)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    reset_token: Mapped[Optional[str]] = mapped_column(String(128), nullable=True, unique=True, index=True)
+    reset_token_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    wechat_openid: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, unique=True, index=True)
+    wechat_unionid: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, unique=True)
 
     # Relationships
     tasks: Mapped[List["Task"]] = relationship("Task", back_populates="user", lazy="select")

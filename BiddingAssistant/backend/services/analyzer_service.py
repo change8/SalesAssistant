@@ -2,16 +2,19 @@
 
 from __future__ import annotations
 
+import logging
 import os
 import tempfile
 import time
 import uuid
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
+from typing import Any, Callable, Dict, Iterable, Optional
 
 from ..analyzer.tender_llm import TenderLLMAnalyzer
-from ..storage import AnalysisJobRecord, InMemoryJobStore
 from ..extractors.dispatcher import extract_text_from_file
+from ..storage import AnalysisJobRecord, InMemoryJobStore
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -26,9 +29,15 @@ class JobPayload:
 class AnalysisService:
     """Submit and execute analysis jobs with pluggable storage."""
 
-    def __init__(self, analyzer: TenderLLMAnalyzer, store: Optional[InMemoryJobStore] = None) -> None:
+    def __init__(
+        self,
+        analyzer: TenderLLMAnalyzer,
+        store: Optional[InMemoryJobStore] = None,
+        observers: Optional[Iterable[Callable[[AnalysisJobRecord], None]]] = None,
+    ) -> None:
         self.analyzer = analyzer
         self.store = store or InMemoryJobStore()
+        self._observers = list(observers or [])
 
     # ------------------------------------------------------------------ API
     def create_job(
@@ -46,7 +55,9 @@ class AnalysisService:
             metadata=metadata or {},
             created_at=time.time(),
         )
-        return self.store.create(job)
+        created = self.store.create(job)
+        self._notify(created.job_id)
+        return created
 
     def process_text(
         self,
@@ -69,16 +80,21 @@ class AnalysisService:
             metadata=combined_metadata,
             source_text=text,
         )
+        self._notify(job_id)
         try:
             result = self.analyzer.analyze(text)
             combined_metadata.update(result.pop("metadata", {}))
             self.store.update(job_id, metadata=combined_metadata)
             self.store.update(job_id, status="completed", result=result, completed_at=time.time())
+            self._notify(job_id)
         except Exception as exc:  # pragma: no cover - defensive
             self.store.update(job_id, status="failed", error=str(exc), completed_at=time.time())
+            self._notify(job_id)
             raise
         finally:
             job = self.store.get(job_id)
+            if job:
+                self._notify(job.job_id)
         assert job is not None
         return job
 
@@ -89,13 +105,54 @@ class AnalysisService:
         filename: Optional[str] = None,
         content_type: Optional[str] = None,
     ) -> AnalysisJobRecord:
+        logger.info(
+            "process_file_upload start job=%s filename=%s content_type=%s path=%s",
+            job_id,
+            filename or "",
+            content_type or "",
+            path,
+        )
         text, meta = extract_text_from_file(path, filename=filename, content_type=content_type)
-        if not text.strip():
-            self.store.update(job_id, status="failed", error="未能从文件中提取文本或文本为空", completed_at=time.time())
+        metadata = meta or {}
+        if not text:
+            debug_bits = []
+            detected = metadata.get("detected_type")
+            if detected:
+                debug_bits.append(f"检测类型：{detected}")
+            size_hint = metadata.get("byte_size")
+            if size_hint:
+                debug_bits.append(f"文件大小：{size_hint} 字节")
+            if metadata.get("fallback"):
+                debug_bits.append(f"fallback：{metadata['fallback']}")
+            if metadata.get("ocr_used"):
+                debug_bits.append("OCR 已尝试")
+            extra = f"（{'，'.join(debug_bits)}）" if debug_bits else ""
+            error_message = f"未能从文件中提取文本或文本为空{extra}"
+            logger.error(
+                "process_file_upload failed job=%s filename=%s meta=%s",
+                job_id,
+                filename or "",
+                metadata,
+            )
+            self.store.update(
+                job_id,
+                status="failed",
+                error=error_message,
+                metadata=metadata,
+                completed_at=time.time(),
+            )
             job = self.store.get(job_id)
             assert job is not None
+            self._notify(job.job_id)
             return job
-        metadata = meta or {}
+        metadata["extracted_text_length"] = str(len(text))
+        logger.info(
+            "process_file_upload success job=%s filename=%s length=%s meta=%s",
+            job_id,
+            filename or "",
+            metadata["extracted_text_length"],
+            metadata,
+        )
         if filename and "filename" not in metadata:
             metadata["filename"] = filename
         return self.process_text(job_id, text, metadata=metadata)
@@ -130,18 +187,15 @@ class AnalysisService:
         with tempfile.NamedTemporaryFile(delete=False) as tmp:
             tmp.write(file_obj.read())
             tmp_path = tmp.name
+        if async_runner:
+            async_runner(self._process_file_async, job.job_id, tmp_path, filename, content_type)
+            stored = self.store.get(job.job_id)
+            assert stored is not None
+            return stored
         try:
-            if async_runner:
-                async_runner(self.process_file_upload, job.job_id, tmp_path, filename, content_type)
-                stored = self.store.get(job.job_id)
-                assert stored is not None
-                return stored
             return self.process_file_upload(job.job_id, tmp_path, filename, content_type)
         finally:
-            try:
-                os.unlink(tmp_path)
-            except FileNotFoundError:
-                pass
+            self._safe_unlink(tmp_path)
 
     # ---------------------------------------------------------------- Public read
     def serialize_job(self, job_id: str, *, include_result: bool = True) -> Dict[str, Any]:
@@ -163,6 +217,21 @@ class AnalysisService:
         return self.store.delete(job_id)
 
     # ---------------------------------------------------------------- Internal
+    def add_observer(self, callback: Callable[[AnalysisJobRecord], None]) -> None:
+        self._observers.append(callback)
+
+    def _notify(self, job_id: str) -> None:
+        if not self._observers:
+            return
+        job = self.store.get(job_id)
+        if not job:
+            return
+        for observer in list(self._observers):
+            try:
+                observer(job)
+            except Exception:  # pragma: no cover - defensive logging
+                logger.exception("Job observer failed for job %s", job_id)
+
     @staticmethod
     def _serialize_job_record(job: AnalysisJobRecord, include_result: bool = True) -> Dict[str, Any]:
         payload = {
@@ -216,6 +285,26 @@ class AnalysisService:
             "context_end": context_end,
             "length": length,
         }
+
+    # ---------------------------------------------------------------- Internals
+    def _process_file_async(
+        self,
+        job_id: str,
+        path: str,
+        filename: Optional[str],
+        content_type: Optional[str],
+    ) -> None:
+        try:
+            self.process_file_upload(job_id, path, filename, content_type)
+        finally:
+            self._safe_unlink(path)
+
+    @staticmethod
+    def _safe_unlink(path: str) -> None:
+        try:
+            os.unlink(path)
+        except FileNotFoundError:
+            pass
 
 
 def background_runner(background_tasks, func, *args, **kwargs):

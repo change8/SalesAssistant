@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import List
 from xml.etree import ElementTree
 from zipfile import ZipFile
@@ -8,6 +9,8 @@ try:
     import docx  # type: ignore
 except Exception:  # pragma: no cover - optional dependency
     docx = None
+
+logger = logging.getLogger(__name__)
 
 
 def extract_text_from_docx(path: str) -> str:
@@ -24,19 +27,21 @@ def extract_text_from_docx(path: str) -> str:
                     if cells:
                         parts.append("\t".join(cells))
             return "\n".join(parts)
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("extract_text_from_docx: python-docx failed path=%s err=%s", path, exc)
 
     # Fallback: parse XML
     try:
         with ZipFile(path) as zf:
             xml_bytes = zf.read("word/document.xml")
     except Exception:
+        logger.warning("extract_text_from_docx: failed opening zip path=%s", path)
         return ""
 
     try:
         tree = ElementTree.fromstring(xml_bytes)
     except ElementTree.ParseError:
+        logger.warning("extract_text_from_docx: failed parsing XML path=%s", path)
         return ""
 
     namespace = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"

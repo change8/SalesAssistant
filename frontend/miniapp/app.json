@@ -1,0 +1,45 @@
+{
+  "pages": [
+    "pages/tools/tools",
+    "pages/tasks/tasks",
+    "pages/profile/profile",
+    "pages/login/login",
+    "pages/register/register",
+    "pages/task-detail/task-detail",
+    "pages/change-password/change-password",
+    "pages/about/about"
+  ],
+  "window": {
+    "navigationBarTitleText": "销售助手",
+    "navigationBarBackgroundColor": "#3366FF",
+    "navigationBarTextStyle": "white",
+    "backgroundTextStyle": "light"
+  },
+  "tabBar": {
+    "color": "#7f8c8d",
+    "selectedColor": "#3366FF",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/tools/tools",
+        "text": "工具",
+        "iconPath": "assets/tools.png",
+        "selectedIconPath": "assets/tools-active.png"
+      },
+      {
+        "pagePath": "pages/tasks/tasks",
+        "text": "任务",
+        "iconPath": "assets/tasks.png",
+        "selectedIconPath": "assets/tasks-active.png"
+      },
+      {
+        "pagePath": "pages/profile/profile",
+        "text": "我的",
+        "iconPath": "assets/profile.png",
+        "selectedIconPath": "assets/profile-active.png"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

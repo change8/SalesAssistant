@@ -5,12 +5,30 @@
 ---
 
 ## 功能总览
-- **账号体系**：手机号 + 密码注册/登录，JWT 鉴权（计划扩展微信手机号授权）。
+- **账号体系**：手机号 + 密码注册/登录，支持找回密码（短信验证待接入），JWT 鉴权（计划扩展微信手机号授权）。
 - **标书分析**：两步式流程（上传 → 进度&结果），输出“结论+投标要点+评分项+成本项”，支持查看原文定位。
 - **FP 项目成本预估**：按人天成本测算总投入、含税成本与报价，支持毛利率控制、成本/报价表一键下载。
 - **ITO 项目工时拆分**：解析 Excel 功能清单，支持人月/人天制，结合自定义角色单价输出汇总成本。
-- **任务队列**：所有大模型任务统一纳入异步队列，支持离开页面后再次登录查看历史与状态。
+- **任务队列**：所有大模型任务统一纳入异步队列，前端提供“任务中心”查看进度、分类筛选与历史记录。
 - **前端控制台**：统一 Web 页面提供登录、Tab 切换和移动端友好的展示；微信小程序提供同源能力。
+
+---
+
+## 部署快速开始
+
+```bash
+# 首次（在服务器）
+git clone https://github.com/change8/SalesAssistant.git
+cd SalesAssistant
+sudo SA_DOMAIN=saleassisstant.chat SA_ADMIN_EMAIL=you@example.com ./deploy.sh
+
+# 更新
+sudo ./update.sh
+```
+
+部署脚本会安装依赖、配置 systemd + nginx、申请 Let's Encrypt 证书并启动服务。更多细节、DNS/HTTPS/微信小程序配置请参考 `ops/docs/deployment.md`。
+
+若需自动化部署，仓库内置 GitHub Actions 工作流 `.github/workflows/deploy.yml`，在 Push 到 `main` 后会执行 `sudo ./update.sh`（需在仓库 Secrets 写入服务器 SSH 信息）。
 
 ---
 

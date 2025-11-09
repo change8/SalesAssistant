@@ -1,0 +1,17 @@
+[Unit]
+Description=Sales Assistant FastAPI backend
+After=network.target
+
+[Service]
+User=__APP_USER__
+Group=__APP_USER__
+WorkingDirectory=__APP_ROOT__/app
+EnvironmentFile=__APP_ROOT__/.env
+ExecStart=__APP_ROOT__/.venv/bin/uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
+Restart=on-failure
+RestartSec=5
+StandardOutput=append:__APP_ROOT__/logs/app.log
+StandardError=append:__APP_ROOT__/logs/app-error.log
+
+[Install]
+WantedBy=multi-user.target

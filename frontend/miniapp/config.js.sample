@@ -1,0 +1,8 @@
+module.exports = {
+  /**
+   * 后端 API 基地址
+   * 生产环境请填写 https://saleassisstant.chat/api
+   * 本地调试可填写 http://127.0.0.1:8000/api
+   */
+  apiBaseUrl: 'https://saleassisstant.chat/api'
+};

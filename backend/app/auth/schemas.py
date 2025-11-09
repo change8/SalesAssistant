@@ -81,3 +81,56 @@ class Token(BaseModel):
 class TokenPayload(BaseModel):
     sub: int
     exp: int
+
+
+class PasswordResetRequest(BaseModel):
+    phone: str
+
+    @field_validator("phone")
+    @classmethod
+    def validate_phone(cls, value: str) -> str:
+        return UserBase.validate_phone(value)
+
+
+class PasswordResetToken(BaseModel):
+    reset_token: str
+    expires_at: datetime
+
+
+class PasswordResetConfirm(BaseModel):
+    phone: str
+    reset_token: str = Field(..., min_length=10, max_length=160)
+    new_password: str = Field(..., min_length=8, max_length=64)
+
+    @field_validator("phone")
+    @classmethod
+    def validate_confirm_phone(cls, value: str) -> str:
+        return UserBase.validate_phone(value)
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password(cls, value: str) -> str:
+        return UserCreate.validate_password(value)
+
+
+class PasswordChange(BaseModel):
+    current_password: str = Field(..., min_length=1, max_length=128)
+    new_password: str = Field(..., min_length=8, max_length=64)
+
+    @field_validator("current_password")
+    @classmethod
+    def validate_current_password(cls, value: str) -> str:
+        password = value.strip()
+        if not password:
+            raise ValueError("当前密码不能为空")
+        return password
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password(cls, value: str) -> str:
+        return UserCreate.validate_password(value)
+
+
+class WechatLoginRequest(BaseModel):
+    login_code: str = Field(..., min_length=1, max_length=128, description="wx.login 返回的 code")
+    phone_code: str = Field(..., min_length=1, max_length=128, description="getRealtimePhoneNumber 返回的 code")

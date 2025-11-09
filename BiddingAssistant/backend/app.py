@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import io
 import json
+import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, Iterable, List, Optional
 
 try:
-    from fastapi import BackgroundTasks, FastAPI, File, HTTPException, Query, UploadFile
+    from fastapi import BackgroundTasks, FastAPI, File, HTTPException, Query, Request, UploadFile
     from fastapi.responses import FileResponse, JSONResponse
     from fastapi.staticfiles import StaticFiles
 except Exception:
@@ -27,6 +28,9 @@ from .analyzer.framework import DEFAULT_FRAMEWORK
 from .analyzer.tender_llm import TenderLLMAnalyzer
 from .config import AppConfig, load_config
 from .services.analyzer_service import AnalysisService, background_runner
+from .storage import AnalysisJobRecord
+
+logger = logging.getLogger(__name__)
 
 try:
     import yaml
@@ -34,16 +38,22 @@ except Exception:
     yaml = None
 
 
-def create_app(rules_path: str = None, config_path: str = None):  # type: ignore
+def create_app(
+    rules_path: str = None,
+    config_path: str = None,
+    job_observers: Optional[Iterable[Callable[[AnalysisJobRecord], None]]] = None,
+    task_factory: Optional[Callable[[Request, Dict[str, Any]], Optional[Dict[str, Any]]]] = None,
+):  # type: ignore
     config = load_config(config_path)
     llm = LLMClient(**config.llm.as_kwargs())
     analyzer = TenderLLMAnalyzer(llm, categories=DEFAULT_FRAMEWORK)
-    service = AnalysisService(analyzer)
+    service = AnalysisService(analyzer, observers=job_observers)
 
     if FastAPI is object:
         return None  # FastAPI not installed; return sentinel
 
     app = FastAPI(title="投标助手 API", version="0.1.0")
+    setattr(app.state, "analysis_service", service)
 
     web_dir = os.path.join(os.path.dirname(__file__), "..", "frontend", "web")
     web_dir = os.path.abspath(web_dir)
@@ -76,26 +86,45 @@ def create_app(rules_path: str = None, config_path: str = None):  # type: ignore
         return cfg
 
     @app.post("/analyze/text")
-    async def analyze_text(req: AnalyzeRequest, background_tasks: BackgroundTasks):
+    async def analyze_text(req: AnalyzeRequest, background_tasks: BackgroundTasks, request: Request):
         text = (req.text or "").strip()
         if not text:
             raise HTTPException(status_code=400, detail="text 不能为空")
 
+        async_mode = bool(getattr(req, "async_mode", False))
+        metadata: Dict[str, Any] = dict(req.metadata or {})
+
+        if task_factory and async_mode:
+            filename_hint = req.filename or "文本分析"
+            try:
+                task_meta = task_factory(
+                    request,
+                    {"filename": filename_hint, "source": "text"},
+                )
+            except Exception as exc:  # pragma: no cover - defensive log
+                logger.exception("Failed to create task metadata for bidding text: %s", exc)
+                task_meta = {}
+            if task_meta:
+                metadata.update(task_meta)
+
         async_runner = None
-        if getattr(req, "async_mode", False):
+        if async_mode:
             async_runner = lambda func, *args, **kwargs: background_runner(background_tasks, func, *args, **kwargs)
 
         job = service.submit_text(
             text=text,
             filename=req.filename,
-            metadata=req.metadata,
+            metadata=metadata or None,
             async_runner=async_runner,
         )
-        include_result = not getattr(req, "async_mode", False)
-        return JSONResponse(service.serialize_job(job.job_id, include_result=include_result))
+        payload = service.serialize_job(job.job_id, include_result=not async_mode)
+        if metadata.get("task_id"):
+            payload["task_id"] = metadata["task_id"]
+        return JSONResponse(payload)
 
     @app.post("/analyze/file")
     async def analyze_file(
+        request: Request,
         background_tasks: BackgroundTasks,
         file: UploadFile = File(...),
         async_mode: bool = Query(False),
@@ -108,7 +137,19 @@ def create_app(rules_path: str = None, config_path: str = None):  # type: ignore
         content_type = getattr(file, "content_type", None)
         file_bytes = await file.read()
         buffer = io.BytesIO(file_bytes)
-        metadata = {"content_type": content_type} if content_type else {}
+        metadata: Dict[str, Any] = {"content_type": content_type} if content_type else {}
+
+        if task_factory and async_mode:
+            try:
+                task_meta = task_factory(
+                    request,
+                    {"filename": file_name or "标书", "source": "file", "content_type": content_type},
+                )
+            except Exception as exc:  # pragma: no cover - defensive log
+                logger.exception("Failed to create task metadata for bidding file: %s", exc)
+                task_meta = {}
+            if task_meta:
+                metadata.update(task_meta)
 
         async_runner = None
         if async_mode:
@@ -118,10 +159,13 @@ def create_app(rules_path: str = None, config_path: str = None):  # type: ignore
             buffer,
             filename=file_name,
             content_type=content_type,
-            metadata=metadata,
+            metadata=metadata or None,
             async_runner=async_runner,
         )
-        return JSONResponse(service.serialize_job(job.job_id, include_result=not async_mode))
+        payload = service.serialize_job(job.job_id, include_result=not async_mode)
+        if metadata.get("task_id"):
+            payload["task_id"] = metadata["task_id"]
+        return JSONResponse(payload)
 
     @app.get("/jobs/{job_id}")
     def get_job(job_id: str):
