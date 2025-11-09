@@ -13,7 +13,8 @@ Page({
   },
   async onGetPhoneNumber(e) {
     if (e.detail.errMsg !== 'getPhoneNumber:ok') {
-      wx.showToast({ title: '需要手机号授权', icon: 'none' });
+      const err = e.detail.errMsg || '需要手机号授权';
+      wx.showToast({ title: err, icon: 'none' });
       return;
     }
     const { encryptedData, iv } = e.detail;
