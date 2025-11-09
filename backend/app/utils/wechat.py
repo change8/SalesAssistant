@@ -33,6 +33,7 @@ class WechatMiniProgramClient:
         self.app_id = app_id
         self.app_secret = app_secret
         self.timeout = timeout
+        self._access_token_cache: str | None = None
 
     def code2session(self, code: str) -> Code2SessionPayload:
         """Exchange wx.login code for openid & session_key."""
@@ -69,7 +70,7 @@ class WechatMiniProgramClient:
 
     @staticmethod
     def decrypt_user_data(session_key: str, encrypted_data: str, iv: str) -> Dict[str, Any]:
-        """Decrypt encrypted data returned by getPhoneNumber button."""
+        """Decrypt encrypted data returned by getPhoneNumber button (old API)."""
 
         try:
             key_bytes = base64.b64decode(session_key)
@@ -86,3 +87,65 @@ class WechatMiniProgramClient:
         except Exception as exc:  # pragma: no cover - crypto errors hard to simulate
             raise WechatDecryptError("手机号解密失败") from exc
         return data
+
+    def get_access_token(self) -> str:
+        """Get access token for WeChat API calls.
+
+        Note: In production, you should cache this token as it's valid for 2 hours.
+        For simplicity, we're making a fresh request each time.
+        """
+        url = "https://api.weixin.qq.com/cgi-bin/token"
+        params = {
+            "grant_type": "client_credential",
+            "appid": self.app_id,
+            "secret": self.app_secret,
+        }
+
+        try:
+            resp = httpx.get(url, params=params, timeout=self.timeout)
+            data = resp.json()
+
+            if "access_token" not in data:
+                errcode = data.get("errcode", "unknown")
+                errmsg = data.get("errmsg", "获取access_token失败")
+                raise WechatAPIError(f"{errmsg}（{errcode}）")
+
+            return data["access_token"]
+
+        except httpx.HTTPError as exc:
+            raise WechatAPIError("无法连接微信服务") from exc
+
+    def get_phone_number(self, phone_code: str) -> Dict[str, Any]:
+        """Get phone number using new getRealtimePhoneNumber API.
+
+        Args:
+            phone_code: The code returned by getRealtimePhoneNumber button
+
+        Returns:
+            Dict containing phone_info with phoneNumber, purePhoneNumber, etc.
+
+        Raises:
+            WechatAPIError: If the API call fails
+        """
+        access_token = self.get_access_token()
+        url = "https://api.weixin.qq.com/wxa/business/getuserphonenumber"
+        params = {"access_token": access_token}
+        payload = {"code": phone_code}
+
+        try:
+            resp = httpx.post(url, params=params, json=payload, timeout=self.timeout)
+            data = resp.json()
+
+            errcode = data.get("errcode")
+            if errcode not in (None, 0):
+                errmsg = data.get("errmsg", "获取手机号失败")
+                raise WechatAPIError(f"{errmsg}（{errcode}）")
+
+            phone_info = data.get("phone_info")
+            if not phone_info:
+                raise WechatAPIError("微信返回数据缺失 phone_info")
+
+            return phone_info
+
+        except httpx.HTTPError as exc:
+            raise WechatAPIError("无法连接微信服务") from exc

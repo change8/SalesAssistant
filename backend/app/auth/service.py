@@ -14,7 +14,6 @@ from backend.app.auth import models, schemas
 from backend.app.core.config import settings
 from backend.app.utils.wechat import (
     WechatAPIError,
-    WechatDecryptError,
     WechatMiniProgramClient,
 )
 
@@ -156,31 +155,26 @@ def change_password(db: Session, user_id: int, current_password: str, new_passwo
 def login_with_wechat(
     db: Session,
     *,
-    code: str,
-    encrypted_data: str,
-    iv: str,
+    login_code: str,
+    phone_code: str,
 ) -> models.User:
-    """Login or auto-register a user via WeChat mini program authorization."""
+    """Login or auto-register a user via WeChat mini program authorization (new API)."""
 
     if not settings.wechat_app_id or not settings.wechat_app_secret:
         raise AuthenticationError("后台未配置微信小程序参数，请联系管理员")
 
     client = WechatMiniProgramClient(settings.wechat_app_id, settings.wechat_app_secret)
     try:
-        session_payload = client.code2session(code)
+        session_payload = client.code2session(login_code)
     except WechatAPIError as exc:
         raise AuthenticationError(str(exc)) from exc
 
     try:
-        decrypted = client.decrypt_user_data(
-            session_payload.session_key,
-            encrypted_data,
-            iv,
-        )
-    except WechatDecryptError as exc:
+        phone_info = client.get_phone_number(phone_code)
+    except WechatAPIError as exc:
         raise AuthenticationError(str(exc)) from exc
 
-    phone = decrypted.get("purePhoneNumber") or decrypted.get("phoneNumber")
+    phone = phone_info.get("purePhoneNumber") or phone_info.get("phoneNumber")
     if not phone:
         raise AuthenticationError("未能解析手机号，请重新授权")
 

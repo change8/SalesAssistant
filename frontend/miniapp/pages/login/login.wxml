@@ -1,8 +1,8 @@
 <view class="card">
   <view class="section-title">微信一键登录</view>
   <view class="desc">授权手机号即可使用全部工具，无需手动注册。</view>
-  <button class="btn" open-type="getPhoneNumber" loading="{{loading}}"
-          bindgetphonenumber="onGetPhoneNumber">授权手机号并登录</button>
+  <button class="btn" open-type="getRealtimePhoneNumber" loading="{{loading}}"
+          bindgetrealtimephonenumber="onGetPhoneNumber">授权手机号并登录</button>
   <view class="helper">
     <text>点击即表示同意《隐私政策》，手机号仅用于任务通知。</text>
   </view>
