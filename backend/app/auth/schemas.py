@@ -29,7 +29,7 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase):
-    password: str = Field(..., min_length=6, max_length=128)
+    password: str = Field(..., min_length=8, max_length=64)
 
     @field_validator("password")
     @classmethod
@@ -100,7 +100,7 @@ class PasswordResetToken(BaseModel):
 class PasswordResetConfirm(BaseModel):
     phone: str
     reset_token: str = Field(..., min_length=10, max_length=160)
-    new_password: str = Field(..., min_length=8, max_length=128)
+    new_password: str = Field(..., min_length=8, max_length=64)
 
     @field_validator("phone")
     @classmethod
@@ -115,7 +115,7 @@ class PasswordResetConfirm(BaseModel):
 
 class PasswordChange(BaseModel):
     current_password: str = Field(..., min_length=1, max_length=128)
-    new_password: str = Field(..., min_length=8, max_length=128)
+    new_password: str = Field(..., min_length=8, max_length=64)
 
     @field_validator("current_password")
     @classmethod

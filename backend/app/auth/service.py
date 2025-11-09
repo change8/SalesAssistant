@@ -191,6 +191,11 @@ def login_with_wechat(
 
     user = get_user_by_phone(db, phone)
     if user:
+        # Security: verify this is the same user trying to bind WeChat
+        if user.wechat_openid and user.wechat_openid != session_payload.openid:
+            raise AuthenticationError(
+                "该手机号已绑定其他微信账号。如需更换绑定，请先使用密码登录解绑"
+            )
         _bind_wechat_identity(user, session_payload)
         db.add(user)
         db.commit()

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import json
+import logging
 from typing import Optional
 from urllib.parse import quote
 
@@ -19,6 +20,8 @@ from backend.app.core.database import SessionLocal
 from backend.app.modules.tasks import schemas as task_schemas
 from backend.app.modules.tasks.schemas import TaskType
 from backend.app.modules.tasks.service import TaskService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["workload"])
 
@@ -71,6 +74,10 @@ def _run_workload_task(
             description=f"工时拆分 · {filename}",
         )
     except Exception as exc:  # pragma: no cover - runtime safeguard
+        logger.exception(
+            f"Workload task {task_id} failed for file '{filename}'",
+            extra={"task_id": task_id, "filename": filename},
+        )
         service.mark_failed(task_id, str(exc))
     finally:
         db.close()

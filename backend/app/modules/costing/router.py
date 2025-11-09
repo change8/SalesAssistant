@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from typing import Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile
@@ -16,6 +17,8 @@ from backend.app.modules.tasks.service import TaskService
 
 from .schemas import CostingRequest
 from .service import CostEstimator
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["costing"])
 
@@ -57,6 +60,10 @@ def _run_costing_task(
             description=f"成本预估 · {filename}",
         )
     except Exception as exc:  # pragma: no cover - runtime safeguard
+        logger.exception(
+            f"Costing task {task_id} failed for file '{filename}'",
+            extra={"task_id": task_id, "filename": filename},
+        )
         task_service.mark_failed(task_id, str(exc))
     finally:
         db.close()
