@@ -24,10 +24,10 @@ def init_db() -> None:
     from backend.app.modules.tasks import models as task_models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
-    _ensure_password_reset_columns()
+    _ensure_user_columns()
 
 
-def _ensure_password_reset_columns() -> None:
+def _ensure_user_columns() -> None:
     inspector = sa_inspect(engine)
     if not inspector.has_table("users"):
         return
@@ -37,6 +37,10 @@ def _ensure_password_reset_columns() -> None:
         statements.append(text("ALTER TABLE users ADD COLUMN reset_token VARCHAR(128)"))
     if "reset_token_expires_at" not in existing_columns:
         statements.append(text("ALTER TABLE users ADD COLUMN reset_token_expires_at DATETIME"))
+    if "wechat_openid" not in existing_columns:
+        statements.append(text("ALTER TABLE users ADD COLUMN wechat_openid VARCHAR(64)"))
+    if "wechat_unionid" not in existing_columns:
+        statements.append(text("ALTER TABLE users ADD COLUMN wechat_unionid VARCHAR(64)"))
     if not statements:
         return
     with engine.begin() as connection:

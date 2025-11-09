@@ -129,3 +129,9 @@ class PasswordChange(BaseModel):
     @classmethod
     def validate_new_password(cls, value: str) -> str:
         return UserCreate.validate_password(value)
+
+
+class WechatLoginRequest(BaseModel):
+    code: str = Field(..., min_length=1, max_length=128, description="wx.login 返回的 code")
+    encrypted_data: str = Field(..., description="getPhoneNumber 返回的 encryptedData")
+    iv: str = Field(..., description="getPhoneNumber 返回的 iv")

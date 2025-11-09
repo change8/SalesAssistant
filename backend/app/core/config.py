@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from pydantic import Field
 from pydantic_settings import BaseSettings
@@ -28,6 +28,8 @@ class Settings(BaseSettings):
     cors_origins: List[str] = Field(default_factory=list)
 
     bidding_async_mode_default: bool = Field(default=False)
+    wechat_app_id: Optional[str] = Field(default=None)
+    wechat_app_secret: Optional[str] = Field(default=None)
 
     model_config = {
         "env_file": ".env",

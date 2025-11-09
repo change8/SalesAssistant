@@ -12,6 +12,11 @@ from sqlalchemy.orm import Session
 
 from backend.app.auth import models, schemas
 from backend.app.core.config import settings
+from backend.app.utils.wechat import (
+    WechatAPIError,
+    WechatDecryptError,
+    WechatMiniProgramClient,
+)
 
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -50,6 +55,10 @@ def get_user_by_phone(db: Session, phone: str) -> Optional[models.User]:
 
 def get_user_by_id(db: Session, user_id: int) -> Optional[models.User]:
     return db.get(models.User, user_id)
+
+
+def get_user_by_wechat_openid(db: Session, openid: str) -> Optional[models.User]:
+    return db.query(models.User).filter(models.User.wechat_openid == openid).first()
 
 
 def create_user(db: Session, user_in: schemas.UserCreate) -> models.User:
@@ -142,3 +151,87 @@ def change_password(db: Session, user_id: int, current_password: str, new_passwo
     db.commit()
     db.refresh(user)
     return user
+
+
+def login_with_wechat(
+    db: Session,
+    *,
+    code: str,
+    encrypted_data: str,
+    iv: str,
+) -> models.User:
+    """Login or auto-register a user via WeChat mini program authorization."""
+
+    if not settings.wechat_app_id or not settings.wechat_app_secret:
+        raise AuthenticationError("后台未配置微信小程序参数，请联系管理员")
+
+    client = WechatMiniProgramClient(settings.wechat_app_id, settings.wechat_app_secret)
+    try:
+        session_payload = client.code2session(code)
+    except WechatAPIError as exc:
+        raise AuthenticationError(str(exc)) from exc
+
+    try:
+        decrypted = client.decrypt_user_data(
+            session_payload.session_key,
+            encrypted_data,
+            iv,
+        )
+    except WechatDecryptError as exc:
+        raise AuthenticationError(str(exc)) from exc
+
+    phone = decrypted.get("purePhoneNumber") or decrypted.get("phoneNumber")
+    if not phone:
+        raise AuthenticationError("未能解析手机号，请重新授权")
+
+    user = get_user_by_wechat_openid(db, session_payload.openid)
+    if user:
+        _update_wechat_metadata(user, session_payload, phone, db)
+        return user
+
+    user = get_user_by_phone(db, phone)
+    if user:
+        _bind_wechat_identity(user, session_payload)
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return user
+
+    random_password = _generate_random_password()
+    new_user = models.User(
+        phone=phone,
+        full_name=None,
+        password_hash=hash_password(random_password),
+        wechat_openid=session_payload.openid,
+        wechat_unionid=session_payload.unionid,
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
+
+
+def _generate_random_password() -> str:
+    seed = token_urlsafe(12)
+    return f"{seed}A1"
+
+
+def _bind_wechat_identity(user: models.User, payload) -> None:
+    if not user.wechat_openid:
+        user.wechat_openid = payload.openid
+    if payload.unionid and not user.wechat_unionid:
+        user.wechat_unionid = payload.unionid
+
+
+def _update_wechat_metadata(user: models.User, payload, phone: str, db: Session) -> None:
+    changed = False
+    if not user.phone:
+        user.phone = phone
+        changed = True
+    if payload.unionid and user.wechat_unionid != payload.unionid:
+        user.wechat_unionid = payload.unionid
+        changed = True
+    if changed:
+        db.add(user)
+        db.commit()
+        db.refresh(user)

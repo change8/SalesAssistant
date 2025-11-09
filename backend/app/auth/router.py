@@ -39,6 +39,25 @@ def login_user(
     return schemas.Token(access_token=token, expires_in=expires_in)
 
 
+@router.post("/wechat-login", response_model=schemas.Token)
+def login_wechat_user(
+    payload: schemas.WechatLoginRequest,
+    db: Session = Depends(dependencies.get_db),
+):
+    try:
+        user = service.login_with_wechat(
+            db,
+            code=payload.code,
+            encrypted_data=payload.encrypted_data,
+            iv=payload.iv,
+        )
+    except service.AuthenticationError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+
+    token, expires_in = service.create_access_token(subject=user.id)
+    return schemas.Token(access_token=token, expires_in=expires_in)
+
+
 @router.get("/me", response_model=schemas.UserRead)
 def get_me(current_user=Depends(dependencies.get_current_user)):
     return current_user

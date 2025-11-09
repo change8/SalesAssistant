@@ -22,3 +22,5 @@ class User(TimestampMixin, Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     reset_token: Mapped[Optional[str]] = mapped_column(String(128), nullable=True, unique=True, index=True)
     reset_token_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    wechat_openid: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, unique=True, index=True)
+    wechat_unionid: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, unique=True)
