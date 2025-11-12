@@ -3,15 +3,22 @@ const { request, getToken, clearToken } = require('../../utils/request');
 Page({
   data: {
     user: null,
-    loading: false
+    loading: false,
+    isLoggedIn: false
   },
   onShow() {
-    if (!getToken()) {
-      wx.redirectTo({ url: '/pages/login/login' });
-      return;
-    }
     wx.setNavigationBarTitle({ title: '我的' });
-    this.fetchProfile();
+    const hasToken = !!getToken();
+    this.setData({ isLoggedIn: hasToken });
+    if (hasToken) {
+      this.fetchProfile();
+    }
+  },
+  onGoLogin() {
+    wx.navigateTo({ url: '/pages/login/login' });
+  },
+  onGoRegister() {
+    wx.navigateTo({ url: '/pages/register/register' });
   },
   async fetchProfile() {
     this.setData({ loading: true });

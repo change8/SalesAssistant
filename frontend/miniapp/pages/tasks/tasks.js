@@ -5,15 +5,22 @@ Page({
     viewMode: 'active',
     loading: false,
     activeList: [],
-    historyList: []
+    historyList: [],
+    isLoggedIn: false
   },
   onShow() {
-    if (!getToken()) {
-      wx.redirectTo({ url: '/pages/login/login' });
-      return;
-    }
     wx.setNavigationBarTitle({ title: '任务中心' });
-    this.loadTasks();
+    const hasToken = !!getToken();
+    this.setData({ isLoggedIn: hasToken });
+    if (hasToken) {
+      this.loadTasks();
+    }
+  },
+  onGoRegister() {
+    wx.navigateTo({ url: '/pages/register/register' });
+  },
+  onGoLogin() {
+    wx.navigateTo({ url: '/pages/login/login' });
   },
   async loadTasks() {
     this.setData({ loading: true });

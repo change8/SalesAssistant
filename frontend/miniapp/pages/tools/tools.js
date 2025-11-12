@@ -22,10 +22,6 @@ Page({
     costingResult: ''
   },
   onShow() {
-    if (!getToken()) {
-      wx.navigateTo({ url: '/pages/login/login' });
-      return;
-    }
     wx.setNavigationBarTitle({ title: '工具中心' });
   },
   onSelectTool(e) {
@@ -33,6 +29,20 @@ Page({
     this.setData({ activeTool: tool });
   },
   async onPickBiddingFile() {
+    if (!getToken()) {
+      wx.showModal({
+        title: '需要登录',
+        content: '注册后可使用异步任务功能，提交任务后无需等待，可退出小程序稍后查看',
+        confirmText: '去注册',
+        cancelText: '取消',
+        success: (res) => {
+          if (res.confirm) {
+            wx.navigateTo({ url: '/pages/register/register' });
+          }
+        }
+      });
+      return;
+    }
     try {
       const res = await wx.chooseMessageFile({ count: 1, type: 'file' });
       if (!res.tempFiles?.length) return;
@@ -125,6 +135,20 @@ Page({
     });
   },
   async onPickWorkloadFile() {
+    if (!getToken()) {
+      wx.showModal({
+        title: '需要登录',
+        content: '注册后可使用异步任务功能，提交任务后无需等待，可退出小程序稍后查看',
+        confirmText: '去注册',
+        cancelText: '取消',
+        success: (res) => {
+          if (res.confirm) {
+            wx.navigateTo({ url: '/pages/register/register' });
+          }
+        }
+      });
+      return;
+    }
     try {
       const res = await wx.chooseMessageFile({ count: 1, type: 'file' });
       if (!res.tempFiles?.length) return;
@@ -181,6 +205,20 @@ Page({
     });
   },
   async onPickCostingFile() {
+    if (!getToken()) {
+      wx.showModal({
+        title: '需要登录',
+        content: '注册后可使用异步任务功能，提交任务后无需等待，可退出小程序稍后查看',
+        confirmText: '去注册',
+        cancelText: '取消',
+        success: (res) => {
+          if (res.confirm) {
+            wx.navigateTo({ url: '/pages/register/register' });
+          }
+        }
+      });
+      return;
+    }
     try {
       const res = await wx.chooseMessageFile({ count: 1, type: 'file' });
       if (!res.tempFiles?.length) return;

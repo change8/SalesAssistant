@@ -1,12 +1,26 @@
-<view class="task-header">
-  <view class="mode-switch">
-    <view class="mode-item {{viewMode==='active'?'active':''}}" data-mode="active" bindtap="onSwitchMode">进行中</view>
-    <view class="mode-item {{viewMode==='history'?'active':''}}" data-mode="history" bindtap="onSwitchMode">历史任务</view>
+<!-- 未登录提示 -->
+<view wx:if="{{!isLoggedIn}}" class="login-prompt">
+  <view class="prompt-icon">📋</view>
+  <view class="prompt-title">任务清单功能</view>
+  <view class="prompt-desc">注册后可使用异步任务清单功能</view>
+  <view class="prompt-desc">提交任务后无需等待，可退出小程序稍后查看</view>
+  <view class="prompt-actions">
+    <button class="btn-primary" bindtap="onGoRegister">立即注册</button>
+    <button class="btn-secondary" bindtap="onGoLogin">已有账号，去登录</button>
   </view>
-  <button class="refresh-btn" size="mini" bindtap="onRefresh" loading="{{loading}}">刷新</button>
 </view>
 
-<view class="task-list">
+<!-- 已登录内容 -->
+<view wx:else>
+  <view class="task-header">
+    <view class="mode-switch">
+      <view class="mode-item {{viewMode==='active'?'active':''}}" data-mode="active" bindtap="onSwitchMode">进行中</view>
+      <view class="mode-item {{viewMode==='history'?'active':''}}" data-mode="history" bindtap="onSwitchMode">历史任务</view>
+    </view>
+    <button class="refresh-btn" size="mini" bindtap="onRefresh" loading="{{loading}}">刷新</button>
+  </view>
+
+  <view class="task-list">
   <block wx:if="{{viewMode==='active'}}">
     <block wx:if="{{activeList.length}}">
       <block wx:for="{{activeList}}" wx:key="id">
@@ -38,4 +52,5 @@
       <view class="empty">暂无历史任务</view>
     </block>
   </block>
+  </view>
 </view>

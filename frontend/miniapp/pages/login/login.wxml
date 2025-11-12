@@ -1,9 +1,13 @@
 <view class="card">
-  <view class="section-title">微信一键登录</view>
-  <view class="desc">授权手机号即可使用全部工具，无需手动注册。</view>
-  <button class="btn" open-type="getRealtimePhoneNumber" loading="{{loading}}"
-          bindgetrealtimephonenumber="onGetPhoneNumber">授权手机号并登录</button>
+  <view class="section-title">账号登录</view>
+  <view class="form-group">
+    <input class="input" type="number" placeholder="请输入手机号" maxlength="11" value="{{phone}}" bindinput="onPhoneInput" />
+  </view>
+  <view class="form-group">
+    <input class="input" type="password" placeholder="请输入密码" value="{{password}}" bindinput="onPasswordInput" />
+  </view>
+  <button class="btn" loading="{{loading}}" bindtap="onLogin">登录</button>
   <view class="helper">
-    <text>点击即表示同意《隐私政策》，手机号仅用于任务通知。</text>
+    <text bindtap="onGoRegister" class="link">还没有账号？立即注册</text>
   </view>
 </view>
