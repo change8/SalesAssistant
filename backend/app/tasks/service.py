@@ -47,7 +47,7 @@ class TaskService:
             payload=payload,
             status=TaskStatus.PENDING,
             max_retries=max_retries,
-            metadata=metadata or {},
+            task_metadata=metadata or {},
         )
         self.db.add(task)
         self.db.commit()
@@ -149,9 +149,9 @@ class TaskService:
             task.result = result
 
         if metadata_update:
-            merged_metadata = task.metadata.copy()
+            merged_metadata = task.task_metadata.copy()
             merged_metadata.update(metadata_update)
-            task.metadata = merged_metadata
+            task.task_metadata = merged_metadata
 
         self.db.commit()
         self.db.refresh(task)

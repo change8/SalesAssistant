@@ -72,7 +72,7 @@ class Task(TimestampMixin, Base):
     error: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Metadata for debugging and monitoring
-    metadata: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
+    task_metadata: Mapped[Dict[str, Any]] = mapped_column(JSON, nullable=False, default=dict)
 
     def __repr__(self) -> str:
         return f"<Task(id={self.id}, type={self.task_type}, status={self.status}, user_id={self.user_id})>"
