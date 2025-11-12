@@ -181,7 +181,7 @@ function initTabs() {
   });
 
   const activeButton = document.querySelector('.tab-btn.active');
-  const initialTarget = activeButton ? activeButton.dataset.target : 'tender-tab';
+  const initialTarget = activeButton ? activeButton.dataset.target : 'bid-tab';
   setActiveTab(initialTarget);
 }
 
@@ -231,11 +231,11 @@ function renderResult(target, data) {
 function formatTaskType(type) {
   switch (type) {
     case 'bidding_analysis':
-      return '标书分析';
+      return '标书得分估算';
     case 'workload_analysis':
       return '工时拆分';
     case 'costing_estimate':
-      return '成本预估';
+      return '快速报价';
     default:
       return type || '任务';
   }
