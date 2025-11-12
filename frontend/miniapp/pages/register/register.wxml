@@ -16,4 +16,7 @@
          bindinput="onInput" data-field="confirmPassword" value="{{confirmPassword}}" />
 
   <button class="btn" loading="{{loading}}" bindtap="onSubmit">注册</button>
+  <view class="helper">
+    <text bindtap="onGoLogin" class="link">已有账号？去登录</text>
+  </view>
 </view>

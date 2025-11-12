@@ -57,5 +57,8 @@ Page({
     } finally {
       this.setData({ loading: false });
     }
+  },
+  onGoLogin() {
+    wx.navigateTo({ url: '/pages/login/login' });
   }
 });

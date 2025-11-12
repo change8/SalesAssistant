@@ -1,25 +1,40 @@
-<view class="profile-card card">
-  <view class="section-title">账户信息</view>
-  <view class="profile-row">
-    <text class="label">用户名</text>
-    <text>{{user ? (user.full_name || '未填写') : '加载中'}}</text>
+<!-- 未登录状态 -->
+<view wx:if="{{!isLoggedIn}}" class="guest-prompt">
+  <view class="prompt-icon">👤</view>
+  <view class="prompt-title">欢迎使用销售助手</view>
+  <view class="prompt-desc">注册登录后可使用完整功能</view>
+  <view class="prompt-actions">
+    <button class="btn-primary" bindtap="onGoRegister">立即注册</button>
+    <button class="btn-secondary" bindtap="onGoLogin">已有账号，去登录</button>
   </view>
-  <view class="profile-row">
-    <text class="label">手机号</text>
-    <text>{{user ? user.phone : '--'}}</text>
-  </view>
+  <view class="guest-tip">游客模式下可以体验工具功能</view>
 </view>
 
-<view class="card action-card">
-  <view class="section-title">常用操作</view>
-  <view class="action-item" bindtap="onNavigateChangePassword">
-    <text>修改密码</text>
-    <text class="arrow">›</text>
+<!-- 已登录状态 -->
+<view wx:else>
+  <view class="profile-card card">
+    <view class="section-title">账户信息</view>
+    <view class="profile-row">
+      <text class="label">用户名</text>
+      <text>{{user ? (user.full_name || '未填写') : '加载中'}}</text>
+    </view>
+    <view class="profile-row">
+      <text class="label">手机号</text>
+      <text>{{user ? user.phone : '--'}}</text>
+    </view>
   </view>
-  <view class="action-item" bindtap="onNavigateAbout">
-    <text>关于</text>
-    <text class="arrow">›</text>
-  </view>
-</view>
 
-<button class="btn logout-btn" bindtap="onLogout">退出登录</button>
+  <view class="card action-card">
+    <view class="section-title">常用操作</view>
+    <view class="action-item" bindtap="onNavigateChangePassword">
+      <text>修改密码</text>
+      <text class="arrow">›</text>
+    </view>
+    <view class="action-item" bindtap="onNavigateAbout">
+      <text>关于</text>
+      <text class="arrow">›</text>
+    </view>
+  </view>
+
+  <button class="btn logout-btn" bindtap="onLogout">退出登录</button>
+</view>

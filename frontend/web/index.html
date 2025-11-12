@@ -1,192 +1,410 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>销售助手统一平台</title>
-    <link rel="stylesheet" href="./styles.css" />
-  </head>
-  <body>
-    <div class="container">
-      <header class="page-header">
-        <h1>销售助手统一平台</h1>
-        <p>投标分析 · 工时拆分 · 成本预估，一站式服务。</p>
-      </header>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>省点儿 - 投标省点儿时间，报价快点儿出手</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#4F46E5',
+            secondary: '#06B6D4',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+    .gradient-bg { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    .card-hover { transition: all 0.3s ease; }
+    .card-hover:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); }
 
-      <section id="auth-section" class="card">
-        <h2>账号登录</h2>
-        <form id="login-form" class="form-grid">
-          <label>
-            手机号
-            <input type="tel" id="login-phone" name="phone" placeholder="请输入 11 位手机号" autocomplete="tel" required />
-          </label>
-          <label>
-            密码
-            <input type="password" id="login-password" name="password" placeholder="请输入密码" autocomplete="current-password" maxlength="64" required />
-          </label>
-          <button type="submit">登录</button>
-        </form>
-        <div class="auth-footer">
-          <span id="auth-message" class="info"></span>
-          <div class="auth-links">
-            <a class="link-btn" href="register.html">没有账号？去注册</a>
-            <a class="link-btn" href="forgot.html">忘记密码</a>
-          </div>
-        </div>
-      </section>
+    /* Task list styles */
+    .task-item {
+      padding: 12px 16px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: white;
+    }
+    .task-item:hover { background: #f9fafb; border-color: #4f46e5; }
+    .task-item.active { background: #eef2ff; border-color: #4f46e5; }
+    .task-title { font-weight: 600; color: #1f2937; margin-bottom: 8px; }
+    .task-meta { display: flex; flex-wrap: wrap; gap: 12px; font-size: 12px; color: #6b7280; }
+    .task-status {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+      font-size: 11px;
+    }
+    .task-status.pending { background: #fef3c7; color: #92400e; }
+    .task-status.running { background: #dbeafe; color: #1e40af; }
+    .task-status.succeeded { background: #d1fae5; color: #065f46; }
+    .task-status.failed { background: #fee2e2; color: #991b1b; }
+    .muted { color: #9ca3af; }
+    .info { color: #6366f1; }
+    .success { color: #10b981; }
+    .error { color: #ef4444; }
+    .task-created {
+      background: #eff6ff;
+      border: 1px solid #3b82f6;
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .task-created strong { color: #1e40af; font-size: 16px; }
+    .task-created span { color: #374151; }
+    .link-btn {
+      color: #4f46e5;
+      text-decoration: underline;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 14px;
+    }
+    .link-btn:hover { color: #4338ca; }
+  </style>
+</head>
+<body class="bg-gray-50">
 
-      <section id="app-section" class="hidden">
-        <div class="topbar card">
+  <!-- 登录界面 -->
+  <div id="auth-section" class="min-h-screen gradient-bg flex items-center justify-center px-4 py-12">
+    <div class="max-w-md w-full">
+      <!-- Logo 和标题 -->
+      <div class="text-center mb-8">
+        <h1 class="text-5xl font-bold text-white mb-3">省点儿</h1>
+        <p class="text-xl text-indigo-100">投标省点儿时间，报价快点儿出手</p>
+        <p class="text-sm text-indigo-200 mt-2">标书得分估算 · ITO工时拆分 · FP快速报价</p>
+      </div>
+
+      <!-- 登录卡片 -->
+      <div class="bg-white rounded-2xl shadow-2xl p-8">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">账号登录</h2>
+
+        <form id="login-form" class="space-y-5">
           <div>
-            <span id="user-info"></span>
-            <button id="logout-btn" class="link-btn">退出登录</button>
+            <label class="block text-sm font-medium text-gray-700 mb-2">手机号</label>
+            <input
+              type="tel"
+              id="login-phone"
+              placeholder="请输入11位手机号"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+              required
+            />
           </div>
-          <nav class="tabs">
-            <button class="tab-btn active" data-target="tender-tab">投标助手</button>
-            <button class="tab-btn" data-target="workload-tab">工时拆分</button>
-            <button class="tab-btn" data-target="costing-tab">成本预估</button>
-            <button class="tab-btn" data-target="tasks-tab">任务中心</button>
-          </nav>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">密码</label>
+            <input
+              type="password"
+              id="login-password"
+              placeholder="请输入密码"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-3 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition duration-200 shadow-lg"
+          >
+            登录
+          </button>
+        </form>
+
+        <div id="auth-message" class="mt-4 text-sm text-center"></div>
+
+        <div class="mt-6 flex items-center justify-between text-sm">
+          <a href="register.html" class="text-indigo-600 hover:text-indigo-700 font-medium">还没有账号？去注册</a>
+          <a href="forgot.html" class="text-gray-600 hover:text-gray-700">忘记密码</a>
         </div>
+      </div>
 
-        <div id="tender-tab" class="tab-panel card">
-          <h2>投标助手</h2>
-          <div class="bidding-assistant">
-            <div class="layout">
-              <section class="panel intake">
-                <div class="panel-header">
-                  <h3>上传标书</h3>
-                  <p>支持 PDF / Word / TXT，推荐文件小于 30MB，可选粘贴文本辅助分析。</p>
-                </div>
-                <div class="upload-card">
-                  <input type="file" id="fileInput" accept=".pdf,.docx,.txt,.text,.md" />
-                  <label for="fileInput" class="upload-btn">选择文件</label>
-                  <p id="fileName" class="file-name">尚未选择文件</p>
-                  <small>提示：上传后会自动生成分析任务，可在右侧查看模型输出。</small>
-                </div>
+      <p class="text-center text-indigo-100 text-sm mt-6">轻量工具 · 快速上手 · 省时省心</p>
+    </div>
+  </div>
 
-                <details class="text-toggle">
-                  <summary>或粘贴招标文本（辅助方式）</summary>
-                  <textarea id="textInput" placeholder="直接粘贴正文，用于快速测试或补充说明"></textarea>
-                </details>
+  <!-- 主应用界面 -->
+  <div id="app-section" class="hidden min-h-screen bg-gray-50">
 
-                <div class="actions">
-                  <button id="analyzeBtn">开始分析</button>
-                  <button id="clearBtn" class="secondary">清空</button>
-                </div>
+    <!-- 顶部导航栏 -->
+    <nav class="bg-white shadow-sm sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+          <div class="flex items-center space-x-3">
+            <h1 class="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">省点儿</h1>
+            <span class="hidden sm:inline text-sm text-gray-500">投标省时工具</span>
+          </div>
 
-                <div id="progress" class="progress hidden">
-                  <span class="spinner"></span>
-                  <span id="progressText">处理中...</span>
-                </div>
-                <div id="status" class="status hidden"></div>
-              </section>
+          <div class="flex items-center space-x-4">
+            <span id="user-info" class="text-sm text-gray-700 font-medium"></span>
+            <button id="logout-btn" class="text-sm text-gray-600 hover:text-gray-900 px-4 py-2 rounded-lg hover:bg-gray-100 transition">退出登录</button>
+          </div>
+        </div>
+      </div>
+    </nav>
 
-              <section class="panel results-panel">
-                <h3>分析结果</h3>
-                <div id="summary" class="summary"></div>
-                <div id="results" class="results"></div>
-              </section>
+    <!-- 工具导航标签 -->
+    <div class="bg-white border-b">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex space-x-8 overflow-x-auto">
+          <button class="tab-btn active py-4 px-2 border-b-2 border-indigo-600 text-indigo-600 font-medium whitespace-nowrap" data-target="bid-tab">
+            📊 标书得分估算
+          </button>
+          <button class="tab-btn py-4 px-2 border-b-2 border-transparent text-gray-600 hover:text-gray-900 font-medium whitespace-nowrap" data-target="workload-tab">
+            ⏱️ 工时拆分（ITO）
+          </button>
+          <button class="tab-btn py-4 px-2 border-b-2 border-transparent text-gray-600 hover:text-gray-900 font-medium whitespace-nowrap" data-target="costing-tab">
+            💰 快速报价（FP）
+          </button>
+          <button class="tab-btn py-4 px-2 border-b-2 border-transparent text-gray-600 hover:text-gray-900 font-medium whitespace-nowrap" data-target="tasks-tab">
+            📋 任务中心
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 主内容区域 -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+      <!-- 标书得分估算 -->
+      <div id="bid-tab" class="tab-panel">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          <!-- 左侧：上传区 -->
+          <div class="bg-white rounded-xl shadow-sm p-6 card-hover">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">📤 上传标书文件</h2>
+            <p class="text-sm text-gray-600 mb-6">支持 PDF、Word、TXT 格式，文件不超过 30MB</p>
+
+            <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-indigo-400 transition">
+              <input type="file" id="fileInput" accept=".pdf,.docx,.txt,.text,.md" class="hidden" />
+              <label for="fileInput" class="cursor-pointer">
+                <div class="text-4xl mb-3">📄</div>
+                <p class="text-sm text-gray-600 mb-2">点击选择文件或拖拽到此处</p>
+                <p id="fileName" class="text-xs text-gray-500">尚未选择文件</p>
+              </label>
             </div>
 
-            <div id="snippetModal" class="modal hidden">
-              <div class="modal-dialog">
-                <header class="modal-header">
-                  <h3 id="modalTitle">原文片段</h3>
-                  <button id="modalClose" type="button" aria-label="关闭">×</button>
-                </header>
-                <div class="modal-body">
-                  <div class="modal-meta" id="modalMeta"></div>
-                  <pre id="modalContext"></pre>
+            <details class="mt-4">
+              <summary class="cursor-pointer text-sm text-gray-600 hover:text-gray-800 mb-2">或粘贴招标文本（辅助）</summary>
+              <textarea
+                id="textInput"
+                placeholder="粘贴标书正文内容..."
+                rows="4"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent mt-2"
+              ></textarea>
+            </details>
+
+            <div class="flex gap-3 mt-6">
+              <button id="analyzeBtn" class="flex-1 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold py-3 rounded-lg hover:from-indigo-700 hover:to-purple-700 transition shadow-md">
+                开始分析
+              </button>
+              <button id="clearBtn" class="px-6 bg-gray-100 text-gray-700 font-medium py-3 rounded-lg hover:bg-gray-200 transition">
+                清空
+              </button>
+            </div>
+
+            <div id="progress" class="hidden mt-4 flex items-center justify-center space-x-3 text-indigo-600">
+              <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span id="progressText">处理中...</span>
+            </div>
+            <div id="status" class="hidden mt-4"></div>
+          </div>
+
+          <!-- 右侧：结果展示 -->
+          <div class="bg-white rounded-xl shadow-sm p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">📈 分析结果</h2>
+            <div id="summary" class="mb-4"></div>
+            <div id="results" class="space-y-4"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 工时拆分（ITO） -->
+      <div id="workload-tab" class="tab-panel hidden">
+        <div class="bg-white rounded-xl shadow-sm p-6 max-w-2xl mx-auto">
+          <h2 class="text-xl font-bold text-gray-800 mb-4">⏱️ 工时拆分（ITO项目）</h2>
+          <p class="text-sm text-gray-600 mb-6">上传功能清单Excel，自动分配各角色工时</p>
+
+          <form id="workload-form" class="space-y-5">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Excel 功能清单</label>
+              <input
+                type="file"
+                id="workload-file"
+                accept=".xlsx,.xls"
+                class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                required
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">分配策略</label>
+              <select id="workload-strategy" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500">
+                <option value="balanced">均衡分配</option>
+                <option value="conservative">保守分配</option>
+                <option value="aggressive">激进分配</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">全局人月上限（可选）</label>
+              <input
+                type="number"
+                id="workload-limit"
+                step="0.1"
+                min="0"
+                placeholder="默认取 Excel 合计"
+                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            <button type="submit" class="w-full bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-semibold py-3 rounded-lg hover:from-cyan-700 hover:to-blue-700 transition shadow-md">
+              开始拆分
+            </button>
+          </form>
+
+          <div id="workload-result" class="mt-6"></div>
+        </div>
+      </div>
+
+      <!-- 快速报价（FP） -->
+      <div id="costing-tab" class="tab-panel hidden">
+        <div class="bg-white rounded-xl shadow-sm p-6 max-w-3xl mx-auto">
+          <h2 class="text-xl font-bold text-gray-800 mb-4">💰 快速报价（FP项目）</h2>
+          <p class="text-sm text-gray-600 mb-6">上传功能清单Excel，配置费率，快速计算成本</p>
+
+          <form id="costing-form" class="space-y-5">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-2">Excel 功能清单</label>
+              <input
+                type="file"
+                id="costing-file"
+                accept=".xlsx,.xls"
+                class="block w-full text-sm text-gray-600 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                required
+              />
+            </div>
+
+            <div>
+              <h3 class="font-semibold text-gray-800 mb-3">角色人月费率（元）</h3>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs text-gray-600 mb-1">架构师</label>
+                  <input type="number" step="100" id="rate-architect" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" />
                 </div>
+                <div>
+                  <label class="block text-xs text-gray-600 mb-1">项目经理</label>
+                  <input type="number" step="100" id="rate-project_manager" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" />
+                </div>
+                <div>
+                  <label class="block text-xs text-gray-600 mb-1">产品设计</label>
+                  <input type="number" step="100" id="rate-product_design" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" />
+                </div>
+                <div>
+                  <label class="block text-xs text-gray-600 mb-1">后端开发</label>
+                  <input type="number" step="100" id="rate-backend_dev" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" />
+                </div>
+                <div>
+                  <label class="block text-xs text-gray-600 mb-1">前端开发</label>
+                  <input type="number" step="100" id="rate-frontend_dev" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" />
+                </div>
+                <div>
+                  <label class="block text-xs text-gray-600 mb-1">测试</label>
+                  <input type="number" step="100" id="rate-qa" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" />
+                </div>
+                <div>
+                  <label class="block text-xs text-gray-600 mb-1">实施</label>
+                  <input type="number" step="100" id="rate-implementation" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" />
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">架构师人月系数</label>
+                <input type="number" step="0.01" id="ratio-architect" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">项目经理人月系数</label>
+                <input type="number" step="0.01" id="ratio-project_manager" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500" />
+              </div>
+            </div>
+
+            <button type="submit" class="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold py-3 rounded-lg hover:from-green-700 hover:to-emerald-700 transition shadow-md">
+              计算成本
+            </button>
+          </form>
+
+          <div id="costing-result" class="mt-6"></div>
+        </div>
+      </div>
+
+      <!-- 任务中心 -->
+      <div id="tasks-tab" class="tab-panel hidden">
+        <div class="bg-white rounded-xl shadow-sm p-6">
+          <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold text-gray-800">📋 任务中心</h2>
+            <div class="flex items-center space-x-3">
+              <select id="task-filter" class="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500">
+                <option value="all">全部任务</option>
+                <option value="bidding_analysis">标书得分估算</option>
+                <option value="workload_analysis">工时拆分</option>
+                <option value="costing_estimate">快速报价</option>
+              </select>
+              <button id="task-refresh-btn" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition text-sm font-medium">
+                刷新
+              </button>
+              <button id="task-toggle-history" data-mode="history" class="px-4 py-2 bg-indigo-50 text-indigo-700 rounded-lg hover:bg-indigo-100 transition text-sm font-medium">
+                查看历史
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-1">
+              <div id="task-list" class="space-y-2 max-h-96 overflow-y-auto"></div>
+            </div>
+            <div class="lg:col-span-2">
+              <div id="task-detail" class="bg-gray-50 rounded-lg p-6">
+                <p class="text-gray-500 text-center">选择任务以查看详情</p>
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-        <div id="workload-tab" class="tab-panel card hidden">
-          <h2>工时拆分</h2>
-          <form id="workload-form" class="form-grid">
-            <label>
-              Excel 功能清单
-              <input type="file" id="workload-file" accept=".xlsx,.xls" required />
-            </label>
-            <label>
-              分配策略
-              <select id="workload-strategy">
-                <option value="balanced">均衡</option>
-                <option value="conservative">保守</option>
-                <option value="aggressive">激进</option>
-              </select>
-            </label>
-            <label>
-              全局人月上限（可选）
-              <input type="number" id="workload-limit" step="0.1" min="0" placeholder="默认取 Excel 合计" />
-            </label>
-            <button type="submit">开始拆分</button>
-          </form>
-          <div id="workload-result" class="result-box"></div>
-        </div>
-
-        <div id="costing-tab" class="tab-panel card hidden">
-          <h2>成本预估</h2>
-          <form id="costing-form" class="form-grid">
-            <label>
-              Excel 功能清单
-              <input type="file" id="costing-file" accept=".xlsx,.xls" required />
-            </label>
-            <div class="rates-grid">
-              <h3>角色人月费率（元）</h3>
-              <label>架构师 <input type="number" step="100" id="rate-architect" /></label>
-              <label>项目经理 <input type="number" step="100" id="rate-project_manager" /></label>
-              <label>产品设计 <input type="number" step="100" id="rate-product_design" /></label>
-              <label>后端开发 <input type="number" step="100" id="rate-backend_dev" /></label>
-              <label>前端开发 <input type="number" step="100" id="rate-frontend_dev" /></label>
-              <label>测试 <input type="number" step="100" id="rate-qa" /></label>
-              <label>实施 <input type="number" step="100" id="rate-implementation" /></label>
-            </div>
-            <div class="ratio-grid">
-              <label>
-                架构师人月系数（相对技术人月）
-                <input type="number" step="0.01" id="ratio-architect" />
-              </label>
-              <label>
-                项目经理人月系数（相对总人月）
-                <input type="number" step="0.01" id="ratio-project_manager" />
-              </label>
-            </div>
-            <button type="submit">计算成本</button>
-          </form>
-          <div id="costing-result" class="result-box"></div>
-        </div>
-
-        <div id="tasks-tab" class="tab-panel card hidden">
-          <h2>任务中心</h2>
-          <div class="task-toolbar">
-            <label>
-              任务分类
-              <select id="task-filter">
-                <option value="all">全部任务</option>
-                <option value="bidding_analysis">标书分析</option>
-                <option value="workload_analysis">工时拆分</option>
-                <option value="costing_estimate">成本预估</option>
-              </select>
-            </label>
-            <div class="task-actions">
-              <button id="task-refresh-btn" type="button">刷新</button>
-              <button id="task-toggle-history" type="button" data-mode="history">查看历史任务</button>
-            </div>
-          </div>
-          <div class="task-layout">
-            <div class="task-list" id="task-list"></div>
-            <div class="task-detail" id="task-detail">
-              <p class="muted">选择任务以查看详情</p>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
-    <script type="module" src="./app.js"></script>
-      <script src="./bidding/main.js" defer></script>
-  </body>
+  </div>
+
+  <!-- Modal -->
+  <div id="snippetModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[80vh] overflow-hidden">
+      <div class="flex items-center justify-between p-6 border-b">
+        <h3 id="modalTitle" class="text-xl font-bold text-gray-800">原文片段</h3>
+        <button id="modalClose" class="text-gray-400 hover:text-gray-600 text-2xl font-bold">&times;</button>
+      </div>
+      <div class="p-6 overflow-y-auto max-h-[60vh]">
+        <div id="modalMeta" class="mb-4 text-sm text-gray-600"></div>
+        <pre id="modalContext" class="bg-gray-50 p-4 rounded-lg text-sm whitespace-pre-wrap"></pre>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./app.js"></script>
+  <script src="./bidding/main.js" defer></script>
+</body>
 </html>
