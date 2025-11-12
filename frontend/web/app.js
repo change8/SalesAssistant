@@ -1,4 +1,4 @@
-const API_BASE = '';
+const API_BASE = '/api';
 const TOKEN_STORAGE_KEY = 'sa_auth_token';
 const DEFAULT_COST_RATES = {
   architect: 18000,
