@@ -21,7 +21,7 @@ def init_db() -> None:
     """Create database tables."""
 
     from backend.app.auth import models as auth_models  # noqa: F401  # Ensure models are imported
-    from backend.app.modules.tasks import models as task_models  # noqa: F401
+    from backend.app.tasks import models as task_models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
     _ensure_user_columns()
