@@ -26,7 +26,7 @@ echo "[update] 2/4 - Upgrading Python dependencies..."
   echo "[update] virtual environment not found at ${APP_ROOT}/.venv. Run deploy.sh first." >&2
   exit 1
 }
-"${APP_ROOT}/.venv/bin/pip" install --upgrade -r "${APP_DIR}/backend/requirements.txt"
+"${APP_ROOT}/.venv/bin/pip" install --no-cache-dir --upgrade -r "${APP_DIR}/backend/requirements.txt"
 
 echo "[update] 3/4 - Running database migrations (if any skipped) ... (SQLite auto) "
 
