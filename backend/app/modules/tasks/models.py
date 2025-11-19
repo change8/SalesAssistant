@@ -12,7 +12,7 @@ from backend.app.common.models import TimestampMixin
 from backend.app.core.database import Base
 
 
-class Task(TimestampMixin, Base):
+class TaskOld(TimestampMixin, Base):
     """Unified task record persisted for bidding / workload / costing flows."""
 
     __tablename__ = "tasks_old"
@@ -28,4 +28,4 @@ class Task(TimestampMixin, Base):
     started_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     finished_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    owner = relationship("User", backref="tasks")
+    owner = relationship("User", backref="tasks_old")

@@ -10,7 +10,7 @@ from sqlalchemy import Select, select
 from sqlalchemy.orm import Session
 
 from . import schemas
-from .models import Task
+from .models import TaskOld as Task
 
 
 class TaskNotFoundError(RuntimeError):
