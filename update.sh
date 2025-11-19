@@ -15,8 +15,11 @@ APP_ROOT=${APP_ROOT:-/opt/sales-assistant}
 APP_DIR="${APP_ROOT}/app"
 SYSTEMD_SERVICE=${SYSTEMD_SERVICE:-sales-assistant}
 
-echo "[update] 1/4 - Pulling latest code..."
-sudo -u "${APP_USER}" git -C "${APP_DIR}" pull --ff-only
+echo "[update] 1/4 - Syncing code (reset to origin/main)..."
+# Fetch latest changes
+sudo -u "${APP_USER}" git -C "${APP_DIR}" fetch origin
+# Force reset to match remote (discards local changes)
+sudo -u "${APP_USER}" git -C "${APP_DIR}" reset --hard origin/main
 
 echo "[update] 2/4 - Upgrading Python dependencies..."
 "${APP_ROOT}/.venv/bin/python" -V >/dev/null 2>&1 || {

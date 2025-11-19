@@ -6,12 +6,12 @@ import base64
 import logging
 from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from backend.app.auth.models import User
-from backend.app.core.dependencies import get_current_active_user, get_db
+from backend.app.core.dependencies import get_current_user, get_db
 from backend.app.tasks.models import Task, TaskStatus, TaskType
 from backend.app.tasks.service import TaskService
 
@@ -75,7 +75,7 @@ class TaskStatsResponse(BaseModel):
 def create_task(
     request: TaskCreateRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_user),
 ) -> Task:
     """Create a new async task.
 
@@ -103,7 +103,7 @@ def create_bidding_text_task(
     text: str = Form(...),
     max_retries: int = Form(default=3),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_user),
 ) -> Task:
     """Create a bidding analysis task from text input."""
     task_service = TaskService(db)
@@ -127,7 +127,7 @@ async def create_bidding_file_task(
     file: UploadFile = File(...),
     max_retries: int = Form(default=3),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_user),
 ) -> Task:
     """Create a bidding analysis task from file upload."""
     task_service = TaskService(db)
@@ -163,7 +163,7 @@ def list_tasks(
     limit: int = 100,
     offset: int = 0,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_user),
 ) -> TaskListResponse:
     """List tasks for the current user with optional filters."""
     task_service = TaskService(db)
@@ -182,7 +182,7 @@ def list_tasks(
 @router.get("/stats", response_model=TaskStatsResponse)
 def get_task_stats(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_user),
 ) -> TaskStatsResponse:
     """Get task statistics for the current user."""
     task_service = TaskService(db)
@@ -194,7 +194,7 @@ def get_task_stats(
 def get_task(
     task_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_user),
 ) -> Task:
     """Get task details by ID.
 
@@ -212,11 +212,11 @@ def get_task(
     return task
 
 
-@router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{task_id}")
 def cancel_task(
     task_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
+    current_user: User = Depends(get_current_user),
 ) -> None:
     """Cancel a pending or running task.
 
@@ -232,3 +232,4 @@ def cancel_task(
         )
 
     logger.info(f"Cancelled task {task_id} by user {current_user.id}")
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

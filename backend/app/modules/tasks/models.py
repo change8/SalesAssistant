@@ -15,7 +15,7 @@ from backend.app.core.database import Base
 class Task(TimestampMixin, Base):
     """Unified task record persisted for bidding / workload / costing flows."""
 
-    __tablename__ = "tasks"
+    __tablename__ = "tasks_old"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     owner_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False)

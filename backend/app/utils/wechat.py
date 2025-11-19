@@ -8,7 +8,10 @@ from dataclasses import dataclass
 from typing import Any, Dict
 
 import httpx
-from Crypto.Cipher import AES  # type: ignore
+try:
+    from Crypto.Cipher import AES
+except ImportError:
+    from Cryptodome.Cipher import AES
 
 
 class WechatAPIError(Exception):
