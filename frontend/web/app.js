@@ -42,40 +42,25 @@ function handleBiddingUpload(input) {
     const originalContent = uploadArea.innerHTML;
     uploadArea.innerHTML = '<h3 class="text-h3">正在分析标书...</h3><p class="text-sm">AI 正在提取关键信息，请稍候</p>';
 
-    // Simulate API call delay
-    setTimeout(() => {
-      // TODO: Replace with actual API call
-      // const formData = new FormData();
-      // formData.append('file', file);
-      // apiCall('/bidding/analyze', 'POST', formData).then(data => renderBiddingResult(data));
+    // Real API Call
+    const formData = new FormData();
+    formData.append('file', file);
 
-      // Mock Data for Demo
-      const mockData = {
-        totalScore: 90,
-        businessScore: 40,
-        techScore: 50,
-        disqualifiers: [
-          "等保三级证书：不满足（需提供原件扫描件）",
-          "近三年无重大违法记录声明：缺失"
-        ],
-        timeline: [
-          { date: "2025-11-20", event: "标书购买截止" },
-          { date: "2025-11-24", event: "投标保证金缴纳 (3000元)" },
-          { date: "2025-11-28", event: "投标截止 / 开标" }
-        ],
-        suggestions: [
-          "运营要求超过 1 年，需确认团队稳定性",
-          "无首付款，需评估资金占用成本",
-          "需现场述标，提前安排差旅"
-        ]
-      };
-
-      renderBiddingResult(mockData);
-
-      // Reset upload area for next time
-      uploadArea.innerHTML = originalContent;
-      input.value = ''; // Clear input
-    }, 2000);
+    apiCall('/bidding_v2/analyze', 'POST', formData)
+      .then(data => {
+        renderBiddingResult(data);
+        // Reset upload area
+        uploadArea.innerHTML = originalContent;
+        input.value = '';
+      })
+      .catch(err => {
+        console.error(err);
+        uploadArea.innerHTML = `<h3 class="text-h3" style="color:red">分析失败</h3><p class="text-sm">${err.message}</p>`;
+        setTimeout(() => {
+          uploadArea.innerHTML = originalContent;
+          input.value = '';
+        }, 3000);
+      });
   }
 }
 
@@ -101,6 +86,10 @@ function renderBiddingResult(data) {
             <div class="text-body">${item.event}</div>
         </div>
     `).join('');
+
+  // Score Details
+  const details = document.getElementById('score-details');
+  details.innerHTML = `<pre style="white-space: pre-wrap; font-family: inherit; color: var(--color-text-secondary);">${data.scoreDetails || '暂无详细数据'}</pre>`;
 
   // Suggestions
   const sgList = document.getElementById('suggestionList');

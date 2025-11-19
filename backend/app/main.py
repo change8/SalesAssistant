@@ -37,6 +37,9 @@ def create_app() -> FastAPI:
     app.mount(f"{api_prefix}/bidding", bidding_subapp)
     app.include_router(workload_router, prefix=f"{api_prefix}/workload")
     app.include_router(costing_router, prefix=f"{api_prefix}/costing")
+    
+    from backend.app.modules.bidding_v2.router import router as bidding_v2_router
+    app.include_router(bidding_v2_router, prefix=f"{api_prefix}")
 
     frontend_dir = Path(__file__).resolve().parent.parent.parent / "frontend" / "web"
     if frontend_dir.exists():
