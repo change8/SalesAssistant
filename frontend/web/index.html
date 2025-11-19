@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>控制台 - Sales Assistant</title>
+  <title>省点事 (SaveTime) - 销售效率工具</title>
   <link rel="stylesheet" href="styles.css">
   <style>
     /* Layout Specific Styles */
@@ -35,7 +35,8 @@
     .logo-icon {
       width: 32px;
       height: 32px;
-      background: linear-gradient(135deg, var(--color-primary), #00C6FB);
+      background: linear-gradient(135deg, #FF9F0A, #FF3B30);
+      /* Warm colors for "SaveTime" */
       border-radius: var(--radius-md);
       display: flex;
       align-items: center;
@@ -69,8 +70,9 @@
     }
 
     .nav-item.active {
-      background: rgba(0, 102, 204, 0.1);
-      color: var(--color-primary);
+      background: rgba(255, 159, 10, 0.1);
+      /* Orange tint */
+      color: #FF9F0A;
     }
 
     .user-profile {
@@ -133,10 +135,11 @@
       border-radius: var(--radius-lg);
       border: 1px solid var(--color-border-light);
       transition: var(--transition-base);
+      cursor: pointer;
     }
 
     .task-item:hover {
-      border-color: var(--color-primary);
+      border-color: #FF9F0A;
       box-shadow: var(--shadow-sm);
     }
 
@@ -180,8 +183,82 @@
     }
 
     .upload-area:hover {
-      border-color: var(--color-primary);
-      background: rgba(0, 102, 204, 0.02);
+      border-color: #FF9F0A;
+      background: rgba(255, 159, 10, 0.02);
+    }
+
+    /* Bidding Result Styles */
+    .bidding-result-card {
+      background: var(--color-bg-surface);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      margin-bottom: var(--space-6);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .score-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: var(--space-4);
+      border-bottom: 1px solid var(--color-border-light);
+      margin-bottom: var(--space-4);
+    }
+
+    .score-badge {
+      font-size: 32px;
+      font-weight: 800;
+      color: #0066CC;
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-left: 24px;
+      margin-bottom: var(--space-4);
+      border-left: 2px solid var(--color-border-light);
+    }
+
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: -6px;
+      top: 6px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--color-primary);
+    }
+
+    .timeline-date {
+      font-size: var(--font-size-sm);
+      color: var(--color-text-secondary);
+      margin-bottom: 4px;
+    }
+
+    .collapsible-header {
+      cursor: pointer;
+      padding: var(--space-3);
+      background: var(--color-bg-base);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-2);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .collapsible-content {
+      padding: var(--space-3);
+      display: none;
+    }
+
+    .collapsible-content.open {
+      display: block;
+    }
+
+    .action-bar {
+      display: flex;
+      gap: var(--space-4);
+      margin-top: var(--space-6);
     }
   </style>
 </head>
@@ -192,7 +269,7 @@
     <aside class="sidebar">
       <div class="sidebar-header">
         <div class="logo-icon">S</div>
-        <span class="text-h3" style="font-weight: 700;">Sales Assistant</span>
+        <span class="text-h3" style="font-weight: 700;">省点事 (SaveTime)</span>
       </div>
 
       <nav class="nav-menu">
@@ -244,15 +321,83 @@
       <section id="bidding-section" class="module-section">
         <div class="page-header">
           <h2 class="text-h2">标书分析</h2>
-          <p class="text-body">上传招标文件，AI 自动提取关键信息。</p>
+          <p class="text-body">上传招标文件，AI 自动提取关键信息、评分预估及废标项。</p>
         </div>
 
-        <div class="card">
+        <!-- Upload State -->
+        <div id="bidding-upload-state" class="card">
           <div class="upload-area" id="biddingUpload" onclick="document.getElementById('biddingFile').click()">
             <div style="font-size: 48px; color: var(--color-border); margin-bottom: var(--space-4);">📄</div>
             <h3 class="text-h3">点击或拖拽上传标书文件</h3>
             <p class="text-sm" style="margin-top: var(--space-2);">支持 PDF, DOCX, TXT 格式</p>
             <input type="file" id="biddingFile" style="display: none" onchange="handleBiddingUpload(this)">
+          </div>
+        </div>
+
+        <!-- Result State (Hidden by default) -->
+        <div id="bidding-result-state" style="display: none;">
+          <!-- Score Card -->
+          <div class="bidding-result-card">
+            <div class="score-header">
+              <div>
+                <h3 class="text-h3">软通得分预估</h3>
+                <p class="text-sm">基于历史数据与资质库匹配</p>
+              </div>
+              <div class="score-badge" id="totalScore">--</div>
+            </div>
+            <div class="grid-cols-2">
+              <div>
+                <span class="text-sm">商务得分:</span> <strong id="businessScore">--</strong>
+              </div>
+              <div>
+                <span class="text-sm">技术得分:</span> <strong id="techScore">--</strong>
+              </div>
+            </div>
+            <div style="margin-top: var(--space-4);">
+              <div class="collapsible-header" onclick="toggleCollapse('score-details')">
+                <span>查看详细评分标准</span>
+                <span>▼</span>
+              </div>
+              <div id="score-details" class="collapsible-content">
+                <!-- Injected via JS -->
+                <p class="text-sm">暂无详细数据</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Disqualifiers -->
+          <div class="bidding-result-card" style="border-left: 4px solid #FF3B30;">
+            <h3 class="text-h3" style="margin-bottom: var(--space-4); color: #FF3B30;">废标项 / 关键风险</h3>
+            <ul id="disqualifierList" style="padding-left: 20px; color: var(--color-text-primary);">
+              <!-- Injected via JS -->
+            </ul>
+          </div>
+
+          <!-- Timeline -->
+          <div class="bidding-result-card">
+            <h3 class="text-h3" style="margin-bottom: var(--space-4);">投标时间轴</h3>
+            <div id="timelineList" style="padding-left: 10px;">
+              <!-- Injected via JS -->
+            </div>
+          </div>
+
+          <!-- Other Suggestions -->
+          <div class="bidding-result-card">
+            <h3 class="text-h3" style="margin-bottom: var(--space-4);">其他建议</h3>
+            <ul id="suggestionList" style="padding-left: 20px;">
+              <!-- Injected via JS -->
+            </ul>
+          </div>
+
+          <!-- Actions -->
+          <div class="action-bar">
+            <button class="btn btn-secondary" onclick="generateDoc('pre_qual')">生成预审材料</button>
+            <button class="btn btn-secondary" onclick="generateDoc('tech_script')">生成技术沟通话术</button>
+            <button class="btn btn-primary" onclick="generateDoc('quotation')">生成报价单</button>
+          </div>
+
+          <div style="margin-top: var(--space-6); text-align: center;">
+            <button class="btn btn-text" onclick="resetBidding()">← 返回上传新文件</button>
           </div>
         </div>
       </section>
