@@ -69,31 +69,95 @@ function renderBiddingResult(data) {
   document.getElementById('bidding-upload-state').style.display = 'none';
   document.getElementById('bidding-result-state').style.display = 'block';
 
-  // Fill Data
-  document.getElementById('totalScore').textContent = data.totalScore;
-  document.getElementById('businessScore').textContent = data.businessScore;
-  document.getElementById('techScore').textContent = data.techScore;
+  // --- Main Requirements ---
+  const renderRequirementList = (items, containerId) => {
+    const container = document.getElementById(containerId);
+    if (!items || items.length === 0) {
+      container.innerHTML = '<p class="text-sm" style="color: #999;">未提取到相关要求</p>';
+      return;
+    }
+
+    container.innerHTML = items.map(item => {
+      let statusClass = 'status-unknown';
+      let statusIcon = '❓';
+      let statusText = '需人工核对';
+
+      if (item.status === 'satisfied') {
+        statusClass = 'status-success';
+        statusIcon = '✅';
+        statusText = '满足';
+      } else if (item.status === 'unsatisfied') {
+        statusClass = 'status-error';
+        statusIcon = '❌';
+        statusText = '不满足';
+      } else if (item.status === 'manual_check') {
+        statusClass = 'status-warning';
+        statusIcon = '⚠️';
+        statusText = '需人工核对';
+      }
+
+      return `
+                <div class="req-item">
+                    <div class="req-header">
+                        <span class="req-desc">${item.description}</span>
+                        <span class="req-status ${statusClass}">${statusIcon} ${statusText}</span>
+                    </div>
+                    ${item.evidence ? `<div class="req-evidence">证明/备注：${item.evidence}</div>` : ''}
+                    ${item.score_contribution > 0 ? `<div class="req-score">分值：${item.score_contribution}</div>` : ''}
+                </div>
+            `;
+    }).join('');
+  };
+
+  const caseItems = data.requirements.filter(i => i.category === 'case');
+  const qualItems = data.requirements.filter(i => i.category === 'qualification');
+  const personnelItems = data.requirements.filter(i => i.category === 'personnel');
+
+  renderRequirementList(caseItems, 'case-requirements-list');
+  renderRequirementList(qualItems, 'qualification-requirements-list');
+  renderRequirementList(personnelItems, 'personnel-requirements-list');
+
+  // --- AI Insights (Sidebar) ---
+
+  // Score Estimate
+  const scoreEl = document.getElementById('totalScoreEstimate');
+  if (data.has_scoring_standard) {
+    scoreEl.textContent = `${data.total_score_estimate} 分`;
+    scoreEl.style.color = 'var(--color-primary)';
+  } else {
+    scoreEl.textContent = '未明确评分标准';
+    scoreEl.style.color = '#999';
+    scoreEl.style.fontSize = '0.9rem';
+  }
 
   // Disqualifiers
   const dqList = document.getElementById('disqualifierList');
-  dqList.innerHTML = data.disqualifiers.map(item => `<li>${item}</li>`).join('');
+  if (data.disqualifiers && data.disqualifiers.length > 0) {
+    dqList.innerHTML = data.disqualifiers.map(item => `<li>${item}</li>`).join('');
+  } else {
+    dqList.innerHTML = '<li style="color: #999; list-style: none;">无明显废标项</li>';
+  }
 
   // Timeline
   const tlList = document.getElementById('timelineList');
-  tlList.innerHTML = data.timeline.map(item => `
-        <div class="timeline-item">
-            <div class="timeline-date">${item.date}</div>
-            <div class="text-body">${item.event}</div>
-        </div>
-    `).join('');
-
-  // Score Details
-  const details = document.getElementById('score-details');
-  details.innerHTML = `<pre style="white-space: pre-wrap; font-family: inherit; color: var(--color-text-secondary);">${data.scoreDetails || '暂无详细数据'}</pre>`;
+  if (data.timeline && data.timeline.length > 0) {
+    tlList.innerHTML = data.timeline.map(item => `
+            <div class="timeline-item">
+                <div class="timeline-date">${item.date}</div>
+                <div class="text-body" style="font-size: 0.85rem;">${item.event}</div>
+            </div>
+        `).join('');
+  } else {
+    tlList.innerHTML = '<div style="color: #999; font-size: 0.85rem;">未提取到时间轴</div>';
+  }
 
   // Suggestions
   const sgList = document.getElementById('suggestionList');
-  sgList.innerHTML = data.suggestions.map(item => `<li>${item}</li>`).join('');
+  if (data.suggestions && data.suggestions.length > 0) {
+    sgList.innerHTML = data.suggestions.map(item => `<li>${item}</li>`).join('');
+  } else {
+    sgList.innerHTML = '<li style="color: #999; list-style: none;">暂无建议</li>';
+  }
 }
 
 function resetBidding() {

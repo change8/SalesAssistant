@@ -317,87 +317,94 @@
         </div>
       </section>
 
-      <!-- 2. Bidding Analysis -->
-      <section id="bidding-section" class="module-section">
-        <div class="page-header">
-          <h2 class="text-h2">标书分析</h2>
-          <p class="text-body">上传招标文件，AI 自动提取关键信息、评分预估及废标项。</p>
+      <!-- Bidding Analysis Section -->
+      <section id="bidding-section" class="content-section" style="display: none;">
+        <div class="section-header fade-in">
+          <h2 class="text-h2">标书分析助手</h2>
+          <p class="text-body" style="color: var(--color-text-secondary);">智能提取标书要求，自动匹配公司业绩与资质</p>
         </div>
 
         <!-- Upload State -->
-        <div id="bidding-upload-state" class="card">
-          <div class="upload-area" id="biddingUpload" onclick="document.getElementById('biddingFile').click()">
-            <div style="font-size: 48px; color: var(--color-border); margin-bottom: var(--space-4);">📄</div>
-            <h3 class="text-h3">点击或拖拽上传标书文件</h3>
-            <p class="text-sm" style="margin-top: var(--space-2);">支持 PDF, DOCX, TXT 格式</p>
-            <input type="file" id="biddingFile" style="display: none" onchange="handleBiddingUpload(this)">
+        <div id="bidding-upload-state" class="fade-in">
+          <div class="upload-area" id="biddingUpload" onclick="document.getElementById('biddingFileInput').click()">
+            <div class="upload-icon">📄</div>
+            <h3 class="text-h3">点击上传招标文件</h3>
+            <p class="text-sm">支持 PDF, Word, TXT 格式</p>
+            <input type="file" id="biddingFileInput" hidden accept=".pdf,.docx,.doc,.txt"
+              onchange="handleBiddingUpload(this)">
           </div>
         </div>
 
-        <!-- Result State (Hidden by default) -->
-        <div id="bidding-result-state" style="display: none;">
-          <!-- Score Card -->
-          <div class="bidding-result-card">
-            <div class="score-header">
-              <div>
-                <h3 class="text-h3">软通得分预估</h3>
-                <p class="text-sm">基于历史数据与资质库匹配</p>
+        <!-- Result State -->
+        <div id="bidding-result-state" class="fade-in" style="display: none;">
+          <div class="bidding-grid">
+            <!-- Left Column: Requirements (Main Focus) -->
+            <div class="bidding-main">
+              <!-- 1. Case Requirements -->
+              <div class="card requirement-card">
+                <div class="card-header">
+                  <h3 class="text-h3">🏆 业绩要求 (Case)</h3>
+                </div>
+                <div class="card-body" id="case-requirements-list">
+                  <!-- Populated by JS -->
+                </div>
               </div>
-              <div class="score-badge" id="totalScore">--</div>
+
+              <!-- 2. Qualification Requirements -->
+              <div class="card requirement-card" style="margin-top: 1.5rem;">
+                <div class="card-header">
+                  <h3 class="text-h3">📜 资质要求 (Qualification)</h3>
+                </div>
+                <div class="card-body" id="qualification-requirements-list">
+                  <!-- Populated by JS -->
+                </div>
+              </div>
+
+              <!-- 3. Personnel Requirements -->
+              <div class="card requirement-card" style="margin-top: 1.5rem;">
+                <div class="card-header">
+                  <h3 class="text-h3">👥 人员要求 (Personnel)</h3>
+                </div>
+                <div class="card-body" id="personnel-requirements-list">
+                  <!-- Populated by JS -->
+                </div>
+              </div>
             </div>
-            <div class="grid-cols-2">
-              <div>
-                <span class="text-sm">商务得分:</span> <strong id="businessScore">--</strong>
-              </div>
-              <div>
-                <span class="text-sm">技术得分:</span> <strong id="techScore">--</strong>
+
+            <!-- Right Column: AI Insights (Tips) -->
+            <div class="bidding-sidebar">
+              <div class="card tip-card">
+                <h3 class="text-h3" style="font-size: 1.1rem; margin-bottom: 1rem;">💡 AI 智能提示</h3>
+
+                <!-- Score Estimate -->
+                <div class="tip-section">
+                  <div class="tip-label">预估得分 (基于提取标准)</div>
+                  <div class="tip-value" id="totalScoreEstimate">--</div>
+                </div>
+
+                <!-- Disqualifiers -->
+                <div class="tip-section">
+                  <div class="tip-label" style="color: var(--color-error);">⚠️ 废标/风险项</div>
+                  <ul class="tip-list" id="disqualifierList"></ul>
+                </div>
+
+                <!-- Timeline -->
+                <div class="tip-section">
+                  <div class="tip-label">📅 关键时间节点</div>
+                  <div class="timeline-container" id="timelineList"></div>
+                </div>
+
+                <!-- Suggestions -->
+                <div class="tip-section">
+                  <div class="tip-label">📝 其他建议</div>
+                  <ul class="tip-list" id="suggestionList"></ul>
+                </div>
+
+                <div style="margin-top: 1.5rem; text-align: center;">
+                  <button class="btn btn-secondary" onclick="resetBidding()" style="width: 100%;">重新分析</button>
+                </div>
               </div>
             </div>
-            <div style="margin-top: var(--space-4);">
-              <div class="collapsible-header" onclick="toggleCollapse('score-details')">
-                <span>查看详细评分标准</span>
-                <span>▼</span>
-              </div>
-              <div id="score-details" class="collapsible-content">
-                <!-- Injected via JS -->
-                <p class="text-sm">暂无详细数据</p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Disqualifiers -->
-          <div class="bidding-result-card" style="border-left: 4px solid #FF3B30;">
-            <h3 class="text-h3" style="margin-bottom: var(--space-4); color: #FF3B30;">废标项 / 关键风险</h3>
-            <ul id="disqualifierList" style="padding-left: 20px; color: var(--color-text-primary);">
-              <!-- Injected via JS -->
-            </ul>
-          </div>
-
-          <!-- Timeline -->
-          <div class="bidding-result-card">
-            <h3 class="text-h3" style="margin-bottom: var(--space-4);">投标时间轴</h3>
-            <div id="timelineList" style="padding-left: 10px;">
-              <!-- Injected via JS -->
-            </div>
-          </div>
-
-          <!-- Other Suggestions -->
-          <div class="bidding-result-card">
-            <h3 class="text-h3" style="margin-bottom: var(--space-4);">其他建议</h3>
-            <ul id="suggestionList" style="padding-left: 20px;">
-              <!-- Injected via JS -->
-            </ul>
-          </div>
-
-          <!-- Actions -->
-          <div class="action-bar">
-            <button class="btn btn-secondary" onclick="generateDoc('pre_qual')">生成预审材料</button>
-            <button class="btn btn-secondary" onclick="generateDoc('tech_script')">生成技术沟通话术</button>
-            <button class="btn btn-primary" onclick="generateDoc('quotation')">生成报价单</button>
-          </div>
-
-          <div style="margin-top: var(--space-6); text-align: center;">
-            <button class="btn btn-text" onclick="resetBidding()">← 返回上传新文件</button>
           </div>
         </div>
       </section>

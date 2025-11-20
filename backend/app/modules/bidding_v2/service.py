@@ -31,23 +31,22 @@ class BiddingService:
             raise ValueError("无法提取文档内容")
 
         # 2. LLM Extraction
-        extracted_data = self._call_llm_extraction(text[:50000]) # Limit context window
+        extracted_data = self._call_llm_extraction(text[:50000])
 
-        # 3. DB Matching & Scoring
-        business_score, business_details = self._calculate_business_score(extracted_data.get("project_keywords", []))
-        tech_score, tech_details = self._calculate_tech_score(extracted_data.get("tech_requirements", []))
+        # 3. Match Requirements
+        requirements = self._match_requirements(extracted_data.get("requirements", []))
         
-        total_score = business_score + tech_score
+        # 4. Calculate Score Estimate (if standard exists)
+        total_score = sum(item.score_contribution for item in requirements)
         
-        # 4. Assemble Result
+        # 5. Assemble Result
         return BiddingAnalysisResult(
-            totalScore=total_score,
-            businessScore=business_score,
-            techScore=tech_score,
+            requirements=requirements,
+            has_scoring_standard=extracted_data.get("has_scoring_standard", False),
+            total_score_estimate=total_score,
             disqualifiers=extracted_data.get("disqualifiers", []),
             timeline=[TimelineItem(**item) for item in extracted_data.get("timeline", [])],
-            suggestions=extracted_data.get("suggestions", []),
-            scoreDetails=f"商务得分详情：\n{business_details}\n\n技术得分详情：\n{tech_details}"
+            suggestions=extracted_data.get("suggestions", [])
         )
 
     async def _extract_text(self, file: UploadFile) -> str:
@@ -55,7 +54,6 @@ class BiddingService:
         filename = file.filename.lower()
         
         if filename.endswith(".pdf"):
-            # Save to temp file for pdfminer
             temp_path = f"/tmp/{file.filename}"
             with open(temp_path, "wb") as f:
                 f.write(content)
@@ -89,19 +87,24 @@ class BiddingService:
             return self._get_mock_data()
 
         prompt = """
-        你是一个专业的标书分析助手。请分析以下招标文件内容，提取关键信息并以 JSON 格式返回。
+        你是一个专业的标书分析助手。请分析以下招标文件内容，提取关键要求和信息。
         
-        需要提取的字段：
-        1. project_keywords (list[str]): 项目的关键技术关键词（如：Java, 大数据, 智慧城市, 运维）。
-        2. tech_requirements (list[str]): 具体的资质证书要求或软件著作权要求（如：CMMI5, ISO9001, 某某软件著作权）。
-        3. disqualifiers (list[str]): 废标项或关键风险点（如：不满足等保三级，无近三年无违法记录声明）。
-        4. timeline (list[dict]): 包含 date (YYYY-MM-DD) 和 event (事件描述) 的时间轴列表。
-        5. suggestions (list[str]): 其他重要建议（如：运营期要求，驻场要求，付款方式风险）。
+        请返回 JSON 对象，包含以下字段：
+        1. requirements (list[dict]): 提取所有的硬性要求或评分项。
+           每个条目包含：
+           - category (str): "case" (业绩要求), "qualification" (企业资质/软著), "personnel" (人员要求)。
+           - description (str): 要求描述（如“近三年类似业绩3个”、“拥有CMMI5证书”、“项目经理需PMP”）。
+           - score_contribution (float): 如果有明确评分标准，该项对应的分值；否则为 0。
+           - keywords (list[str]): 用于数据库匹配的关键词。
+        2. has_scoring_standard (bool): 文档中是否明确包含了评分标准。
+        3. disqualifiers (list[str]): 废标项或关键风险点。
+        4. timeline (list[dict]): 包含 date (YYYY-MM-DD) 和 event (事件描述) 的时间轴。
+        5. suggestions (list[str]): 其他重要建议。
 
-        请只返回 JSON 对象，不要包含 markdown 格式或其他废话。
+        请只返回 JSON 对象。
         
         招标文件内容：
-        """ + text[:10000] # Truncate to avoid token limit
+        """ + text[:10000]
 
         headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -126,64 +129,79 @@ class BiddingService:
             logger.error(f"LLM Call Failed: {e}")
             return self._get_mock_data()
 
-    def _calculate_business_score(self, keywords: List[str]) -> tuple[int, str]:
-        """Match keywords against contracts.db to find similar projects."""
-        if not os.path.exists(CONTRACTS_DB_PATH):
-            return 0, "数据库未连接"
-
-        score = 0
-        details = []
+    def _match_requirements(self, requirements: List[Dict[str, Any]]) -> List[Any]:
+        """Match requirements against the database."""
+        from backend.app.modules.bidding_v2.schemas import RequirementItem
         
+        if not os.path.exists(CONTRACTS_DB_PATH):
+            return []
+
         conn = sqlite3.connect(CONTRACTS_DB_PATH)
         cursor = conn.cursor()
         
-        # Simple keyword matching strategy
-        matched_contracts = set()
-        for kw in keywords:
-            if len(kw) < 2: continue
-            cursor.execute("SELECT title, contract_amount FROM contracts WHERE title LIKE ? LIMIT 3", (f"%{kw}%",))
-            rows = cursor.fetchall()
-            for row in rows:
-                if row[0] not in matched_contracts:
-                    matched_contracts.add(row[0])
-                    score += 5 # 5 points per matched contract
-                    details.append(f"匹配业绩：{row[0]} ({row[1]}) +5分")
-        
-        conn.close()
-        
-        final_score = min(40, score) # Cap at 40
-        return final_score, "\n".join(details) if details else "无匹配业绩"
+        results = []
+        for item in requirements:
+            category = item.get("category", "case")
+            keywords = item.get("keywords", [])
+            score = item.get("score_contribution", 0)
+            
+            status = "unsatisfied"
+            evidence = None
+            
+            if category == "personnel":
+                status = "manual_check"
+                evidence = "需人工核对人员简历"
+            
+            elif not keywords:
+                status = "manual_check"
+                evidence = "无法自动匹配"
 
-    def _calculate_tech_score(self, requirements: List[str]) -> tuple[int, str]:
-        """Match requirements against assets in contracts.db."""
-        if not os.path.exists(CONTRACTS_DB_PATH):
-            return 0, "数据库未连接"
+            elif category == "case":
+                # Match Contracts
+                matched = []
+                for kw in keywords:
+                    if len(kw) < 2: continue
+                    cursor.execute("SELECT title, contract_amount FROM contracts WHERE title LIKE ? LIMIT 3", (f"%{kw}%",))
+                    rows = cursor.fetchall()
+                    for row in rows:
+                        matched.append(f"{row[0]} ({row[1]})")
+                
+                if matched:
+                    status = "satisfied"
+                    evidence = "匹配业绩：" + "; ".join(list(set(matched))[:3])
+                
+            elif category == "qualification":
+                # Match Assets
+                matched = []
+                for kw in keywords:
+                    cursor.execute("SELECT qualification_name FROM assets WHERE qualification_name LIKE ? LIMIT 1", (f"%{kw}%",))
+                    row = cursor.fetchone()
+                    if row:
+                        matched.append(row[0])
+                
+                if matched:
+                    status = "satisfied"
+                    evidence = "拥有资质：" + "; ".join(list(set(matched)))
 
-        score = 0
-        details = []
-        
-        conn = sqlite3.connect(CONTRACTS_DB_PATH)
-        cursor = conn.cursor()
-        
-        for req in requirements:
-            # Fuzzy match for qualifications
-            cursor.execute("SELECT qualification_name FROM assets WHERE qualification_name LIKE ? LIMIT 1", (f"%{req}%",))
-            row = cursor.fetchone()
-            if row:
-                score += 5
-                details.append(f"满足资质/软著：{row[0]} +5分")
-            else:
-                details.append(f"缺失资质/软著：{req} -0分")
-        
+            results.append(RequirementItem(
+                category=category,
+                description=item["description"],
+                status=status,
+                evidence=evidence,
+                score_contribution=score if status == "satisfied" else 0
+            ))
+            
         conn.close()
-        
-        final_score = min(50, score) # Cap at 50
-        return final_score, "\n".join(details) if details else "无匹配资质要求"
+        return results
 
     def _get_mock_data(self):
         return {
-            "project_keywords": ["大数据", "运维"],
-            "tech_requirements": ["CMMI5", "ISO9001"],
+            "has_scoring_standard": True,
+            "requirements": [
+                {"category": "case", "description": "近三年3个大数据项目", "score_contribution": 10, "keywords": ["大数据"]},
+                {"category": "qualification", "description": "拥有CMMI5证书", "score_contribution": 5, "keywords": ["CMMI5"]},
+                {"category": "personnel", "description": "项目经理PMP证书", "score_contribution": 2, "keywords": ["PMP"]}
+            ],
             "disqualifiers": ["未提供近三年财务报表"],
             "timeline": [{"date": "2025-01-01", "event": "开标"}],
             "suggestions": ["注意付款周期"]
