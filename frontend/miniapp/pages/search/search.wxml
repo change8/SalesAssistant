@@ -170,7 +170,7 @@
           </view>
         </scroll-view>
         <view class="detail-footer">
-          <button class="copy-full-btn" bindtap="copyItem" data-item="{{selectedContract}}">复制全部信息</button>
+          <button class="copy-full-btn" bindtap="copyItem" data-item="{{selectedContract}}">复制合同信息</button>
         </view>
       </view>
     </view>

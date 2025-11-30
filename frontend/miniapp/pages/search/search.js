@@ -180,7 +180,7 @@ Page({
         const item = e.currentTarget.dataset.item;
         let text = '';
         if (this.data.activeTab === 0) { // Contract
-            text = `合同编号: ${item.contract_number || '-'}\n合同名称: ${item.contract_title || item.project_name}\n客户: ${item.customer_name || '-'}\n金额: ${item.contract_amount || '-'}`;
+            text = `合同编号: ${item.contract_number || '-'}\n合同名称: ${item.contract_title || item.project_name}\n客户: ${item.customer_name || '-'}\n金额: ${item.contract_amount || '-'}\n签订时间: ${item.signing_date || '-'}`;
         } else if (this.data.activeTab === 1 || this.data.activeTab === 2) { // Qual/IP
             text = `名称: ${item.qualification_name}\n公司: ${item.company_name}\n类型: ${item.business_type || '-'}`;
         } else if (type === 'group') {
