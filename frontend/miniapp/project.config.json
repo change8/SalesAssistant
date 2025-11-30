@@ -21,7 +21,8 @@
     "condition": false,
     "swc": false,
     "disableSWC": true,
-    "urlCheck": false
+    "urlCheck": false,
+    "localPlugins": false
   },
   "compileType": "miniprogram",
   "simulatorPluginLibVersion": {},
@@ -29,7 +30,7 @@
     "ignore": [],
     "include": []
   },
-  "appid": "wxa7a547d84de3f72a",
+  "appid": "wx2049dff42862da52",
   "editorSetting": {},
   "libVersion": "3.10.3"
 }

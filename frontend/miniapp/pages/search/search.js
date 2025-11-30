@@ -34,7 +34,10 @@ Page({
             status: null, // 'completed'
             group: '1100', // Default for Quals? Or null? PC defaults to 1100 if checked. Let's default null.
             ipCategory: null // 'patent', 'copyright', 'trademark'
-        }
+        },
+        // Detail Popup State
+        showDetail: false,
+        selectedContract: null
     },
 
     onLoad(options) {
@@ -416,5 +419,21 @@ Page({
     // 触底加载
     onReachBottom() {
         this.loadMore();
+    },
+
+    // --- Detail Popup Logic ---
+    showContractDetail(e) {
+        const item = e.currentTarget.dataset.item;
+        this.setData({
+            selectedContract: item,
+            showDetail: true
+        });
+    },
+
+    closeContractDetail() {
+        this.setData({
+            showDetail: false,
+            selectedContract: null
+        });
     }
 });
