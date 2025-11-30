@@ -37,3 +37,46 @@
 .link {
   color: #3366ff;
 }
+
+/* Divider */
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 60rpx 0 40rpx;
+}
+
+.divider .line {
+  flex: 1;
+  height: 1rpx;
+  background: #eee;
+}
+
+.divider .text {
+  padding: 0 20rpx;
+  color: #999;
+  font-size: 24rpx;
+}
+
+/* WeChat Button */
+.wechat-btn {
+  background: #07c160;
+  color: white;
+  border-radius: 12rpx;
+  height: 88rpx;
+  line-height: 88rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 30rpx;
+  border: none;
+}
+
+.wechat-btn::after {
+  border: none;
+}
+
+.wechat-icon {
+  width: 40rpx;
+  height: 40rpx;
+  margin-right: 16rpx;
+}

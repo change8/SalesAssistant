@@ -55,5 +55,52 @@ Page({
   },
   onGoRegister() {
     wx.navigateTo({ url: '/pages/register/register' });
+  },
+
+  async onGetPhoneNumber(e) {
+    if (!e.detail.code) {
+      wx.showToast({ title: '获取手机号失败', icon: 'none' });
+      return;
+    }
+
+    const phoneCode = e.detail.code;
+    this.setData({ loading: true });
+
+    try {
+      // 1. Get Login Code
+      const loginRes = await new Promise((resolve, reject) => {
+        wx.login({
+          success: resolve,
+          fail: reject
+        });
+      });
+
+      if (!loginRes.code) {
+        throw new Error('微信登录失败');
+      }
+
+      // 2. Call Backend API
+      const data = await request({
+        url: '/auth/wechat-login',
+        method: 'POST',
+        data: {
+          login_code: loginRes.code,
+          phone_code: phoneCode
+        }
+      });
+
+      // 3. Handle Success
+      setToken(data.access_token);
+      wx.showToast({ title: '登录成功', icon: 'success' });
+      setTimeout(() => {
+        wx.switchTab({ url: '/pages/tools/tools' });
+      }, 500);
+
+    } catch (error) {
+      console.error('WeChat Login failed:', error);
+      wx.showToast({ title: error.message || '登录失败', icon: 'none' });
+    } finally {
+      this.setData({ loading: false });
+    }
   }
 });

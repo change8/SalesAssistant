@@ -10,4 +10,15 @@
   <view class="helper">
     <text bindtap="onGoRegister" class="link">还没有账号？立即注册</text>
   </view>
+
+  <view class="divider">
+    <view class="line"></view>
+    <text class="text">其他登录方式</text>
+    <view class="line"></view>
+  </view>
+
+  <button class="wechat-btn" open-type="getPhoneNumber" bindgetphonenumber="onGetPhoneNumber">
+    <image src="../../assets/wechat.png" class="wechat-icon" />
+    <text>微信手机号一键登录</text>
+  </button>
 </view>
