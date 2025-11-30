@@ -86,14 +86,13 @@
     <block wx:if="{{activeTab === 0}}">
       <view wx:for="{{results}}" wx:key="id" class="card" bindtap="showContractDetail" data-item="{{item}}">
         <view class="card-header">
-          <text>{{item.contract_title || item.project_name || '未命名合同'}}</text>
+          <view class="title-row">
+            <text wx:if="{{item.short_type}}" class="tag-mini">{{item.short_type}}</text>
+            <text class="title">{{item.contract_title || item.project_name || '未命名合同'}}</text>
+          </view>
           <view class="copy-btn" catchtap="copyItem" data-item="{{item}}">复制</view>
         </view>
         <view class="card-body">
-          <view class="tags">
-            <text class="tag tag-primary">{{item.contract_number || '无编号'}}</text>
-            <text wx:if="{{item.contract_type}}" class="tag tag-secondary">{{item.contract_type}}</text>
-          </view>
           <view class="info">
             <view class="info-row">
               <text class="info-label">客户:</text>
@@ -125,29 +124,42 @@
           
           <view class="detail-tags">
             <text class="tag tag-primary">{{selectedContract.contract_number || '无编号'}}</text>
+            <text wx:if="{{selectedContract.project_code}}" class="tag tag-primary">{{selectedContract.project_code}}</text>
             <text wx:if="{{selectedContract.contract_status}}" class="tag tag-success">{{selectedContract.contract_status}}</text>
             <text wx:if="{{selectedContract.contract_type}}" class="tag tag-secondary">{{selectedContract.contract_type}}</text>
           </view>
 
           <view class="detail-section">
-            <view class="detail-row">
-              <text class="label">客户名称</text>
-              <text class="value">{{selectedContract.customer_name || '-'}}</text>
+            <view class="detail-row" wx:if="{{selectedContract.project_code}}">
+              <text class="label">🔢 项目编号</text>
+              <text class="value">{{selectedContract.project_code}}</text>
             </view>
             <view class="detail-row">
-              <text class="label">所属行业</text>
-              <text class="value">{{selectedContract.industry || '-'}}</text>
+              <text class="label">🏢 客户名称</text>
+              <text class="value">{{selectedContract.display_customer || '-'}}</text>
             </view>
             <view class="detail-row">
-              <text class="label">签订时间</text>
+              <text class="label">🏭 所属行业</text>
+              <text class="value">{{selectedContract.display_industry || '-'}}</text>
+            </view>
+            <view class="detail-row" wx:if="{{selectedContract.delivery_location}}">
+              <text class="label">📍 交付地点</text>
+              <text class="value">{{selectedContract.delivery_location}}</text>
+            </view>
+            <view class="detail-row" wx:if="{{selectedContract.delivery_team}}">
+              <text class="label">👥 交付团队</text>
+              <text class="value">{{selectedContract.delivery_team}}</text>
+            </view>
+            <view class="detail-row">
+              <text class="label">📅 签订时间</text>
               <text class="value">{{selectedContract.signing_date || '-'}}</text>
             </view>
             <view class="detail-row">
-              <text class="label">合同金额</text>
+              <text class="label">💰 合同金额</text>
               <text class="value highlight">{{selectedContract.contract_amount || '-'}}</text>
             </view>
              <view class="detail-row">
-              <text class="label">合同状态</text>
+              <text class="label">📊 合同状态</text>
               <text class="value">{{selectedContract.contract_status || '-'}}</text>
             </view>
           </view>

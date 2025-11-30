@@ -177,6 +177,8 @@ def search_contracts(
                 'description': contract.description,
                 'tags': contract.tags,
                 'industry': contract.industry,
+                'delivery_location': contract.raw_payload.get('delivery_location') if contract.raw_payload else None,
+                'delivery_team': contract.raw_payload.get('delivery_team') if contract.raw_payload else None,
                 'created_at': contract.created_at,
                 'updated_at': contract.updated_at
             })
@@ -361,6 +363,8 @@ def get_contract_by_id(db: Session, contract_id: int) -> Optional[dict]:
             'project_description': contract.description,
             'status': contract.status or 'active',
             'contract_type': contract_type,
+            'delivery_location': contract.raw_payload.get('delivery_location') if contract.raw_payload else None,
+            'delivery_team': contract.raw_payload.get('delivery_team') if contract.raw_payload else None,
             'created_at': contract.created_at,
             'updated_at': contract.updated_at
         }

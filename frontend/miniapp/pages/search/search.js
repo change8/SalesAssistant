@@ -276,8 +276,9 @@ Page({
 
         try {
             const result = await this.searchByTab(activeTab, searchQuery, 0);
+            const processedResults = this.processResults(result.results || []);
             this.setData({
-                results: result.results || [],
+                results: processedResults,
                 hasMore: (result.total || 0) > this.data.limit,
                 loading: false
             });
@@ -399,8 +400,9 @@ Page({
                 nextPage * this.data.limit
             );
 
+            const processedResults = this.processResults(result.results || []);
             this.setData({
-                results: [...this.data.results, ...(result.results || [])],
+                results: [...this.data.results, ...processedResults],
                 hasMore: (nextPage + 1) * this.data.limit < (result.total || 0),
                 loading: false
             });
@@ -421,13 +423,65 @@ Page({
         this.loadMore();
     },
 
+    processResults(results) {
+        if (!results) return [];
+        return results.map(item => {
+            // Contract Type Abbreviation
+            if (item.contract_type) {
+                const typeMap = {
+                    '固定金额': 'FP',
+                    '时间资源': 'TM',
+                    '混合模式': '混',
+                    '转售业务': '转',
+                    '计件计量': '计'
+                };
+                // Default to first 2 chars if not matched, or just keep original if short?
+                // User asked for specific mapping.
+                item.short_type = typeMap[item.contract_type] || item.contract_type;
+            }
+            return item;
+        });
+    },
+
     // --- Detail Popup Logic ---
     showContractDetail(e) {
         const item = e.currentTarget.dataset.item;
+
+        // Parse Customer and Industry
+        const { customerName, industry } = this.parseCustomerInfo(item.customer_name);
+
+        // Use parsed industry if available, otherwise fallback to item.industry
+        const displayIndustry = industry || item.industry;
+        const displayCustomer = customerName || item.customer_name;
+
+        // Create a display object to avoid mutating original item too much
+        const displayContract = {
+            ...item,
+            display_customer: displayCustomer,
+            display_industry: displayIndustry
+        };
+
         this.setData({
-            selectedContract: item,
+            selectedContract: displayContract,
             showDetail: true
         });
+    },
+
+    parseCustomerInfo(fullName) {
+        if (!fullName) return { customerName: '', industry: '' };
+
+        // Match the last occurrence of content inside full-width parentheses
+        // Regex: /（([^）]+)）$/
+        // Note: Using full-width parenthesis as per user example
+        const match = fullName.match(/（([^）]+)）$/);
+
+        if (match) {
+            const industry = match[1].trim();
+            const customerName = fullName.replace(match[0], '').trim();
+            return { customerName, industry };
+        }
+
+        return { customerName: fullName, industry: '' };
     },
 
     closeContractDetail() {
