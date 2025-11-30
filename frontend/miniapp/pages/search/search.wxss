@@ -598,7 +598,7 @@ view, text, scroll-view, input, button {
   bottom: -100%;
   left: 0;
   width: 100%;
-  max-height: 75vh; /* Reduced from 85vh to move top down */
+  max-height: 70vh; /* Reduced to 70vh to move top down further */
   background: white;
   border-radius: 32rpx 32rpx 0 0;
   display: flex;
@@ -710,9 +710,9 @@ view, text, scroll-view, input, button {
 }
 
 .detail-footer {
-  padding: 24rpx 40rpx; /* Reduced top/bottom padding */
+  padding: 24rpx 40rpx;
   border-top: 1rpx solid #f3f4f6;
-  padding-bottom: calc(12rpx + env(safe-area-inset-bottom)); /* Reduced bottom padding significantly */
+  padding-bottom: env(safe-area-inset-bottom); /* Remove extra padding, just safe area */
   flex-shrink: 0; /* Prevent shrinking */
   background: white;
 }
