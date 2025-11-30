@@ -150,3 +150,4 @@ cp .env.example .env
 - [技术架构总览](docs/architecture-overview.md)：组件划分、数据流、部署注意事项。
 - [TODO / Backlog 列表](docs/todo.md)：待办事项与优先级记录。
 - [微信小程序规划](docs/wechat-miniapp.md)：小程序落地准备与环境清单。
+Last deployment test: Sun Nov 30 16:10:39 CST 2025
