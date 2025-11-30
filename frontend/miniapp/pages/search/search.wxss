@@ -261,13 +261,22 @@ view, text, scroll-view, input, button {
 
 .info-label {
   color: #9ca3af;
-  width: 140rpx;
+  width: auto; /* Remove fixed width to remove whitespace */
+  min-width: 120rpx; /* Minimum width for alignment if needed, or just auto */
+  margin-right: 16rpx; /* Small gap instead of large fixed width */
   flex-shrink: 0;
 }
 
 .info-value {
   color: #374151;
   flex: 1;
+}
+
+.amount-text {
+  font-size: 30rpx; /* Increased size (base is 26rpx) */
+  font-weight: 700; /* Bold */
+  color: #3366ff; /* Optional: make it blue like detail? User didn't ask, but looks better. Stick to black/gray if not asked. User said "bold". Let's keep color standard or dark. */
+  color: #111827;
 }
 
 /* Certificates */

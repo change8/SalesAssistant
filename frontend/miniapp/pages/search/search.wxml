@@ -95,15 +95,15 @@
         <view class="card-body">
           <view class="info">
             <view class="info-row">
-              <text class="info-label">客户:</text>
+              <text class="info-label">🏢 客户:</text>
               <text class="info-value">{{item.customer_name || '-'}}</text>
             </view>
             <view class="info-row">
-              <text class="info-label">金额:</text>
-              <text class="info-value">{{item.contract_amount || '-'}}</text>
+              <text class="info-label">💰 金额:</text>
+              <text class="info-value amount-text">{{item.contract_amount || '-'}}</text>
             </view>
             <view class="info-row">
-              <text class="info-label">签订:</text>
+              <text class="info-label">📅 签订:</text>
               <text class="info-value">{{item.signing_date || '-'}}</text>
             </view>
           </view>
