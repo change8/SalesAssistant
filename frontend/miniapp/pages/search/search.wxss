@@ -712,7 +712,7 @@ view, text, scroll-view, input, button {
 .detail-footer {
   padding: 24rpx 40rpx;
   border-top: 1rpx solid #f3f4f6;
-  padding-bottom: env(safe-area-inset-bottom); /* Remove extra padding, just safe area */
+  padding-bottom: calc(16rpx + env(safe-area-inset-bottom)); /* Half of original 32rpx */
   flex-shrink: 0; /* Prevent shrinking */
   background: white;
 }
