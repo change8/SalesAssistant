@@ -164,9 +164,9 @@
             </view>
           </view>
 
-          <view class="detail-section" wx:if="{{selectedContract.description}}">
+          <view class="detail-section">
             <view class="section-title">简介</view>
-            <view class="description">{{selectedContract.description}}</view>
+            <view class="description">{{selectedContract.description || '无简介'}}</view>
           </view>
         </scroll-view>
         <view class="detail-footer">

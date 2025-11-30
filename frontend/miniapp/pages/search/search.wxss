@@ -1,6 +1,11 @@
 page {
   background-color: #f8faff;
   min-height: 100vh;
+  box-sizing: border-box;
+}
+
+view, text, scroll-view, input, button {
+  box-sizing: border-box;
 }
 
 .container {
