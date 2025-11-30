@@ -16,6 +16,9 @@ APP_DIR="${APP_ROOT}/app"
 SYSTEMD_SERVICE=${SYSTEMD_SERVICE:-sales-assistant}
 
 echo "[update] 1/4 - Syncing code (reset to origin/main)..."
+# Force HTTP/1.1 to avoid HTTP/2 stream errors
+sudo -u "${APP_USER}" git config --global http.version HTTP/1.1
+
 # Fetch latest changes
 sudo -u "${APP_USER}" git -C "${APP_DIR}" fetch origin
 # Force reset to match remote (discards local changes)

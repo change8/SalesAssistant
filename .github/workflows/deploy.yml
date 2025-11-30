@@ -26,4 +26,6 @@ jobs:
               exit 1
             fi
             cd /opt/sales-assistant/app
+            # Force HTTP/1.1 to avoid HTTP/2 stream errors
+            sudo -u salesassistant git config --global http.version HTTP/1.1
             sudo ./update.sh
