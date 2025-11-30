@@ -162,7 +162,6 @@
         </view>
       </view>
     </view>
-    </block>
 
     <!-- Qualification/IP Results -->
     <block wx:if="{{activeTab === 1 || activeTab === 2}}">
