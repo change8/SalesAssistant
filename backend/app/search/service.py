@@ -13,6 +13,8 @@ from backend.app.search.assets_models import QualificationAsset, IntellectualPro
 from backend.app.core.database import ContractsSessionLocal
 
 
+from backend.app.common.currency_service import convert_and_format
+
 def parse_amount_string(amount_str: str) -> Optional[float]:
     """Parse amount string like '中国人民币 526,548.00' to float."""
     if not amount_str:
@@ -168,7 +170,7 @@ def search_contracts(
                 'contract_title': contract.title,
                 'contract_number': contract.contract_number,
                 'customer_name': contract.customer_name,
-                'contract_amount': contract.contract_amount,
+                'contract_amount': convert_and_format(contract.contract_amount),
                 'contract_amount_raw': amount_raw,
                 'signing_date': contract.signed_at,
                 'contract_type': contract_type,
@@ -358,7 +360,7 @@ def get_contract_by_id(db: Session, contract_id: int) -> Optional[dict]:
             'project_name': contract.title,
             'contract_number': contract.contract_number,
             'client_name': contract.customer_name,
-            'contract_amount': amount_raw, # Schema expects Decimal/float? No, schema says Decimal, but we can pass float/str usually
+            'contract_amount': convert_and_format(contract.contract_amount), # Schema expects Decimal/float? No, schema says Decimal, but we can pass float/str usually
             'signing_date': None, # Schema expects date, but DB has string. Need handling.
             'project_description': contract.description,
             'status': contract.status or 'active',
