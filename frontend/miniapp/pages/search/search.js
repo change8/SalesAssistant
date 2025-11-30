@@ -435,10 +435,17 @@ Page({
                     '转售业务': '转',
                     '计件计量': '计'
                 };
-                // Default to first 2 chars if not matched, or just keep original if short?
-                // User asked for specific mapping.
                 item.short_type = typeMap[item.contract_type] || item.contract_type;
             }
+
+            // Parse Customer Name (Remove Industry)
+            if (item.customer_name) {
+                const { customerName } = this.parseCustomerInfo(item.customer_name);
+                item.display_customer = customerName;
+            } else {
+                item.display_customer = '-';
+            }
+
             return item;
         });
     },
