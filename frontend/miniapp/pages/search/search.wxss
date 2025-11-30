@@ -710,9 +710,9 @@ view, text, scroll-view, input, button {
 }
 
 .detail-footer {
-  padding: 24rpx 40rpx;
+  padding: 20rpx 40rpx; /* Reduced top padding */
   border-top: 1rpx solid #f3f4f6;
-  padding-bottom: calc(16rpx + env(safe-area-inset-bottom)); /* Half of original 32rpx */
+  padding-bottom: env(safe-area-inset-bottom); /* Only safe area, no extra padding */
   flex-shrink: 0; /* Prevent shrinking */
   background: white;
 }
