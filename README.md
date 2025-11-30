@@ -151,3 +151,4 @@ cp .env.example .env
 - [TODO / Backlog 列表](docs/todo.md)：待办事项与优先级记录。
 - [微信小程序规划](docs/wechat-miniapp.md)：小程序落地准备与环境清单。
 Last deployment test: Sun Nov 30 16:10:39 CST 2025
+Deployment retry test: Sun Nov 30 17:00:08 CST 2025
