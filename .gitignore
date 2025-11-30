@@ -12,6 +12,7 @@ __pycache__/
 .env
 sales_assistant.db
 *.sqlite3
+*.db
 
 # macOS
 .DS_Store

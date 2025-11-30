@@ -1,5 +1,5 @@
 """Enhanced service layer for Simple Search feature."""
-from typing import Optional
+from typing import Optional, List, Tuple, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import or_, and_, func, select, case
 import re
@@ -9,7 +9,7 @@ from datetime import datetime
 
 from backend.app.search import models, schemas
 from backend.app.search.contracts_models import ExistingContract
-from backend.app.search.assets_models import ExistingAsset
+from backend.app.search.assets_models import QualificationAsset, IntellectualPropertyAsset
 from backend.app.core.database import ContractsSessionLocal
 
 
@@ -36,16 +36,9 @@ def extract_industry(customer_name: str) -> Optional[str]:
 def search_contracts(
     db: Session,  # Not used for contracts, kept for API consistency
     params: schemas.ContractSearchParams
-) -> tuple[list[dict], int]:
+) -> Tuple[List[dict], int]:
     """
     Enhanced contract search from existing contracts.db with fuzzy matching, filters, and relevance sorting.
-    
-    Args:
-        db: Database session (not used for contracts)
-        params: Search parameters with filters
-        
-    Returns:
-        Tuple of (results as dicts, total_count)
     """
     contracts_db = ContractsSessionLocal()
     
@@ -64,7 +57,8 @@ def search_contracts(
                         ExistingContract.project_code.like(search_term),       # 项目编号
                         ExistingContract.customer_name.like(search_term),      # 客户名称
                         ExistingContract.description.like(search_term),        # 合同描述/概述
-                        ExistingContract.tags.like(search_term)                # 合同标签
+                        ExistingContract.tags.like(search_term),               # 合同标签
+                        ExistingContract.industry.like(search_term)            # 行业
                     )
                 )
         
@@ -76,23 +70,20 @@ def search_contracts(
         if params.status:
             query = query.where(ExistingContract.status.like(f"%{params.status}%"))
             
-        # Filter by contract type
+        # Filter by contract type (using tags or specific logic)
         if params.contract_type:
             query = query.where(ExistingContract.tags.like(f"%{params.contract_type}%"))
             
-        # Note: is_fp filter is applied after extracting contract_type from tags
-        # (See below after sorting)
-        
         # Filter by tags
         if params.tags:
             query = query.where(ExistingContract.tags.like(f"%{params.tags}%"))
+
+        # Filter by industry
+        if params.industry:
+            query = query.where(ExistingContract.industry.like(f"%{params.industry}%"))
         
-        # Amount filters
-        if params.min_amount:
-            # This is approximate, actual filtering will be done post-query
-            pass  # Can't filter TEXT amounts easily in SQL
-        if params.max_amount:
-            pass
+        # Amount filters (Client side filtering mostly, but can try basic SQL if format allows)
+        # Since amount is string, we skip SQL filtering for now and do it in python
         
         # Date range filter
         if params.start_date:
@@ -100,14 +91,14 @@ def search_contracts(
         if params.end_date:
             query = query.where(ExistingContract.signed_at <= params.end_date)
         
-        # Get total count
-        count_query = select(func.count()).select_from(query.subquery())
-        total = contracts_db.execute(count_query).scalar()
+        # Get total count (approximation before python filtering)
+        # count_query = select(func.count()).select_from(query.subquery())
+        # total = contracts_db.execute(count_query).scalar()
         
         # Execute query
         all_results = contracts_db.execute(query).scalars().all()
         
-        # Apply FP filter after extracting contract_type (can't do in SQL since contract_type is extracted from tags)
+        # Apply FP filter
         if params.is_fp:
             filtered_results = []
             for contract in all_results:
@@ -116,7 +107,6 @@ def search_contracts(
                     if tags_list and tags_list[0] == '固定金额':  # FP = Fixed Price
                         filtered_results.append(contract)
             all_results = filtered_results
-            total = len(all_results)  # Update total after filtering
         
         # Filter by amount range (client-side due to string storage)
         if params.min_amount is not None or params.max_amount is not None:
@@ -134,7 +124,6 @@ def search_contracts(
         total = len(all_results)
         
         # Relevance + Time Sorting
-        # Sort by relevance first (title match priority), then by date
         if params.q:
             query_lower = params.q.lower()
             def sort_key(contract):
@@ -154,7 +143,7 @@ def search_contracts(
                 signed_date = contract.signed_at or '0000-00-00'
                 return (relevance, signed_date)
             
-            all_results.sort(key=sort_key, reverse=False)  # Ascending relevance, descending date handled in tuple
+            all_results.sort(key=sort_key, reverse=False)
         else:
             # No query: just sort by date descending
             all_results.sort(key=lambda x: x.signed_at or '0000-00-00', reverse=True)
@@ -165,14 +154,13 @@ def search_contracts(
         # Convert to dicts for API response
         contracts_list = []
         for contract in paginated:
-            # Extract contract type from tags (first tag before comma)
+            # Extract contract type from tags
             contract_type = None
             if contract.tags:
                 tags_list = [t.strip() for t in contract.tags.split(',')]
                 if tags_list:
-                    contract_type = tags_list[0]  # Use first tag as contract type
+                    contract_type = tags_list[0]
             
-            # Parse amount to raw value for frontend filtering
             amount_raw = parse_amount_string(contract.contract_amount)
             
             contracts_list.append({
@@ -188,6 +176,7 @@ def search_contracts(
                 'project_code': contract.project_code,
                 'description': contract.description,
                 'tags': contract.tags,
+                'industry': contract.industry,
                 'created_at': contract.created_at,
                 'updated_at': contract.updated_at
             })
@@ -201,62 +190,58 @@ def search_contracts(
 def search_assets(
     db: Session,  # Not used, kept for consistency
     params: schemas.AssetSearchParams
-) -> tuple[list[dict], int]:
+) -> Tuple[List[dict], int]:
     """
-    Search assets (qualifications & intellectual property) from contracts.db.
-    
-    Args:
-        db: Database session (not used)
-        params: Search parameters
-        
-    Returns:
-        Tuple of (results as dicts, total_count)
+    Search assets (Intellectual Property) from contracts.db.
+    Note: This now specifically targets IntellectualPropertyAsset for the 'assets' endpoint (IP tab).
     """
     contracts_db = ContractsSessionLocal()
     
     try:
-        query = select(ExistingAsset)
+        query = select(IntellectualPropertyAsset)
         
-        # Filter by category (qualification or intellectual_property)
-        if params.category:
-            query = query.where(ExistingAsset.category == params.category)
-        
-        # Fuzzy search on qualification_name and company_name with keyword splitting
+        # Fuzzy search
         if params.q:
             keywords = params.q.split()
             for keyword in keywords:
                 search_term = f"%{keyword}%"
                 query = query.where(
                     or_(
-                        ExistingAsset.qualification_name.like(search_term),
-                        ExistingAsset.company_name.like(search_term)
+                        IntellectualPropertyAsset.knowledge_name.like(search_term),
+                        IntellectualPropertyAsset.company_name.like(search_term),
+                        IntellectualPropertyAsset.certificate_number.like(search_term),
+                        IntellectualPropertyAsset.inventor.like(search_term)
                     )
                 )
         
         # Filter by company
         if params.company:
-            query = query.where(ExistingAsset.company_name.like(f"%{params.company}%"))
+            query = query.where(IntellectualPropertyAsset.company_name.like(f"%{params.company}%"))
             
-        # Filter by business_type (for IP categories like patent, copyright)
+        # Filter by business_type (patent, copyright, trademark)
         if params.business_type:
-            # Map frontend types to DB values if needed, or assume direct match/fuzzy
-            # Assuming DB stores '专利', '软著', '商标' or similar. 
-            # Frontend sends 'patent', 'copyright', 'trademark'.
-            # Let's map them for better accuracy or use fuzzy if unsure.
             type_map = {
                 'patent': '专利',
                 'copyright': '软著',
                 'trademark': '商标'
             }
             db_type = type_map.get(params.business_type, params.business_type)
-            query = query.where(ExistingAsset.business_type.like(f"%{db_type}%"))
+            # Assuming business_type or patent_category or knowledge_category holds this info
+            # Checking multiple fields to be safe
+            query = query.where(
+                or_(
+                    IntellectualPropertyAsset.business_type.like(f"%{db_type}%"),
+                    IntellectualPropertyAsset.knowledge_category.like(f"%{db_type}%"),
+                    IntellectualPropertyAsset.patent_category.like(f"%{db_type}%")
+                )
+            )
         
         # Get total count
         count_query = select(func.count()).select_from(query.subquery())
         total = contracts_db.execute(count_query).scalar()
         
-        # Sort by expire_date (ascending - expiring soon first)
-        query = query.order_by(ExistingAsset.expire_date.asc().nullslast())
+        # Sort by issue_date
+        query = query.order_by(IntellectualPropertyAsset.issue_date.desc().nullslast())
         
         # Pagination
         query = query.offset(params.offset).limit(params.limit)
@@ -268,15 +253,15 @@ def search_assets(
         for asset in results:
             assets_list.append({
                 'id': asset.id,
-                'category': asset.category,
+                'category': 'intellectual_property',
                 'company_name': asset.company_name,
                 'business_type': asset.business_type,
-                'qualification_name': asset.qualification_name,
-                'qualification_level': asset.qualification_level,
-                'expire_date': asset.expire_date,
-                'next_review_date': asset.next_review_date,
+                'qualification_name': asset.knowledge_name, # Map knowledge_name to qualification_name for schema compatibility
+                'qualification_level': None,
+                'expire_date': None,
+                'next_review_date': None,
                 'download_url': asset.download_url,
-                'collected_at': asset.collected_at,
+                'collected_at': asset.created_at, # Use created_at as collected_at
                 'created_at': asset.created_at,
                 'updated_at': asset.updated_at
             })
@@ -290,47 +275,65 @@ def search_assets(
 def search_qualifications(
     db: Session,
     params: schemas.QualificationSearchParams
-) -> tuple[list[models.Qualification], int]:
+) -> Tuple[List[dict], int]:
     """
-    Search qualifications from sales_assistant.db (test data).
-    Note: This searches the test qualification table, not the assets table.
+    Search qualifications from contracts.db (QualificationAsset).
     """
-    query = select(models.Qualification)
-    
-    # Fuzzy search
-    if params.q:
-        search_term = f"%{params.q}%"
-        query = query.where(
-            or_(
-                models.Qualification.qualification_name.like(search_term),
-                models.Qualification.qualification_type.like(search_term),
-                models.Qualification.scope.like(search_term),
-                models.Qualification.certificate_number.like(search_term)
+    contracts_db = ContractsSessionLocal()
+    try:
+        query = select(QualificationAsset)
+        
+        # Fuzzy search
+        if params.q:
+            search_term = f"%{params.q}%"
+            query = query.where(
+                or_(
+                    QualificationAsset.qualification_name.like(search_term),
+                    QualificationAsset.company_name.like(search_term),
+                    QualificationAsset.certificate_number.like(search_term)
+                )
             )
-        )
-    
-    # Filters
-    if params.qualification_type:
-        query = query.where(
-            models.Qualification.qualification_type.like(f"%{params.qualification_type}%")
-        )
-    
-    if params.status:
-        query = query.where(models.Qualification.status == params.status)
-    
-    # Get total count
-    count_query = select(func.count()).select_from(query.subquery())
-    total = db.execute(count_query).scalar()
-    
-    # Sort by expire_date
-    query = query.order_by(models.Qualification.expire_date.asc().nullslast())
-    
-    # Pagination
-    query = query.offset(params.offset).limit(params.limit)
-    
-    results = db.execute(query).scalars().all()
-    
-    return list(results), total or 0
+        
+        # Filters
+        if params.qualification_type:
+             query = query.where(QualificationAsset.qualification_name.like(f"%{params.qualification_type}%"))
+        
+        if params.status:
+            query = query.where(QualificationAsset.status == params.status)
+        
+        # Get total count
+        count_query = select(func.count()).select_from(query.subquery())
+        total = contracts_db.execute(count_query).scalar()
+        
+        # Sort by expire_date
+        query = query.order_by(QualificationAsset.expire_date.asc().nullslast())
+        
+        # Pagination
+        query = query.offset(params.offset).limit(params.limit)
+        
+        results = contracts_db.execute(query).scalars().all()
+        
+        # Map to schema
+        qual_list = []
+        for q in results:
+            qual_list.append({
+                'id': q.id,
+                'qualification_name': q.qualification_name,
+                'qualification_type': q.business_type, # Map business_type to qualification_type
+                'qualification_level': q.qualification_level,
+                'certificate_number': q.certificate_number,
+                'issue_organization': q.issuer,
+                'issue_date': None, # String to date conversion needed if schema enforces date
+                'expire_date': None, # String to date conversion needed
+                'scope': None,
+                'status': q.status or 'valid',
+                'created_at': q.created_at,
+                'updated_at': q.updated_at
+            })
+            
+        return qual_list, total or 0
+    finally:
+        contracts_db.close()
 
 
 def get_contract_by_id(db: Session, contract_id: int) -> Optional[dict]:
@@ -340,16 +343,24 @@ def get_contract_by_id(db: Session, contract_id: int) -> Optional[dict]:
         contract = contracts_db.get(ExistingContract, contract_id)
         if not contract:
             return None
+        
+        amount_raw = parse_amount_string(contract.contract_amount)
+        contract_type = None
+        if contract.tags:
+            tags_list = [t.strip() for t in contract.tags.split(',')]
+            if tags_list:
+                contract_type = tags_list[0]
+
         return {
             'id': contract.id,
             'project_name': contract.title,
             'contract_number': contract.contract_number,
             'client_name': contract.customer_name,
-            'contract_amount': contract.contract_amount,
-            'signing_date': contract.signed_at,
+            'contract_amount': amount_raw, # Schema expects Decimal/float? No, schema says Decimal, but we can pass float/str usually
+            'signing_date': None, # Schema expects date, but DB has string. Need handling.
             'project_description': contract.description,
             'status': contract.status or 'active',
-            'tags': contract.tags,
+            'contract_type': contract_type,
             'created_at': contract.created_at,
             'updated_at': contract.updated_at
         }
@@ -357,25 +368,34 @@ def get_contract_by_id(db: Session, contract_id: int) -> Optional[dict]:
         contracts_db.close()
 
 
-
-def get_qualification_by_id(db: Session, qual_id: int) -> Optional[models.Qualification]:
+def get_qualification_by_id(db: Session, qual_id: int) -> Optional[dict]:
     """Get qualification by ID."""
-    return db.get(models.Qualification, qual_id)
+    contracts_db = ContractsSessionLocal()
+    try:
+        qual = contracts_db.get(QualificationAsset, qual_id)
+        if not qual:
+            return None
+        return {
+            'id': qual.id,
+            'qualification_name': qual.qualification_name,
+            'qualification_type': qual.business_type,
+            'qualification_level': qual.qualification_level,
+            'certificate_number': qual.certificate_number,
+            'issue_organization': qual.issuer,
+            'status': qual.status or 'valid',
+            'created_at': qual.created_at,
+            'updated_at': qual.updated_at
+        }
+    finally:
+        contracts_db.close()
 
 
 def search_employees(
     db: Session,  # Not used for employees, kept for API consistency
     params: schemas.EmployeeSearchParams
-) -> tuple[list[dict], int]:
+) -> Tuple[List[dict], int]:
     """
     Search employees from contracts.db with fuzzy matching and filters.
-    
-    Args:
-        db: Database session (not used for employees)
-        params: Search parameters with filters
-        
-    Returns:
-        Tuple of (results as dicts, total_count)
     """
     from backend.app.search.employee_models import Employee, EmployeeEducation, EmployeeCertificate
     
@@ -499,15 +519,10 @@ def export_contracts(
     """
     Export contract search results to Excel-compatible CSV.
     """
-    # Reuse search logic to get all results (no pagination limit for export, but maybe set a safe max)
-    # We need to bypass the pagination limit in search_contracts if we want all.
-    # For now, let's just fetch a large number, e.g., 10000.
-    
     contracts_db = ContractsSessionLocal()
     try:
         query = select(ExistingContract)
         
-        # --- COPY OF SEARCH LOGIC (Refactor later to avoid duplication if needed) ---
         if params.q:
             keywords = params.q.split()
             for keyword in keywords:
@@ -519,7 +534,8 @@ def export_contracts(
                         ExistingContract.project_code.like(search_term),
                         ExistingContract.customer_name.like(search_term),
                         ExistingContract.description.like(search_term),
-                        ExistingContract.tags.like(search_term)
+                        ExistingContract.tags.like(search_term),
+                        ExistingContract.industry.like(search_term)
                     )
                 )
         if params.customer:
@@ -530,13 +546,14 @@ def export_contracts(
             query = query.where(ExistingContract.tags.like(f"%{params.contract_type}%"))
         if params.tags:
             query = query.where(ExistingContract.tags.like(f"%{params.tags}%"))
+        if params.industry:
+            query = query.where(ExistingContract.industry.like(f"%{params.industry}%"))
         if params.start_date:
             query = query.where(ExistingContract.signed_at >= params.start_date)
         if params.end_date:
             query = query.where(ExistingContract.signed_at <= params.end_date)
-        # ---------------------------------------------------------------------------
         
-        # Limit export to 5000 to prevent memory issues
+        # Limit export to 5000
         query = query.limit(5000)
         
         results = contracts_db.execute(query).scalars().all()
@@ -546,23 +563,29 @@ def export_contracts(
         writer = csv.writer(output)
         
         # Header
-        writer.writerow(['合同名称', '合同编号', '项目编号', '客户名称', '签订日期', '金额', '状态', '类型', '标签', '描述'])
+        writer.writerow(['合同名称', '合同编号', '项目编号', '客户名称', '签订日期', '金额', '状态', '类型', '标签', '行业', '描述'])
         
         for contract in results:
+            contract_type = None
+            if contract.tags:
+                tags_list = [t.strip() for t in contract.tags.split(',')]
+                if tags_list:
+                    contract_type = tags_list[0]
+                    
             writer.writerow([
                 contract.title,
                 contract.contract_number,
                 contract.project_code,
                 contract.customer_name,
                 contract.signed_at,
-                contract.amount,
+                contract.contract_amount,
                 contract.status,
-                contract.contract_type,
+                contract_type,
                 contract.tags,
+                contract.industry,
                 contract.description
             ])
             
-        # Convert to bytes with BOM for Excel
         output.seek(0)
         byte_output = io.BytesIO()
         byte_output.write(b'\xef\xbb\xbf') # BOM

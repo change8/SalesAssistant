@@ -113,7 +113,7 @@ def create_access_token(*, subject: int, expires_minutes: Optional[int] = None) 
     expire_minutes = expires_minutes or settings.jwt_access_token_expires_minutes
     expire_delta = timedelta(minutes=expire_minutes)
     expire_time = datetime.now(tz=timezone.utc) + expire_delta
-    payload = {"sub": subject, "exp": expire_time}
+    payload = {"sub": str(subject), "exp": expire_time}
     token = jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
     return token, int(expire_delta.total_seconds())
 
