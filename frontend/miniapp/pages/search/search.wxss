@@ -589,7 +589,7 @@ view, text, scroll-view, input, button {
   bottom: -100%;
   left: 0;
   width: 100%;
-  max-height: 85vh;
+  max-height: 75vh; /* Reduced from 85vh to move top down */
   background: white;
   border-radius: 32rpx 32rpx 0 0;
   display: flex;
@@ -701,9 +701,9 @@ view, text, scroll-view, input, button {
 }
 
 .detail-footer {
-  padding: 32rpx 40rpx;
+  padding: 24rpx 40rpx; /* Reduced top/bottom padding */
   border-top: 1rpx solid #f3f4f6;
-  padding-bottom: calc(32rpx + env(safe-area-inset-bottom));
+  padding-bottom: calc(12rpx + env(safe-area-inset-bottom)); /* Reduced bottom padding significantly */
   flex-shrink: 0; /* Prevent shrinking */
   background: white;
 }
