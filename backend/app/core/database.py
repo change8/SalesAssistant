@@ -16,6 +16,12 @@ engine = create_engine(settings.database_url, echo=settings.database_echo, futur
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False, class_=Session)
 Base = declarative_base()
 
+# Contracts database (read-only for existing data)
+from pathlib import Path
+CONTRACTS_DB_PATH = Path(__file__).resolve().parent.parent.parent.parent / "data" / "contracts.db"
+contracts_engine = create_engine(f"sqlite:///{CONTRACTS_DB_PATH}", echo=False, future=True)
+ContractsSessionLocal = sessionmaker(bind=contracts_engine, autoflush=False, autocommit=False, expire_on_commit=False, class_=Session)
+
 
 def init_db() -> None:
     """Create database tables."""

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#667eea">
+    <title>登录 - 销售助手</title>
+    <link rel="stylesheet" href="styles/mobile.css">
+    <style>
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: var(--space-6);
+        }
+
+        .logo-section {
+            text-align: center;
+            margin-bottom: var(--space-8);
+            animation: slideUp 0.6s ease-out;
+        }
+
+        .logo-icon {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto var(--space-4);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius-xl);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            box-shadow: var(--shadow-xl);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .logo-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: var(--space-2);
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo-subtitle {
+            font-size: 15px;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+        }
+
+        .login-form {
+            animation: slideUp 0.6s ease-out 0.2s both;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-3);
+            margin-top: var(--space-8);
+            animation: fadeIn 0.6s ease-out 0.4s both;
+        }
+
+        .feature-card {
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius-lg);
+            padding: var(--space-4);
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: var(--shadow-md);
+        }
+
+        .feature-icon {
+            font-size: 36px;
+            margin-bottom: var(--space-2);
+        }
+
+        .feature-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--space-1);
+        }
+
+        .feature-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-container">
+        <!-- Logo Section -->
+        <div class="logo-section">
+            <div class="logo-icon">📊</div>
+            <h1 class="logo-title">销售助手</h1>
+            <p class="logo-subtitle">智能搜索 · AI 分析 · 高效协作</p>
+        </div>
+
+        <!-- Login Form -->
+        <form class="login-form" id="loginForm" onsubmit="handleLogin(event)">
+            <div class="form-group">
+                <label class="form-label">手机号/用户名</label>
+                <input type="text" class="form-input" id="identifier" placeholder="请输入手机号或用户名" required
+                    autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">密码</label>
+                <input type="password" class="form-input" id="password" placeholder="请输入密码" required
+                    autocomplete="current-password">
+            </div>
+
+            <div id="loginError"
+                style="display: none; color: white; background: rgba(239, 68, 68, 0.9); padding: var(--space-3); border-radius: var(--radius-md); font-size: 14px; margin-bottom: var(--space-4); text-align: center; backdrop-filter: blur(10px);">
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block" id="loginBtn">
+                <span>登录</span>
+            </button>
+
+            <div style="margin-top: var(--space-4); text-align: center;">
+                <a href="register.html"
+                    style="color: white; text-decoration: none; font-size: 14px; font-weight: 500; text-shadow: 0 1px 2px rgba(0,0,0,0.1);">
+                    还没有账号？立即注册 →
+                </a>
+            </div>
+        </form>
+
+        <!-- Features -->
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <div class="feature-title">智能搜索</div>
+                <div class="feature-desc">快速查找合同资质</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🏆</div>
+                <div class="feature-title">资质管理</div>
+                <div class="feature-desc">企业资质查询</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">👥</div>
+                <div class="feature-title">人员管理</div>
+                <div class="feature-desc">证书资质查询</div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">💼</div>
+                <div class="feature-title">知产管理</div>
+                <div class="feature-desc">专利软著商标</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="scripts/mobile.js"></script>
+    <script>
+        checkAuth(false);
+
+        async function handleLogin(event) {
+            event.preventDefault();
+
+            const identifier = document.getElementById('identifier').value.trim();
+            const password = document.getElementById('password').value;
+            const errorEl = document.getElementById('loginError');
+            const loginBtn = document.getElementById('loginBtn');
+
+            errorEl.style.display = 'none';
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span>登录中...</span>';
+
+            try {
+                const data = await apiCall('/auth/login', 'POST', {
+                    phone: identifier,
+                    password
+                });
+
+                auth.setToken(data.access_token);
+
+                const user = await apiCall('/auth/me', 'GET');
+                storage.set('sa_user_role', user.role || 'user');
+                storage.set('sa_user_name', user.full_name || user.username || 'User');
+
+                showToast('登录成功', 'success');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 500);
+
+            } catch (error) {
+                errorEl.textContent = error.message || '登录失败，请检查用户名和密码';
+                errorEl.style.display = 'block';
+
+                loginBtn.style.animation = 'shake 0.5s';
+                setTimeout(() => {
+                    loginBtn.style.animation = '';
+                }, 500);
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '<span>登录</span>';
+            }
+        }
+
+        document.getElementById('identifier').addEventListener('input', () => {
+            document.getElementById('loginError').style.display = 'none';
+        });
+        document.getElementById('password').addEventListener('input', () => {
+            document.getElementById('loginError').style.display = 'none';
+        });
+
+        const shakeStyle = document.createElement('style');
+        shakeStyle.textContent = `
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+        20%, 40%, 60%, 80% { transform: translateX(10px); }
+      }
+    `;
+        document.head.appendChild(shakeStyle);
+    </script>
+</body>
+
+</html>

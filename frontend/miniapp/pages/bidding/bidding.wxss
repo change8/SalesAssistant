@@ -1,0 +1,212 @@
+.container {
+  padding: 20rpx;
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+
+/* Upload Section */
+.upload-section {
+  background: white;
+  border-radius: 16rpx;
+  padding: 80rpx 40rpx;
+  text-align: center;
+}
+
+.upload-icon {
+  font-size: 120rpx;
+  margin-bottom: 30rpx;
+}
+
+.upload-title {
+  font-size: 36rpx;
+  font-weight: 600;
+  margin-bottom: 16rpx;
+}
+
+.upload-desc {
+  font-size: 26rpx;
+  color: #999;
+  margin-bottom: 40rpx;
+}
+
+.upload-btn {
+  background: #3366FF;
+  color: white;
+  border-radius: 40rpx;
+  font-size: 32rpx;
+  padding: 20rpx 60rpx;
+}
+
+/* Analyzing */
+.analyzing {
+  padding: 40rpx 0;
+}
+
+.loading-spinner {
+  width: 80rpx;
+  height: 80rpx;
+  border: 6rpx solid #eee;
+  border-top-color: #3366FF;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 24rpx;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.analyzing-text {
+  font-size: 28rpx;
+  color: #333;
+  margin-bottom: 12rpx;
+}
+
+.analyzing-desc {
+  font-size: 24rpx;
+  color: #999;
+}
+
+/* Result Section */
+.result-section {
+  padding-bottom: 40rpx;
+}
+
+.section-title {
+  font-size: 32rpx;
+  font-weight: 600;
+  margin: 30rpx 0 20rpx;
+  color: #333;
+}
+
+/* Card */
+.card {
+  background: white;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 30rpx;
+  font-weight: 600;
+  margin-bottom: 20rpx;
+  color: #333;
+}
+
+.count {
+  background: rgba(51, 102, 255, 0.1);
+  color: #3366FF;
+  padding: 8rpx 16rpx;
+  border-radius: 20rpx;
+  font-size: 24rpx;
+}
+
+/* Requirements */
+.requirements {
+  font-size: 26rpx;
+}
+
+.requirement-item {
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid #eee;
+}
+
+.requirement-item:last-child {
+  border-bottom: none;
+}
+
+.requirement-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12rpx;
+}
+
+.requirement-desc {
+  flex: 1;
+  font-size: 28rpx;
+  font-weight: 500;
+  color: #333;
+  margin-right: 16rpx;
+}
+
+.requirement-evidence {
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 8rpx;
+}
+
+.requirement-score {
+  font-size: 24rpx;
+  color: #3366FF;
+  margin-top: 8rpx;
+}
+
+.empty-requirements {
+  text-align: center;
+  padding: 40rpx 0;
+  color: #999;
+  font-size: 26rpx;
+}
+
+/* Tags */
+.tag {
+  padding: 8rpx 16rpx;
+  font-size: 22rpx;
+  border-radius: 8rpx;
+  white-space: nowrap;
+}
+
+.tag-success {
+  background: rgba(38, 222, 129, 0.1);
+  color: #26DE81;
+}
+
+.tag-danger {
+  background: rgba(255, 71, 87, 0.1);
+  color: #FF4757;
+}
+
+.tag-warning {
+  background: rgba(255, 165, 2, 0.1);
+  color: #FFA502;
+}
+
+/* Score Estimate */
+.score-estimate {
+  font-size: 48rpx;
+  font-weight: 600;
+  color: #3366FF;
+  text-align: center;
+  padding: 20rpx 0;
+}
+
+/* Insights */
+.insights {
+  font-size: 26rpx;
+  color: #666;
+}
+
+.insight-item {
+  margin-bottom: 12rpx;
+  line-height: 1.6;
+}
+
+.empty-insights {
+  text-align: center;
+  padding: 40rpx 0;
+  color: #999;
+}
+
+/* Reset Button */
+.reset-btn {
+  background: #f5f5f5;
+  color: #666;
+  border-radius: 40rpx;
+  font-size: 32rpx;
+  margin-top: 30rpx;
+}

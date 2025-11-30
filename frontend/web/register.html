@@ -33,6 +33,42 @@
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
+
+    /* Shake Animation */
+    @keyframes shake {
+
+      0%,
+      100% {
+        transform: translateX(0);
+      }
+
+      10%,
+      30%,
+      50%,
+      70%,
+      90% {
+        transform: translateX(-5px);
+      }
+
+      20%,
+      40%,
+      60%,
+      80% {
+        transform: translateX(5px);
+      }
+    }
+
+    .shake {
+      animation: shake 0.5s cubic-bezier(.36, .07, .19, .97) both;
+    }
+
+    .error-message {
+      color: var(--color-danger);
+      font-size: var(--font-size-xs);
+      margin-top: var(--space-2);
+      display: none;
+      font-weight: var(--font-weight-medium);
+    }
   </style>
 </head>
 
@@ -50,13 +86,57 @@
       </div>
 
       <div class="input-group">
-        <label class="input-label" for="fullName">姓名</label>
-        <input type="text" id="fullName" class="input-field" placeholder="您的真实姓名" required>
+        <label class="input-label" for="fullName">用户名</label>
+        <input type="text" id="fullName" class="input-field" placeholder="您的用户名" required>
       </div>
 
       <div class="input-group">
         <label class="input-label" for="password">密码</label>
-        <input type="password" id="password" class="input-field" placeholder="设置登录密码" required>
+        <input type="password" id="password" class="input-field" placeholder="8位以上，包含字母和数字" required>
+        <div id="passwordError" class="error-message"></div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label" for="confirmPassword">确认密码</label>
+        <input type="password" id="confirmPassword" class="input-field" placeholder="请再次输入密码" required>
+      </div>
+
+      <!-- Optional Security Fields -->
+      <div
+        style="margin-top: var(--space-6); border-top: 1px solid var(--color-border-light); padding-top: var(--space-4);">
+        <div class="text-sm"
+          style="color: var(--color-text-secondary); margin-bottom: var(--space-4); cursor: pointer; display: flex; justify-content: space-between; align-items: center;"
+          onclick="toggleSecurityFields()">
+          <span>安全设置 (选填)</span>
+          <span id="securityToggleIcon">▼</span>
+        </div>
+
+        <div id="securityFields" style="display: none;">
+          <div class="input-group">
+            <label class="input-label" for="email">邮箱</label>
+            <input type="email" id="email" class="input-field" placeholder="用于找回密码">
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="securityQuestion">密保问题</label>
+            <select id="securityQuestion" class="input-field">
+              <option value="">请选择密保问题</option>
+              <option value="mother_name">母亲的名字是？</option>
+              <option value="first_pet">第一只宠物的名字是？</option>
+              <option value="primary_school">小学的名字是？</option>
+              <option value="custom">自定义问题</option>
+            </select>
+          </div>
+
+          <div class="input-group" id="customQuestionGroup" style="display: none;">
+            <input type="text" id="customQuestion" class="input-field" placeholder="请输入自定义问题">
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" for="securityAnswer">密保答案</label>
+            <input type="text" id="securityAnswer" class="input-field" placeholder="请输入答案">
+          </div>
+        </div>
       </div>
 
       <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: var(--space-4)">
@@ -70,8 +150,8 @@
     </form>
   </div>
 
-  <script src="app.js"></script>
-  <script src="register.js"></script>
+  <script src="app.js?v=2"></script>
+  <script src="register.js?v=2"></script>
 </body>
 
 </html>

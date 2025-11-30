@@ -27,6 +27,15 @@ class User(TimestampMixin, Base):
     reset_token_expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     wechat_openid: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, unique=True, index=True)
     wechat_unionid: Mapped[Optional[str]] = mapped_column(String(64), nullable=True, unique=True)
+    
+    # Optional security fields
+    email: Mapped[Optional[str]] = mapped_column(String(120), nullable=True, index=True)
+    security_question: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    security_answer: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+
+    # New fields for Simple Search pivot
+    username: Mapped[Optional[str]] = mapped_column(String(64), unique=True, nullable=True, index=True)
+    role: Mapped[str] = mapped_column(String(20), default="user", nullable=False)
 
     # Relationships
     tasks: Mapped[List["Task"]] = relationship("Task", back_populates="user", lazy="select")

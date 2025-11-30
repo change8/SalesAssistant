@@ -203,9 +203,11 @@ async function apiCall(endpoint, method = 'GET', body = null) {
   try {
     const response = await fetch(`${API_BASE}${endpoint}`, options);
 
-    if (response.status === 401) {
+    // Special handling for Login 401 (Invalid Credentials) vs Token Expired 401
+    if (response.status === 401 && !endpoint.includes('/auth/login')) {
+      alert('登录已过期，请重新登录');
       logout();
-      throw new Error('登录已过期，请重新登录');
+      return new Promise(() => { }); // Halt execution to prevent caller from catching and alerting again
     }
 
     const data = await response.json();
@@ -223,24 +225,64 @@ async function apiCall(endpoint, method = 'GET', body = null) {
 
 // --- Auth Actions ---
 
-async function login(phone, password) {
-  const formData = new URLSearchParams();
-  formData.append('username', phone); // FastAPI OAuth2 expects 'username'
-  formData.append('password', password);
-
-  // Note: The backend might expect JSON or Form Data depending on implementation.
-  // Based on standard FastAPI OAuth2PasswordRequestForm, it expects form data.
-  // However, previous app.js used JSON. Let's try JSON first as per previous code.
-
+async function login(identifier, password) {
   try {
-    // Try JSON first (custom auth endpoint)
-    const data = await apiCall('/auth/login', 'POST', { phone, password });
+    // 1. Login to get token
+    const data = await apiCall('/auth/login', 'POST', {
+      phone: identifier, // Backend expects 'phone' field but logic handles username too
+      password
+    });
+
     setToken(data.access_token);
+
+    // 2. Fetch user info to get role
+    const user = await apiCall('/auth/me', 'GET');
+    localStorage.setItem('sa_user_role', user.role || 'user');
+    localStorage.setItem('sa_user_name', user.full_name || user.username || 'User');
+
     window.location.href = 'index.html';
-  } catch (e) {
-    // Fallback or error handling
-    throw e;
+    window.location.href = 'index.html';
+  } catch (error) {
+    const errorEl = document.getElementById('loginError');
+    let msg = error.message || '登录失败';
+
+    // Handle case where message might be a JSON string or object
+    if (typeof msg === 'object') {
+      msg = JSON.stringify(msg);
+    }
+
+    errorEl.textContent = msg;
+    errorEl.style.display = 'block';
+
+    // Shake button
+    const btn = document.querySelector('#loginForm button[type="submit"]');
+    if (btn) {
+      btn.classList.add('shake');
+      setTimeout(() => btn.classList.remove('shake'), 500);
+    }
   }
+}
+
+// Clear error on input
+document.addEventListener('DOMContentLoaded', () => {
+  const inputs = document.querySelectorAll('#loginForm input');
+  inputs.forEach(input => {
+    input.addEventListener('input', () => {
+      const errorEl = document.getElementById('loginError');
+      if (errorEl) errorEl.style.display = 'none';
+    });
+  });
+});
+
+function getUserRole() {
+  return localStorage.getItem('sa_user_role') || 'user';
+}
+
+function logout() {
+  removeToken();
+  localStorage.removeItem('sa_user_role');
+  localStorage.removeItem('sa_user_name');
+  window.location.href = 'login.html';
 }
 
 async function register(phone, fullName, password) {

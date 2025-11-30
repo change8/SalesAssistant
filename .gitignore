@@ -21,3 +21,10 @@ node_modules/
 
 # Misc
 *.log
+
+# User specified exclusions
+contracts.db
+frontend/miniapp/config.js
+frontend/miniapp/project.private.config.json
+deploy.sh
+

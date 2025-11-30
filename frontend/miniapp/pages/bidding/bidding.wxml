@@ -1,0 +1,136 @@
+<view class="container">
+  <!-- Upload Section -->
+  <view wx:if="{{!result}}" class="upload-section">
+    <view class="upload-icon">📄</view>
+    <view class="upload-title">上传标书文件</view>
+    <view class="upload-desc">支持 PDF、Word、TXT 格式</view>
+    
+    <button 
+      wx:if="{{!analyzing}}" 
+      class="upload-btn" 
+      bindtap="chooseFile"
+    >
+      选择文件
+    </button>
+    
+    <view wx:else class="analyzing">
+      <view class="loading-spinner"></view>
+      <view class="analyzing-text">正在分析标书...</view>
+      <view class="analyzing-desc">AI 正在提取关键信息，请稍候</view>
+    </view>
+  </view>
+
+  <!-- Result Section -->
+  <view wx:else class="result-section">
+    <!-- Requirements -->
+    <view class="section-title">需求匹配</view>
+    
+    <!-- Case Requirements -->
+    <view class="card">
+      <view class="card-header">
+        <text>📋 案例要求</text>
+        <text class="count">{{caseRequirements.length}}</text>
+      </view>
+      <view class="requirements">
+        <view 
+          wx:for="{{caseRequirements}}" 
+          wx:key="index"
+          class="requirement-item"
+        >
+          <view class="requirement-header">
+            <text class="requirement-desc">{{item.description}}</text>
+            <text class="tag {{item.statusClass}}">{{item.statusText}}</text>
+          </view>
+          <view wx:if="{{item.evidence}}" class="requirement-evidence">证明: {{item.evidence}}</view>
+          <view wx:if="{{item.score_contribution > 0}}" class="requirement-score">分值: {{item.score_contribution}}</view>
+        </view>
+        <view wx:if="{{caseRequirements.length === 0}}" class="empty-requirements">
+          未提取到相关要求
+        </view>
+      </view>
+    </view>
+
+    <!-- Qualification Requirements -->
+    <view class="card">
+      <view class="card-header">
+        <text>🏆 资质要求</text>
+        <text class="count">{{qualificationRequirements.length}}</text>
+      </view>
+      <view class="requirements">
+        <view 
+          wx:for="{{qualificationRequirements}}" 
+          wx:key="index"
+          class="requirement-item"
+        >
+          <view class="requirement-header">
+            <text class="requirement-desc">{{item.description}}</text>
+            <text class="tag {{item.statusClass}}">{{item.statusText}}</text>
+          </view>
+          <view wx:if="{{item.evidence}}" class="requirement-evidence">证明: {{item.evidence}}</view>
+          <view wx:if="{{item.score_contribution > 0}}" class="requirement-score">分值: {{item.score_contribution}}</view>
+        </view>
+        <view wx:if="{{qualificationRequirements.length === 0}}" class="empty-requirements">
+          未提取到相关要求
+        </view>
+      </view>
+    </view>
+
+    <!-- Personnel Requirements -->
+    <view class="card">
+      <view class="card-header">
+        <text>👥 人员要求</text>
+        <text class="count">{{personnelRequirements.length}}</text>
+      </view>
+      <view class="requirements">
+        <view 
+          wx:for="{{personnelRequirements}}" 
+          wx:key="index"
+          class="requirement-item"
+        >
+          <view class="requirement-header">
+            <text class="requirement-desc">{{item.description}}</text>
+            <text class="tag {{item.statusClass}}">{{item.statusText}}</text>
+          </view>
+          <view wx:if="{{item.evidence}}" class="requirement-evidence">证明: {{item.evidence}}</view>
+          <view wx:if="{{item.score_contribution > 0}}" class="requirement-score">分值: {{item.score_contribution}}</view>
+        </view>
+        <view wx:if="{{personnelRequirements.length === 0}}" class="empty-requirements">
+          未提取到相关要求
+        </view>
+      </view>
+    </view>
+
+    <!-- AI Insights -->
+    <view class="section-title">AI 分析</view>
+    
+    <view class="card">
+      <view class="card-header">📊 预估得分</view>
+      <view class="score-estimate">
+        {{result.has_scoring_standard ? result.total_score_estimate + ' 分' : '未明确评分标准'}}
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="card-header">⚠️ 废标风险</view>
+      <view class="insights">
+        <view wx:for="{{result.disqualifiers}}" wx:key="index" class="insight-item">• {{item}}</view>
+        <view wx:if="{{!result.disqualifiers || result.disqualifiers.length === 0}}" class="empty-insights">
+          无明显废标项
+        </view>
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="card-header">💡 建议</view>
+      <view class="insights">
+        <view wx:for="{{result.suggestions}}" wx:key="index" class="insight-item">• {{item}}</view>
+        <view wx:if="{{!result.suggestions || result.suggestions.length === 0}}" class="empty-insights">
+          暂无建议
+        </view>
+      </view>
+    </view>
+
+    <!-- Reset Button -->
+    <button class="reset-btn" bindtap="reset">重新分析</button>
+  </view>
+</view>

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,18 +14,18 @@
             min-height: 100vh;
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
         }
-        
+
         .auth-card {
             width: 100%;
             max-width: 400px;
             padding: var(--space-10);
         }
-        
+
         .brand-logo {
             text-align: center;
             margin-bottom: var(--space-8);
         }
-        
+
         .brand-logo h1 {
             font-size: var(--font-size-2xl);
             font-weight: var(--font-weight-bold);
@@ -34,19 +35,20 @@
         }
     </style>
 </head>
+
 <body>
     <div class="card auth-card glass fade-in">
         <div class="brand-logo">
             <h1>Sales Assistant</h1>
             <p class="text-sm" style="margin-top: var(--space-2)">销售效率提升平台</p>
         </div>
-        
+
         <form id="loginForm">
             <div class="input-group">
-                <label class="input-label" for="phone">手机号</label>
-                <input type="tel" id="phone" class="input-field" placeholder="请输入手机号" required>
+                <label class="input-label" for="phone">手机号 / 用户名</label>
+                <input type="text" id="phone" class="input-field" placeholder="请输入手机号或用户名" required>
             </div>
-            
+
             <div class="input-group">
                 <div class="flex-between">
                     <label class="input-label" for="password">密码</label>
@@ -54,11 +56,12 @@
                 </div>
                 <input type="password" id="password" class="input-field" placeholder="请输入密码" required>
             </div>
-            
+
             <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: var(--space-4)">
                 登 录
             </button>
-            
+            <div id="loginError" class="error-message"></div>
+
             <div class="text-center" style="margin-top: var(--space-6); text-align: center;">
                 <span class="text-sm">还没有账号？</span>
                 <a href="register.html" style="font-weight: var(--font-weight-medium)">立即注册</a>
@@ -73,7 +76,7 @@
             e.preventDefault();
             const phone = document.getElementById('phone').value;
             const password = document.getElementById('password').value;
-            
+
             const submitBtn = e.target.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerText;
             submitBtn.innerText = '登录中...';
@@ -89,4 +92,5 @@
         });
     </script>
 </body>
+
 </html>

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#667eea">
+    <title>标书助手 - 销售助手</title>
+    <link rel="stylesheet" href="styles/mobile.css">
+    <style>
+        .upload-section {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius-xl);
+            padding: var(--space-8) var(--space-5);
+            text-align: center;
+            box-shadow: var(--shadow-xl);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            margin: var(--space-4) 0;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        .upload-icon {
+            font-size: 80px;
+            margin-bottom: var(--space-4);
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+        }
+
+        .upload-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--space-2);
+        }
+
+        .upload-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-6);
+        }
+
+        .requirement-section {
+            margin-bottom: var(--space-4);
+        }
+
+        .requirement-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: var(--space-3);
+        }
+
+        .requirement-title {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .requirement-count {
+            background: linear-gradient(135deg, var(--primary-start) 0%, var(--primary-end) 100%);
+            color: white;
+            padding: var(--space-1) var(--space-3);
+            border-radius: var(--radius-full);
+            font-size: 12px;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+        }
+
+        .requirement-item {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            padding: var(--space-3);
+            margin-bottom: var(--space-2);
+            border-left: 3px solid var(--border-color);
+        }
+
+        .requirement-item.satisfied {
+            border-left-color: var(--success-color);
+            background: rgba(16, 185, 129, 0.05);
+        }
+
+        .requirement-item.unsatisfied {
+            border-left-color: var(--danger-color);
+            background: rgba(239, 68, 68, 0.05);
+        }
+
+        .requirement-item.manual {
+            border-left-color: var(--warning-color);
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        .requirement-desc {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: var(--space-2);
+        }
+
+        .requirement-meta {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: var(--space-1);
+        }
+
+        .insight-card {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-radius: var(--radius-lg);
+            padding: var(--space-4);
+            margin-bottom: var(--space-3);
+            border: 1px solid rgba(102, 126, 234, 0.2);
+        }
+
+        .insight-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--space-2);
+        }
+
+        .insight-value {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-start) 0%, var(--primary-end) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .insight-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .insight-list li {
+            padding: var(--space-2) 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .insight-list li:last-child {
+            border-bottom: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="mobile-header">
+        <button class="back-btn" onclick="history.back()">←</button>
+        <div class="title">AI 标书分析</div>
+        <div style="width: 44px;"></div>
+    </div>
+
+    <div class="mobile-content">
+        <div class="container">
+            <!-- Upload Section -->
+            <div id="uploadSection" class="upload-section">
+                <div class="upload-icon">📄</div>
+                <h2 class="upload-title">上传标书文件</h2>
+                <p class="upload-desc">支持 PDF、Word、TXT 格式<br>文件大小不超过 10MB</p>
+                <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt" style="display: none;"
+                    onchange="handleFileSelect(event)">
+                <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                    选择文件
+                </button>
+            </div>
+
+            <!-- Analysis Result Section -->
+            <div id="resultSection" style="display: none;">
+                <!-- Requirements -->
+                <div class="section-title" style="color: white;">需求匹配</div>
+
+                <!-- Case Requirements -->
+                <div class="card requirement-section animate-slide-up">
+                    <div class="requirement-header">
+                        <div class="requirement-title">
+                            <span>📋</span>
+                            <span>案例要求</span>
+                        </div>
+                        <span id="caseCount" class="requirement-count">0</span>
+                    </div>
+                    <div id="caseRequirements"></div>
+                </div>
+
+                <!-- Qualification Requirements -->
+                <div class="card requirement-section animate-slide-up" style="animation-delay: 0.1s;">
+                    <div class="requirement-header">
+                        <div class="requirement-title">
+                            <span>🏆</span>
+                            <span>资质要求</span>
+                        </div>
+                        <span id="qualCount" class="requirement-count">0</span>
+                    </div>
+                    <div id="qualRequirements"></div>
+                </div>
+
+                <!-- Personnel Requirements -->
+                <div class="card requirement-section animate-slide-up" style="animation-delay: 0.2s;">
+                    <div class="requirement-header">
+                        <div class="requirement-title">
+                            <span>👥</span>
+                            <span>人员要求</span>
+                        </div>
+                        <span id="personnelCount" class="requirement-count">0</span>
+                    </div>
+                    <div id="personnelRequirements"></div>
+                </div>
+
+                <!-- AI Insights -->
+                <div class="section-title" style="color: white;">AI 分析</div>
+
+                <div class="insight-card animate-slide-up" style="animation-delay: 0.3s;">
+                    <div class="insight-title">📊 预估得分</div>
+                    <div id="scoreEstimate" class="insight-value">-</div>
+                </div>
+
+                <div class="card animate-slide-up" style="animation-delay: 0.4s;">
+                    <div class="card-header">
+                        <span>⚠️</span>
+                        <span>废标风险</span>
+                    </div>
+                    <ul id="disqualifiers" class="insight-list"></ul>
+                </div>
+
+                <div class="card animate-slide-up" style="animation-delay: 0.5s;">
+                    <div class="card-header">
+                        <span>💡</span>
+                        <span>建议</span>
+                    </div>
+                    <ul id="suggestions" class="insight-list"></ul>
+                </div>
+
+                <!-- Actions -->
+                <button class="btn btn-secondary btn-block mt-4" onclick="resetAnalysis()">
+                    重新分析
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <a href="index.html" class="bottom-nav-item">
+            <div class="icon">🏠</div>
+            <div>首页</div>
+        </a>
+        <a href="search.html" class="bottom-nav-item">
+            <div class="icon">🔍</div>
+            <div>搜索</div>
+        </a>
+        <a href="bidding.html" class="bottom-nav-item active">
+            <div class="icon">📄</div>
+            <div>标书</div>
+        </a>
+        <a href="#" class="bottom-nav-item" onclick="window.location.href='index.html'; return false;">
+            <div class="icon">👤</div>
+            <div>我的</div>
+        </a>
+    </div>
+
+    <script src="scripts/mobile.js"></script>
+    <script>
+        checkAuth(true);
+
+        async function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (file.size > 10 * 1024 * 1024) {
+                showToast('文件大小不能超过 10MB', 'error');
+                return;
+            }
+
+            const uploadSection = document.getElementById('uploadSection');
+            uploadSection.innerHTML = `
+        <div class="loading">
+          <div class="loading-spinner"></div>
+          <div style="margin-top: var(--space-3); font-size: 16px; font-weight: 500;">正在分析标书...</div>
+          <div style="font-size: 13px; color: var(--text-secondary); margin-top: var(--space-2);">
+            AI 正在提取关键信息，请稍候
+          </div>
+        </div>
+      `;
+
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                const result = await apiCall('/bidding_v2/analyze', 'POST', formData);
+                displayResults(result);
+                showToast('分析完成', 'success');
+            } catch (error) {
+                showToast(error.message || '分析失败', 'error');
+                resetAnalysis();
+            }
+        }
+
+        function displayResults(data) {
+            document.getElementById('uploadSection').style.display = 'none';
+            document.getElementById('resultSection').style.display = 'block';
+
+            displayRequirements('case', data.requirements);
+            displayRequirements('qualification', data.requirements);
+            displayRequirements('personnel', data.requirements);
+
+            if (data.has_scoring_standard) {
+                document.getElementById('scoreEstimate').textContent = `${data.total_score_estimate} 分`;
+            } else {
+                document.getElementById('scoreEstimate').textContent = '未明确评分标准';
+                document.getElementById('scoreEstimate').style.fontSize = '18px';
+            }
+
+            const disqualifiers = data.disqualifiers || [];
+            document.getElementById('disqualifiers').innerHTML = disqualifiers.length > 0
+                ? disqualifiers.map(item => `<li>• ${item}</li>`).join('')
+                : '<li style="color: var(--success-color);">无明显废标项</li>';
+
+            const suggestions = data.suggestions || [];
+            document.getElementById('suggestions').innerHTML = suggestions.length > 0
+                ? suggestions.map(item => `<li>• ${item}</li>`).join('')
+                : '<li style="color: var(--text-tertiary);">暂无建议</li>';
+        }
+
+        function displayRequirements(category, requirements) {
+            const items = requirements.filter(r => r.category === category);
+            const countId = category === 'case' ? 'caseCount' : category === 'qualification' ? 'qualCount' : 'personnelCount';
+            const containerId = category === 'case' ? 'caseRequirements' : category === 'qualification' ? 'qualRequirements' : 'personnelRequirements';
+
+            document.getElementById(countId).textContent = items.length;
+
+            if (items.length === 0) {
+                document.getElementById(containerId).innerHTML = '<div style="color: var(--text-secondary); text-align: center; padding: var(--space-4);">未提取到相关要求</div>';
+                return;
+            }
+
+            document.getElementById(containerId).innerHTML = items.map(item => {
+                let statusClass = 'manual';
+                let statusIcon = '⚠️';
+                let statusText = '需人工核对';
+
+                if (item.status === 'satisfied') {
+                    statusClass = 'satisfied';
+                    statusIcon = '✅';
+                    statusText = '满足';
+                } else if (item.status === 'unsatisfied') {
+                    statusClass = 'unsatisfied';
+                    statusIcon = '❌';
+                    statusText = '不满足';
+                }
+
+                return `
+          <div class="requirement-item ${statusClass}">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: var(--space-2);">
+              <div class="requirement-desc" style="flex: 1;">${item.description}</div>
+              <span class="tag tag-${statusClass === 'satisfied' ? 'success' : statusClass === 'unsatisfied' ? 'danger' : 'warning'}" style="margin-left: var(--space-2);">
+                ${statusIcon} ${statusText}
+              </span>
+            </div>
+            ${item.evidence ? `<div class="requirement-meta">证明: ${item.evidence}</div>` : ''}
+            ${item.score_contribution > 0 ? `<div class="requirement-meta" style="color: var(--primary-color);">分值: ${item.score_contribution}</div>` : ''}
+          </div>
+        `;
+            }).join('');
+        }
+
+        function resetAnalysis() {
+            document.getElementById('uploadSection').style.display = 'block';
+            document.getElementById('resultSection').style.display = 'none';
+            document.getElementById('fileInput').value = '';
+
+            document.getElementById('uploadSection').innerHTML = `
+        <div class="upload-icon">📄</div>
+        <h2 class="upload-title">上传标书文件</h2>
+        <p class="upload-desc">支持 PDF、Word、TXT 格式<br>文件大小不超过 10MB</p>
+        <input 
+          type="file" 
+          id="fileInput" 
+          accept=".pdf,.doc,.docx,.txt" 
+          style="display: none;"
+          onchange="handleFileSelect(event)"
+        >
+        <button class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+          选择文件
+        </button>
+      `;
+        }
+    </script>
+</body>
+
+</html>

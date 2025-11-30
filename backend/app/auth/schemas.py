@@ -30,6 +30,20 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str = Field(..., min_length=8, max_length=64)
+    email: Optional[str] = None
+    security_question: Optional[str] = None
+    security_answer: Optional[str] = None
+    username: Optional[str] = None
+
+    @field_validator("username")
+    @classmethod
+    def validate_username(cls, value: Optional[str]) -> Optional[str]:
+        if value:
+            if len(value) < 3:
+                raise ValueError("用户名至少需要 3 个字符")
+            if not re.match(r"^[a-zA-Z0-9_]+$", value):
+                raise ValueError("用户名只能包含字母、数字和下划线")
+        return value
 
     @field_validator("password")
     @classmethod
@@ -47,6 +61,8 @@ class UserCreate(UserBase):
 class UserRead(UserBase):
     id: int
     is_active: bool
+    role: str
+    username: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
@@ -61,7 +77,10 @@ class UserLogin(BaseModel):
     @field_validator("phone")
     @classmethod
     def validate_login_phone(cls, value: str) -> str:
-        return UserBase.validate_phone(value)
+        # Allow both phone and username, so we don't enforce strict phone regex here
+        if not value.strip():
+            raise ValueError("手机号/用户名不能为空")
+        return value
 
     @field_validator("password")
     @classmethod

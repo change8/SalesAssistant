@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>省点事 (SaveTime) - 销售效率工具</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=google">
   <style>
     /* Layout Specific Styles */
     .app-shell {
@@ -260,6 +260,101 @@
       gap: var(--space-4);
       margin-top: var(--space-6);
     }
+
+    /* Modal Styles */
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .modal-content {
+      background: var(--color-bg-surface);
+      border-radius: var(--radius-lg);
+      padding: var(--space-6);
+      max-width: 800px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-4);
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 32px;
+      cursor: pointer;
+      color: var(--color-text-secondary);
+      line-height: 1;
+      padding: 0;
+    }
+
+    .modal-close:hover {
+      color: var(--color-text-primary);
+    }
+
+    .modal-body {
+      margin-top: var(--space-4);
+    }
+
+    /* Tab Styles */
+    .tab-btn {
+      background: none;
+      border: none;
+      padding: 12px 20px;
+      cursor: pointer;
+      font-size: 14px;
+      color: var(--color-text-secondary);
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab-btn:hover {
+      color: var(--color-text-primary);
+    }
+
+    .tab-btn.active-tab {
+      color: var(--color-primary);
+      border-bottom-color: var(--color-primary);
+      font-weight: 600;
+    }
+
+    /* Quick Tag Styles */
+    .quick-tag {
+      background: #f3f4f6;
+      border: 1px solid transparent;
+      color: var(--color-text-secondary);
+      padding: 6px 12px;
+      border-radius: 16px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .quick-tag:hover {
+      background: #e5e7eb;
+      color: var(--color-text-primary);
+    }
+
+    .quick-tag.active {
+      background: #eff6ff;
+      border-color: var(--color-primary);
+      color: var(--color-primary);
+      font-weight: 500;
+    }
   </style>
 </head>
 
@@ -273,16 +368,23 @@
       </div>
 
       <nav class="nav-menu">
-        <div class="nav-item active" onclick="switchTab('tasks')">
-          <span>任务中心</span>
+        <!-- Navigation Tabs -->
+        <div class="nav-tabs">
+          <button class="nav-tab active" onclick="switchTab('contracts')" id="tab-contracts">查合同</button>
+          <button class="nav-tab" onclick="switchTab('qualifications')" id="tab-qualifications">查资质</button>
+          <button class="nav-tab" onclick="switchTab('ip')" id="tab-ip">查知识产权</button>
+          <button class="nav-tab" onclick="switchTab('personnel')" id="tab-personnel">查人员</button>
         </div>
-        <div class="nav-item" onclick="switchTab('bidding')">
+        <div class="nav-item" onclick="switchTab('bidding')" id="nav-bidding">
           <span>标书分析</span>
         </div>
-        <div class="nav-item" onclick="switchTab('workload')">
+        <div class="nav-item" onclick="switchTab('simple-search')" id="nav-simple-search">
+          <span>简单查</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('workload')" id="nav-workload">
           <span>工时拆分 (ITO)</span>
         </div>
-        <div class="nav-item" onclick="switchTab('costing')">
+        <div class="nav-item" onclick="switchTab('costing')" id="nav-costing">
           <span>成本预估 (FP)</span>
         </div>
       </nav>
@@ -299,40 +401,34 @@
 
     <!-- Main Content -->
     <main class="main-content">
-      <!-- 1. Task Center -->
+      <!-- 1. Task Center (Default) -->
       <section id="tasks-section" class="module-section active">
-        <div class="page-header flex-between">
-          <div>
-            <h2 class="text-h2">任务中心</h2>
-            <p class="text-body">查看所有后台任务的处理进度与结果。</p>
-          </div>
-          <button class="btn btn-secondary" onclick="loadTasks()">
-            <span style="margin-right: 6px;">↻</span> 刷新
-          </button>
+        <div class="page-header">
+          <h2 class="text-h2">任务中心</h2>
+          <p class="text-body">查看所有历史任务与处理状态。</p>
         </div>
-
-        <div id="taskList" class="task-list">
-          <!-- Tasks will be injected here -->
+        <div class="task-list" id="taskList">
+          <!-- Tasks injected by JS -->
           <div class="text-center text-body" style="padding: 40px;">正在加载任务...</div>
         </div>
       </section>
 
-      <!-- Bidding Analysis Section -->
-      <section id="bidding-section" class="content-section" style="display: none;">
-        <div class="section-header fade-in">
-          <h2 class="text-h2">标书分析助手</h2>
-          <p class="text-body" style="color: var(--color-text-secondary);">智能提取标书要求，自动匹配公司业绩与资质</p>
+      <!-- 2. Bidding Analysis -->
+      <section id="bidding-section" class="module-section">
+        <div class="page-header">
+          <h2 class="text-h2">标书分析</h2>
+          <p class="text-body">上传招标文件，自动提取关键信息与评分点。</p>
         </div>
 
         <!-- Upload State -->
         <div id="bidding-upload-state" class="fade-in">
           <div class="upload-area" id="biddingUpload" onclick="document.getElementById('biddingFileInput').click()">
             <div class="upload-icon">📄</div>
-            <h3 class="text-h3">点击上传招标文件</h3>
+            <p class="text-body">点击上传招标文件</p>
             <p class="text-sm">支持 PDF, Word, TXT 格式</p>
-            <input type="file" id="biddingFileInput" hidden accept=".pdf,.docx,.doc,.txt"
-              onchange="handleBiddingUpload(this)">
           </div>
+          <input type="file" id="biddingFileInput" style="display: none;" accept=".pdf,.docx,.txt,.doc"
+            onchange="handleBiddingUpload(this)">
         </div>
 
         <!-- Result State -->
@@ -409,6 +505,295 @@
         </div>
       </section>
 
+      <!-- Simple Search Section (Default for Users) -->
+      <section id="simple-search-section" class="module-section" style="display: none;">
+        <div class="section-header fade-in" style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <h2 class="text-h2">简单查</h2>
+            <p class="text-body">快速查询合同、资质与人员信息</p>
+          </div>
+          <button onclick="logout()" class="btn btn-secondary" id="simple-search-logout-btn"
+            style="display: none;">退出登录</button>
+        </div>
+
+        <div class="fade-in" style="margin-top: 24px;">
+          <!-- Main Search Tabs -->
+          <div style="display: flex; border-bottom: 1px solid #e5e7eb; margin-bottom: 24px;">
+            <button onclick="switchSearchTab('contracts')" id="searchTabContracts" class="tab-btn active-tab"
+              style="font-size: 16px; padding: 16px 24px;">查合同</button>
+            <button onclick="switchSearchTab('qualifications')" id="searchTabQualifications" class="tab-btn"
+              style="font-size: 16px; padding: 16px 24px;">查资质</button>
+            <button onclick="switchSearchTab('ip')" id="searchTabIP" class="tab-btn"
+              style="font-size: 16px; padding: 16px 24px;">查知识产权</button>
+            <button onclick="switchSearchTab('personnel')" id="searchTabPersonnel" class="tab-btn"
+              style="font-size: 16px; padding: 16px 24px;">查人员</button>
+          </div>
+
+          <!-- Tab Content Container -->
+          <div id="search-content-container">
+
+            <!-- Contract Search Section -->
+            <div id="tab-content-contracts" class="search-tab-content">
+
+              <!-- Google Style Search Header -->
+              <div style="text-align: center; margin-bottom: 40px; padding-top: 20px;">
+
+                <!-- Search Bar -->
+                <div class="search-container-google">
+                  <div class="search-icon-google">
+                    <svg focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20"
+                      height="20">
+                      <path fill="currentColor"
+                        d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z">
+                      </path>
+                    </svg>
+                  </div>
+                  <input type="text" id="contractSearchInput" class="search-input-google"
+                    placeholder="搜索合同名称、编号、项目编号、客户..." onkeypress="if(event.key === 'Enter') searchContracts()">
+                </div>
+
+                <!-- Quick Filters (Google Buttons/Chips Style) -->
+                <div class="chip-group">
+                  <!-- FP Tag -->
+                  <button onclick="toggleQuickTag('fp', 'true')" id="tag-fp" class="chip">只看 FP</button>
+
+                  <!-- Time Tags -->
+                  <button onclick="toggleQuickTag('time', '3')" id="tag-time-3" class="chip">近 3 年</button>
+                  <button onclick="toggleQuickTag('time', '5')" id="tag-time-5" class="chip">近 5 年</button>
+
+                  <!-- Amount Tags -->
+                  <button onclick="toggleQuickTag('amount', '300')" id="tag-amount-300" class="chip">300万+</button>
+                  <button onclick="toggleQuickTag('amount', '500')" id="tag-amount-500" class="chip">500万+</button>
+                  <button onclick="toggleQuickTag('amount', '800')" id="tag-amount-800" class="chip">800万+</button>
+                  <button onclick="toggleQuickTag('amount', '1000')" id="tag-amount-1000" class="chip">1000万+</button>
+
+                  <!-- Status Tag -->
+                  <button onclick="toggleQuickTag('status', 'completed')" id="tag-status-completed"
+                    class="chip">只看完结</button>
+                </div>
+
+                <!-- Advanced Filter Toggle (Subtle Link) -->
+                <div style="display: flex; justify-content: center; gap: 20px; font-size: 14px; align-items: center;">
+                  <a href="javascript:void(0)" onclick="toggleContractFilters()"
+                    style="color: var(--color-text-secondary); text-decoration: none;">更多筛选条件 ▼</a>
+                  <a href="javascript:void(0)" onclick="clearContractFilters()"
+                    style="color: var(--color-text-tertiary); text-decoration: none;">清除筛选</a>
+                  <span style="color: var(--color-border-light);">|</span>
+                  <a href="javascript:void(0)" onclick="exportContracts()"
+                    style="color: var(--color-primary); text-decoration: none; display: flex; align-items: center; gap: 4px;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="7 10 12 15 17 10"></polyline>
+                      <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    导出 Excel
+                  </a>
+                </div>
+
+                <!-- Filters Panel (Collapsible) -->
+                <div id="contractFiltersPanel"
+                  style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--color-border-light); text-align: left;">
+                  <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; max-width: 800px; margin: 0 auto;">
+                    <!-- Row 1: Industry, Type, Customer, Status -->
+                    <div>
+                      <label class="input-label">行业</label>
+                      <input type="text" id="filterIndustry" class="input-field" placeholder="行业" style="width: 100%;">
+                    </div>
+                    <div>
+                      <label class="input-label">合同类型</label>
+                      <input type="text" id="filterType" class="input-field" placeholder="类型" style="width: 100%;">
+                    </div>
+                    <div>
+                      <label class="input-label">客户名称</label>
+                      <input type="text" id="filterCustomer" class="input-field" placeholder="客户名称"
+                        style="width: 100%;">
+                    </div>
+                    <div>
+                      <label class="input-label">合同状态</label>
+                      <select id="filterStatus" class="input-field" style="width: 100%;">
+                        <option value="">全部</option>
+                        <option value="已完结">已完结</option>
+                        <option value="进行中">进行中</option>
+                      </select>
+                    </div>
+
+                    <!-- Row 2: Amount Range -->
+                    <div style="grid-column: span 2;">
+                      <label class="input-label">金额范围 (万)</label>
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="number" id="filterMinAmount" class="input-field" placeholder="最小"
+                          style="width: 100%;">
+                        <span style="color: var(--color-text-tertiary);">-</span>
+                        <input type="number" id="filterMaxAmount" class="input-field" placeholder="最大"
+                          style="width: 100%;">
+                      </div>
+                    </div>
+
+                    <!-- Row 3: Date Range -->
+                    <div style="grid-column: span 2;">
+                      <label class="input-label">签订日期范围</label>
+                      <div style="display: flex; align-items: center; gap: 8px;">
+                        <input type="date" id="filterStartDate" class="input-field" style="width: 100%;">
+                        <span style="color: var(--color-text-tertiary);">-</span>
+                        <input type="date" id="filterEndDate" class="input-field" style="width: 100%;">
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Search Button in Filter Panel -->
+                  <div style="text-align: center; margin-top: 24px;">
+                    <button onclick="searchContracts()" class="btn btn-primary" style="padding: 8px 32px;">搜索</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Active Filters Display -->
+              <div id="activeFilters" style="margin-bottom: 12px; min-height: 20px;"></div>
+
+              <!-- Results -->
+              <div id="contractSearchResults" style="min-height: 100px;">
+                <!-- Initial state empty as requested -->
+              </div>
+            </div>
+
+            <!-- Qualifications Search Section -->
+            <div id="tab-content-qualifications" class="search-tab-content" style="display: none;">
+
+              <!-- Google Style Search Header -->
+              <div style="text-align: center; margin-bottom: 40px; padding-top: 20px;">
+
+                <!-- Search Bar -->
+                <div class="search-container-google">
+                  <div class="search-icon-google">
+                    <svg focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20"
+                      height="20">
+                      <path fill="currentColor"
+                        d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z">
+                      </path>
+                    </svg>
+                  </div>
+                  <input type="text" id="qualificationsSearchInput" class="search-input-google"
+                    placeholder="搜索资质名称、公司名称..." onkeypress="if(event.key === 'Enter') searchQualifications()">
+                </div>
+
+                <!-- Quick Filters -->
+                <div class="chip-group">
+                  <button onclick="toggleQuickTag('group', '1100')" id="tag-group-1100" class="chip">只看集团
+                    (1100)</button>
+                </div>
+              </div>
+
+              <!-- Results -->
+              <div id="qualificationsSearchResults" style="min-height: 100px;"></div>
+            </div>
+
+            <!-- Intellectual Property Search Section -->
+            <div id="tab-content-ip" class="search-tab-content" style="display: none;">
+
+              <!-- Google Style Search Header -->
+              <div style="text-align: center; margin-bottom: 40px; padding-top: 20px;">
+
+                <!-- Search Bar -->
+                <div class="search-container-google">
+                  <div class="search-icon-google">
+                    <svg focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20"
+                      height="20">
+                      <path fill="currentColor"
+                        d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z">
+                      </path>
+                    </svg>
+                  </div>
+                  <input type="text" id="ipSearchInput" class="search-input-google" placeholder="搜索知识产权名称、公司名称..."
+                    onkeypress="if(event.key === 'Enter') searchIP()">
+                </div>
+
+                <!-- Category Filters -->
+                <div class="chip-group">
+                  <button onclick="toggleIPCategory('patent')" id="tag-ip-patent" class="chip">专利</button>
+                  <button onclick="toggleIPCategory('copyright')" id="tag-ip-copyright" class="chip">软著</button>
+                  <button onclick="toggleIPCategory('trademark')" id="tag-ip-trademark" class="chip">商标</button>
+                </div>
+              </div>
+
+              <!-- Results -->
+              <div id="ipSearchResults" style="min-height: 100px;"></div>
+            </div>
+
+            <!-- Personnel Search Section -->
+            <div id="tab-content-personnel" class="search-tab-content" style="display: none;">
+
+              <!-- Google Style Search Header -->
+              <div style="text-align: center; margin-bottom: 40px; padding-top: 20px;">
+
+                <!-- Search Bar -->
+                <div class="search-container-google">
+                  <div class="search-icon-google">
+                    <svg focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20"
+                      height="20">
+                      <path fill="currentColor"
+                        d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z">
+                      </path>
+                    </svg>
+                  </div>
+                  <input type="text" id="personnelSearchInput" class="search-input-google"
+                    placeholder="搜索员工姓名、工号、学校、专业..." onkeypress="if(event.key === 'Enter') searchEmployees()">
+                </div>
+
+                <!-- Filter Toggle (Subtle Link) -->
+                <div style="display: flex; justify-content: center; gap: 20px; font-size: 14px;">
+                  <a href="javascript:void(0)" onclick="togglePersonnelFilters()"
+                    style="color: var(--color-text-secondary); text-decoration: none;">更多筛选条件 ▼</a>
+                  <a href="javascript:void(0)" onclick="clearPersonnelFilters()"
+                    style="color: var(--color-text-tertiary); text-decoration: none;">清除筛选</a>
+                </div>
+
+                <!-- Filter Panel -->
+                <div id="personnelFiltersPanel"
+                  style="display: none; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--color-border-light); text-align: left;">
+                  <div
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; max-width: 800px; margin: 0 auto;">
+                    <div>
+                      <label class="input-label">状态</label>
+                      <select id="filterPersonnelStatus" class="input-field" style="width: 100%;">
+                        <option value="">全部</option>
+                        <option value="在职">在职</option>
+                        <option value="离职">离职</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="input-label">公司</label>
+                      <input type="text" id="filterPersonnelCompany" class="input-field" placeholder="公司/社保公司"
+                        style="width: 100%;">
+                    </div>
+                    <div>
+                      <label class="input-label">学历</label>
+                      <select id="filterPersonnelDegree" class="input-field" style="width: 100%;">
+                        <option value="">全部</option>
+                        <option value="本科">本科</option>
+                        <option value="硕士">硕士</option>
+                        <option value="博士">博士</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label class="input-label">证书名称</label>
+                      <input type="text" id="filterPersonnelCertificate" class="input-field" placeholder="证书名称"
+                        style="width: 100%;">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Results -->
+              <div id="personnelSearchResults" style="min-height: 100px;"></div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+
       <!-- 3. Workload Splitting -->
       <section id="workload-section" class="module-section">
         <div class="page-header">
@@ -474,55 +859,118 @@
         </div>
       </section>
     </main>
-  </div>
 
-  <script src="app.js"></script>
-  <script>
-    // UI Logic
-    function switchTab(tabId) {
-      // Update Nav
-      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-      event.currentTarget.classList.add('active');
 
-      // Update Content
-      document.querySelectorAll('.module-section').forEach(el => el.classList.remove('active'));
-      document.getElementById(tabId + '-section').classList.add('active');
 
-      if (tabId === 'tasks') {
-        loadTasks();
-      }
-    }
 
-    // Initialize
-    document.addEventListener('DOMContentLoaded', () => {
-      checkAuth();
-      loadUserInfo();
-      loadTasks();
-    });
+    <script src="app.js?v=2"></script>
+    <script src="bidding/main.js?v=2"></script>
+    <script>
+      // UI Logic
+      function switchTab(tabId) {
+        console.log('Switching to tab:', tabId);
+        // Update Nav
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        const navItem = document.getElementById('nav-' + tabId);
+        if (navItem) navItem.classList.add('active');
 
-    async function loadUserInfo() {
-      try {
-        const user = await apiCall('/auth/me');
-        document.getElementById('userName').innerText = user.full_name || user.phone;
-        document.getElementById('userAvatar').innerText = (user.full_name || user.phone)[0].toUpperCase();
-      } catch (e) {
-        console.error(e);
-      }
-    }
+        // Update Content
+        document.querySelectorAll('.module-section').forEach(el => {
+          el.classList.remove('active');
+          el.style.display = 'none'; // Force hide
+        });
 
-    // Task Rendering
-    async function loadTasks() {
-      const container = document.getElementById('taskList');
-      container.innerHTML = '<div class="text-center text-body" style="padding: 20px;">加载中...</div>';
-
-      try {
-        const data = await apiCall('/tasks/');
-        if (data.tasks.length === 0) {
-          container.innerHTML = '<div class="text-center text-body" style="padding: 40px;">暂无任务</div>';
-          return;
+        const section = document.getElementById(tabId + '-section');
+        if (section) {
+          section.style.display = 'block';
+          section.classList.add('active');
         }
 
-        container.innerHTML = data.tasks.map(task => `
+        if (tabId === 'tasks') {
+          loadTasks();
+        }
+      }
+
+      // Initialize - CRITICAL: Fetch role from backend to avoid stale cache
+      document.addEventListener('DOMContentLoaded', async () => {
+        console.log('App Initializing...');
+        checkAuth();
+
+        // FETCH FRESH ROLE FROM BACKEND (not from localStorage)
+        let role = 'user'; // default
+        try {
+          const user = await apiCall('/auth/me', 'GET');
+          role = user.role || 'user';
+          console.log('User Role from Backend:', role, 'User:', user);
+
+          // Update localStorage with fresh data
+          localStorage.setItem('sa_user_role', role);
+          localStorage.setItem('sa_user_name', user.full_name || user.username || user.phone);
+
+          // Update user info display
+          document.getElementById('userName').innerText = user.full_name || user.username || user.phone;
+          document.getElementById('userAvatar').innerText = (user.full_name || user.username || user.phone)[0].toUpperCase();
+        } catch (e) {
+          console.error('Failed to fetch user info:', e);
+          // Fallback to localStorage if API fails
+          role = getUserRole();
+        }
+
+        const sidebar = document.querySelector('.sidebar');
+        const logoutBtn = document.getElementById('simple-search-logout-btn');
+
+        if (role === 'admin') {
+          // Admin: Show Sidebar, Default to Tasks
+          console.log('Admin mode: Showing sidebar');
+          if (sidebar) sidebar.style.display = 'flex';
+          if (logoutBtn) logoutBtn.style.display = 'none'; // Admin has logout in sidebar
+          switchTab('tasks');
+        } else {
+          // User: Hide Sidebar, Show Simple Search ONLY
+          console.log('User mode: Hiding sidebar, showing Simple Search');
+          if (sidebar) {
+            sidebar.style.setProperty('display', 'none', 'important');
+          }
+          if (logoutBtn) logoutBtn.style.display = 'block'; // Show logout button for users
+
+          // Adjust layout for no sidebar
+          const mainContent = document.querySelector('.main-content');
+          if (mainContent) mainContent.style.marginLeft = '0';
+
+          // Force switch to simple search
+          switchTab('simple-search');
+        }
+      });
+
+      async function loadUserInfo() {
+        // This function is now called in DOMContentLoaded, but keeping it for compatibility
+        try {
+          const user = await apiCall('/auth/me');
+          // Update role in storage just in case
+          localStorage.setItem('sa_user_role', user.role || 'user');
+
+          document.getElementById('userName').innerText = user.full_name || user.username || user.phone;
+          document.getElementById('userAvatar').innerText = (user.full_name || user.username || user.phone)[0].toUpperCase();
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      // Task Rendering
+      async function loadTasks() {
+        const container = document.getElementById('taskList');
+        if (!container) return;
+
+        container.innerHTML = '<div class="text-center text-body" style="padding: 20px;">加载中...</div>';
+
+        try {
+          const data = await apiCall('/tasks/');
+          if (data.tasks.length === 0) {
+            container.innerHTML = '<div class="text-center text-body" style="padding: 40px;">暂无任务</div>';
+            return;
+          }
+
+          container.innerHTML = data.tasks.map(task => `
                     <div class="task-item" onclick="viewTaskDetail(${task.id})">
                         <div style="display: flex; align-items: center; gap: var(--space-4);">
                             <div style="width: 40px; height: 40px; background: var(--color-bg-base); border-radius: 8px; display: flex; align-items: center; justify-content: center;">
@@ -536,82 +984,720 @@
                         <div class="status-badge status-${task.status}">${task.status}</div>
                     </div>
                 `).join('');
-      } catch (e) {
-        container.innerHTML = `<div class="text-center text-danger">加载失败: ${e.message}</div>`;
+        } catch (e) {
+          container.innerHTML = `<div class="text-center text-danger">加载失败: ${e.message}</div>`;
+        }
       }
-    }
 
-    function getTaskIcon(type) {
-      if (type.includes('bidding')) return '📄';
-      if (type.includes('workload')) return '📊';
-      if (type.includes('cost')) return '💰';
-      return '📝';
-    }
-
-    function getTaskTitle(task) {
-      if (task.metadata && task.metadata.filename) return task.metadata.filename;
-      if (task.task_type === 'bidding_analysis') return '标书分析';
-      if (task.task_type === 'workload_analysis') return '工时拆分';
-      if (task.task_type === 'cost_estimation') return '成本预估';
-      return '未知任务';
-    }
-
-    // Handlers
-    async function handleBiddingUpload(input) {
-      if (!input.files[0]) return;
-      const formData = new FormData();
-      formData.append('file', input.files[0]);
-
-      try {
-        await apiCall('/tasks/bidding/file', 'POST', formData);
-        alert('任务已提交');
-        switchTab('tasks');
-      } catch (e) {
-        alert('上传失败: ' + e.message);
+      function getTaskIcon(type) {
+        if (type.includes('bidding')) return '📄';
+        if (type.includes('workload')) return '📊';
+        if (type.includes('cost')) return '💰';
+        return '📝';
       }
-    }
 
-    async function handleWorkloadSubmit(e) {
-      e.preventDefault();
-      const file = document.getElementById('workloadFile').files[0];
-      if (!file) return alert('请选择文件');
-
-      const formData = new FormData();
-      formData.append('file', file);
-      // Add other params if API supports
-
-      try {
-        await apiCall('/workload/analyze', 'POST', formData);
-        alert('任务已提交');
-        switchTab('tasks');
-      } catch (err) {
-        alert('提交失败: ' + err.message);
+      function getTaskTitle(task) {
+        if (task.metadata && task.metadata.filename) return task.metadata.filename;
+        if (task.task_type === 'bidding_analysis') return '标书分析';
+        if (task.task_type === 'workload_analysis') return '工时拆分';
+        if (task.task_type === 'cost_estimation') return '成本预估';
+        return '未知任务';
       }
-    }
 
-    async function handleCostingSubmit(e) {
-      e.preventDefault();
-      const file = document.getElementById('costingFile').files[0];
-      if (!file) return alert('请选择文件');
+      // Handlers
+      async function handleBiddingUpload(input) {
+        if (!input.files[0]) return;
+        const formData = new FormData();
+        formData.append('file', input.files[0]);
 
-      const formData = new FormData();
-      formData.append('file', file);
-
-      try {
-        await apiCall('/costing/analyze', 'POST', formData);
-        alert('任务已提交');
-        switchTab('tasks');
-      } catch (err) {
-        alert('提交失败: ' + err.message);
+        try {
+          await apiCall('/tasks/bidding/file', 'POST', formData);
+          // Use custom alert or toast ideally, but alert is fine for now
+          alert('任务已提交');
+          switchTab('tasks');
+        } catch (e) {
+          alert('上传失败: ' + e.message);
+        }
       }
-    }
 
-    function viewTaskDetail(taskId) {
-      // Simple alert for now, ideally open a modal
-      alert('查看任务详情功能待完善，请查看控制台日志');
-      apiCall(`/tasks/${taskId}`).then(console.log);
-    }
-  </script>
+      async function handleWorkloadSubmit(e) {
+        e.preventDefault();
+        const file = document.getElementById('workloadFile').files[0];
+        if (!file) return alert('请选择文件');
+
+        const formData = new FormData();
+        formData.append('file', file);
+        // Add other params if API supports
+
+        try {
+          await apiCall('/workload/analyze', 'POST', formData);
+          alert('任务已提交');
+          switchTab('tasks');
+        } catch (err) {
+          alert('提交失败: ' + err.message);
+        }
+      }
+
+      async function handleCostingSubmit(e) {
+        e.preventDefault();
+        const file = document.getElementById('costingFile').files[0];
+        if (!file) return alert('请选择文件');
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+          await apiCall('/costing/analyze', 'POST', formData);
+          alert('任务已提交');
+          switchTab('tasks');
+        } catch (err) {
+          alert('提交失败: ' + err.message);
+        }
+      }
+
+      function viewTaskDetail(taskId) {
+        // Simple alert for now, ideally open a modal
+        alert('查看任务详情功能待完善，请查看控制台日志');
+        apiCall(`/tasks/${taskId}`).then(console.log);
+      }
+
+
+      // ===== Enhanced Search Functions =====
+
+      function toggleContractFilters() {
+        const panel = document.getElementById('contractFiltersPanel');
+        const toggleText = document.getElementById('filterToggleText');
+        const toggleIcon = document.getElementById('filterToggleIcon');
+
+        if (panel.style.display === 'none') {
+          panel.style.display = 'block';
+          toggleText.textContent = '隐藏筛选条件';
+          toggleIcon.textContent = '▲';
+        } else {
+          panel.style.display = 'none';
+          toggleText.textContent = '更多筛选条件';
+          toggleIcon.textContent = '▼';
+        }
+      }
+
+      function clearContractFilters() {
+        document.getElementById('filterCustomer').value = '';
+        document.getElementById('filterStatus').value = '';
+        document.getElementById('filterType').value = '';
+        document.getElementById('filterTags').value = '';
+        document.getElementById('filterIndustry').value = '';
+        document.getElementById('filterMinAmount').value = '';
+        document.getElementById('filterMaxAmount').value = '';
+        document.getElementById('filterStartDate').value = '';
+        document.getElementById('filterEndDate').value = '';
+
+        // Clear Quick Tags
+        activeQuickTags = {
+          fp: false,
+          time: null,
+          amount: null,
+          status: null
+        };
+        document.querySelectorAll('.quick-tag').forEach(el => el.classList.remove('active'));
+
+        searchContracts();
+      }
+
+      // Quick Tags State
+      let activeQuickTags = {
+        fp: false,
+        time: null, // '3', '5'
+        amount: null, // '300', '500', '800', '1000'
+        status: null, // 'completed'
+        group: '1100' // Default to Group Only
+      };
+
+      function toggleQuickTag(type, value) {
+        const tagId = `tag-${type}${value && value !== 'true' ? '-' + value : ''}`;
+        const btn = document.getElementById(tagId);
+
+        if (type === 'fp') {
+          activeQuickTags.fp = !activeQuickTags.fp;
+          btn.classList.toggle('active', activeQuickTags.fp);
+        } else if (type === 'status') {
+          // Toggle status (currently only 'completed')
+          if (activeQuickTags.status === value) {
+            activeQuickTags.status = null;
+            btn.classList.remove('active');
+          } else {
+            activeQuickTags.status = value;
+            btn.classList.add('active');
+          }
+        } else if (type === 'group') {
+          // Toggle group filter
+          if (activeQuickTags.group === value) {
+            activeQuickTags.group = null;
+            btn.classList.remove('active');
+          } else {
+            activeQuickTags.group = value;
+            btn.classList.add('active');
+          }
+          // Trigger qualification search if on that tab
+          if (document.getElementById('tab-content-qualifications').style.display !== 'none') {
+            searchQualifications();
+            return;
+          }
+        } else {
+          // Mutually exclusive groups (time, amount)
+          if (activeQuickTags[type] === value) {
+            // Deselect if clicking active
+            activeQuickTags[type] = null;
+            btn.classList.remove('active');
+          } else {
+            // Deselect others in group
+            document.querySelectorAll(`[id^="tag-${type}-"]`).forEach(el => el.classList.remove('active'));
+            // Select new
+            activeQuickTags[type] = value;
+            btn.classList.add('active');
+          }
+        }
+
+        // Trigger search automatically
+        searchContracts();
+      }
+
+      let searchDebounceTimer;
+
+      // Initialize debounced search on load
+      document.addEventListener('DOMContentLoaded', () => {
+        const contractInput = document.getElementById('contractSearchInput');
+        if (contractInput) {
+          contractInput.addEventListener('input', () => {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(searchContracts, 600);
+          });
+        }
+
+        const qualInput = document.getElementById('qualificationsSearchInput');
+        if (qualInput) {
+          qualInput.addEventListener('input', () => {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(searchQualifications, 600);
+          });
+        }
+
+        const ipInput = document.getElementById('ipSearchInput');
+        if (ipInput) {
+          ipInput.addEventListener('input', () => {
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(searchIP, 600);
+          });
+        }
+
+        // Initialize Group Filter UI
+        if (activeQuickTags.group === '1100') {
+          const groupBtn = document.getElementById('tag-group-1100');
+          if (groupBtn) groupBtn.classList.add('active');
+        }
+      });
+
+      async function searchContracts(page = 1) {
+        const query = document.getElementById('contractSearchInput').value;
+        const resultsDiv = document.getElementById('contractSearchResults');
+
+        // Show loading state
+        if (page === 1) {
+          resultsDiv.innerHTML = '<p class="text-body" style="text-align: center; padding: 40px;">搜索中...</p>';
+        }
+
+        try {
+          const params = new URLSearchParams({
+            q: query,
+            page: page,
+            limit: '20'
+          });
+
+          // Add Filter Panel Params
+          const filters = {
+            customer: document.getElementById('filterCustomer').value,
+            status: document.getElementById('filterStatus').value,
+            type: document.getElementById('filterType').value,
+            tags: document.getElementById('filterTags') ? document.getElementById('filterTags').value : '',
+            industry: document.getElementById('filterIndustry').value,
+            min_amount: document.getElementById('filterMinAmount').value,
+            max_amount: document.getElementById('filterMaxAmount').value,
+            start_date: document.getElementById('filterStartDate').value,
+            end_date: document.getElementById('filterEndDate').value
+          };
+
+          Object.keys(filters).forEach(key => {
+            if (filters[key]) params.append(key, filters[key]);
+          });
+
+          // Add Quick Tags Params
+          if (activeQuickTags.fp) {
+            params.append('is_fp', 'true');
+          }
+          if (activeQuickTags.status === 'completed') {
+            if (!filters.status) params.append('status', '已完结');
+          }
+          if (activeQuickTags.time) {
+            const years = parseInt(activeQuickTags.time);
+            const date = new Date();
+            date.setFullYear(date.getFullYear() - years);
+            const dateStr = date.toISOString().split('T')[0];
+            if (!filters.start_date) params.append('start_date', dateStr);
+          }
+          if (activeQuickTags.amount) {
+            const amount = parseInt(activeQuickTags.amount) * 10000;
+            if (!filters.min_amount) params.append('min_amount', amount);
+          }
+
+          const data = await apiCall(`/search/contracts?${params.toString()}`);
+
+          if (data.total === 0) {
+            resultsDiv.innerHTML = '<p class="text-body" style="text-align: center; padding: 40px;">未找到相关合同</p>';
+            return;
+          }
+
+          let html = `<div style="margin-bottom: 12px;"><strong>找到 ${data.total} 条结果</strong></div>`;
+
+          data.results.forEach(contract => {
+            // Calculate Tags for Display
+            let displayTags = [];
+
+            const amountVal = parseFloat(contract.contract_amount_raw || 0);
+            if (amountVal >= 10000000) displayTags.push({ text: '1000万+', color: 'blue' });
+            else if (amountVal >= 8000000) displayTags.push({ text: '800万+', color: 'blue' });
+            else if (amountVal >= 5000000) displayTags.push({ text: '500万+', color: 'blue' });
+            else if (amountVal >= 3000000) displayTags.push({ text: '300万+', color: 'blue' });
+
+            if (contract.contract_type === '固定金额') {
+              displayTags.push({ text: 'FP', color: 'purple' });
+            }
+
+            if (contract.contract_status === '已完结' || contract.contract_status === '完结') {
+              displayTags.push({ text: '已完结', color: 'green' });
+            }
+
+            const tagsHtml = displayTags.map(t => {
+              const colorClass = t.color === 'blue' ? 'tag-blue' : (t.color === 'purple' ? 'tag-purple' : 'tag-green');
+              return `<span class="tag ${colorClass}">${t.text}</span>`;
+            }).join('');
+
+            html += `
+            <div class="result-card">
+              <div class="result-header">
+                <div class="result-title-group">
+                  <h3 class="result-title">
+                    ${contract.contract_title} 
+                    <span class="result-id">#${contract.contract_number}</span>
+                  </h3>
+                  ${contract.description ? `<p class="result-description">${contract.description}</p>` : ''}
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px;">
+                    <span class="result-date">${contract.signing_date || '无日期'}</span>
+                    <button onclick="copyContractInfo('${contract.contract_number}', '${contract.contract_title}', '${contract.customer_name}', '${contract.contract_amount}')" class="btn btn-sm btn-secondary" style="padding: 2px 8px; font-size: 12px;">复制信息</button>
+                </div>
+              </div>
+              
+              <div class="result-meta">
+                <div class="result-amount">
+                  💰 ${contract.contract_amount || '-'}
+                </div>
+                <div class="result-customer">
+                  🏢 ${contract.customer_name || '-'}
+                </div>
+              </div>
+
+              <div class="result-info-grid">
+                ${contract.project_code ? `<span class="result-info-item">📋 项目编号: <strong>${contract.project_code}</strong></span>` : ''}
+                ${contract.contract_type ? `<span class="result-info-item">📄 类型: <strong>${contract.contract_type}</strong></span>` : ''}
+                ${contract.contract_status ? `<span class="result-info-item">📊 状态: <strong>${contract.contract_status}</strong></span>` : ''}
+              </div>
+
+              <div class="result-tags">
+                ${tagsHtml}
+                ${contract.tags ? contract.tags.split(',').map(tag => `<span class="tag tag-gray">${tag.trim()}</span>`).join('') : ''}
+              </div>
+            </div>
+          `;
+          });
+
+          if (data.pages > 1) {
+            html += `
+            <div style="display: flex; justify-content: center; gap: 12px; margin-top: 20px;">
+              <button class="btn btn-secondary" ${page === 1 ? 'disabled' : ''} onclick="searchContracts(${page - 1})">上一页</button>
+              <span style="display: flex; align-items: center;">第 ${page} / ${data.pages} 页</span>
+              <button class="btn btn-secondary" ${page === data.pages ? 'disabled' : ''} onclick="searchContracts(${page + 1})">下一页</button>
+            </div>
+          `;
+          }
+
+          resultsDiv.innerHTML = html;
+        } catch (err) {
+          resultsDiv.innerHTML = `<p class="text-body" style="text-align: center; padding: 40px; color: red;">搜索失败: ${err.message}</p>`;
+        }
+      }
+
+      async function exportContracts() {
+        const query = document.getElementById('contractSearchInput').value;
+        const params = new URLSearchParams({ q: query });
+
+        // Add all active filters
+        const filters = {
+          customer: document.getElementById('filterCustomer').value,
+          status: document.getElementById('filterStatus').value,
+          type: document.getElementById('filterType').value,
+          tags: document.getElementById('filterTags') ? document.getElementById('filterTags').value : '',
+          industry: document.getElementById('filterIndustry').value,
+          min_amount: document.getElementById('filterMinAmount').value,
+          max_amount: document.getElementById('filterMaxAmount').value,
+          start_date: document.getElementById('filterStartDate').value,
+          end_date: document.getElementById('filterEndDate').value
+        };
+        Object.keys(filters).forEach(key => {
+          if (filters[key]) params.append(key, filters[key]);
+        });
+
+        // Add Quick Tags
+        if (activeQuickTags.fp) params.append('is_fp', 'true');
+        if (activeQuickTags.status === 'completed' && !filters.status) params.append('status', '已完结');
+        if (activeQuickTags.time) {
+          const years = parseInt(activeQuickTags.time);
+          const date = new Date();
+          date.setFullYear(date.getFullYear() - years);
+          params.append('start_date', date.toISOString().split('T')[0]);
+        }
+        if (activeQuickTags.amount) {
+          params.append('min_amount', parseInt(activeQuickTags.amount) * 10000);
+        }
+
+        // Trigger download
+        window.location.href = `/api/search/contracts/export?${params.toString()}`;
+      }
+
+      function copyContractInfo(no, title, customer, amount) {
+        const text = `合同编号: ${no}\n合同名称: ${title}\n客户: ${customer}\n金额: ${amount}`;
+        navigator.clipboard.writeText(text).then(() => {
+          alert('已复制到剪切板');
+        }).catch(err => {
+          console.error('复制失败', err);
+          alert('复制失败，请手动复制');
+        });
+      }
+
+      // --- Qualifications Search ---
+      async function searchQualifications() {
+        const query = document.getElementById('qualificationsSearchInput').value.trim();
+        const resultsDiv = document.getElementById('qualificationsSearchResults');
+
+        // Initial state check removed as requested, but we still need a query or filter to search effectively?
+        // User said "remove enter keyword to start search", implying auto search or just empty state is fine.
+        // But if we search without query, we get all results.
+
+        resultsDiv.innerHTML = '<p class="text-body" style="text-align: center; padding: 40px;">搜索中...</p>';
+
+        try {
+          const params = new URLSearchParams({
+            q: query,
+            limit: '20',
+            category: 'qualification'
+          });
+
+          // Group Only Filter
+          if (activeQuickTags.group === '1100') {
+            params.append('company', '1100');
+          }
+
+          const data = await apiCall(`/search/assets?${params.toString()}`);
+
+          if (data.total === 0) {
+            resultsDiv.innerHTML = '<p class="text-body" style="text-align: center; padding: 40px;">未找到相关资质</p>';
+            return;
+          }
+
+          let html = `<div style="margin-bottom: 12px;"><strong>找到 ${data.total} 条结果</strong></div>`;
+
+          // Use result-card style for Qualifications as requested
+          data.results.forEach(asset => {
+            // Check expiration
+            let expireDateStyle = '';
+            let isExpired = false;
+            if (asset.expire_date) {
+              const today = new Date().toISOString().split('T')[0];
+              if (asset.expire_date < today) {
+                expireDateStyle = 'color: #dc2626; font-weight: bold;'; // Red bold
+                isExpired = true;
+              }
+            }
+
+            html += `
+            <div class="result-card">
+              <div class="result-header">
+                <div class="result-title-group">
+                  <h3 class="result-title">
+                    ${asset.qualification_name}
+                  </h3>
+                  <p class="result-description">${asset.company_name}</p>
+                </div>
+                <span class="result-date" style="${expireDateStyle}">
+                  ${isExpired ? '⚠️ 已过期: ' : '有效期至: '} ${asset.expire_date || '长期'}
+                </span>
+              </div>
+              
+              <div class="result-info-grid" style="margin-top: 12px;">
+                ${asset.qualification_level ? `<span class="result-info-item">📄 内容/等级: <strong>${asset.qualification_level}</strong></span>` : ''}
+                ${asset.business_type ? `<span class="result-info-item">🏷️ 类型: <strong>${asset.business_type}</strong></span>` : ''}
+                ${asset.cert_number ? `<span class="result-info-item">🔢 证书编号: <strong>${asset.cert_number}</strong></span>` : ''}
+              </div>
+            </div>
+          `;
+          });
+
+          resultsDiv.innerHTML = html;
+        } catch (err) {
+          resultsDiv.innerHTML = `<p class="text-body" style="text-align: center; padding: 40px; color: red;">搜索失败: ${err.message}</p>`;
+        }
+      }
+
+      // --- IP Search ---
+      let currentIPCategory = '';
+      function toggleIPCategory(category) {
+        const btn = document.getElementById(`tag-ip-${category}`);
+        if (currentIPCategory === category) {
+          currentIPCategory = '';
+          btn.classList.remove('active');
+        } else {
+          // Deselect others
+          ['patent', 'copyright', 'trademark'].forEach(c => {
+            const b = document.getElementById(`tag-ip-${c}`);
+            if (b) b.classList.remove('active');
+          });
+          currentIPCategory = category;
+          btn.classList.add('active');
+        }
+        searchIP();
+      }
+
+      async function searchIP() {
+        const query = document.getElementById('ipSearchInput').value.trim();
+        const resultsDiv = document.getElementById('ipSearchResults');
+
+        resultsDiv.innerHTML = '<p class="text-body" style="text-align: center; padding: 40px;">搜索中...</p>';
+
+        try {
+          const params = new URLSearchParams({
+            q: query,
+            limit: '20',
+            category: 'intellectual_property'
+          });
+
+          if (currentIPCategory) {
+            params.append('business_type', currentIPCategory);
+          }
+
+          // IP Category Filter (Note: Backend needs to support this if we map 'patent' to specific DB values, 
+          // but for now assuming 'patent', 'copyright' etc are values in 'qualification_name' or similar, 
+          // OR we need a specific backend filter. The prompt said "add a category filter". 
+          // Since backend 'search_assets' filters by 'category' column which is 'qualification' or 'intellectual_property',
+          // we might need to filter by 'business_type' or fuzzy search for sub-categories if they aren't distinct columns.
+          // Let's assume we append it to query for now if no specific column exists, OR if 'business_type' holds it.)
+
+          // Checking backend service.py: it filters by `params.category`.
+          // But `params.category` is top level (Qual vs IP).
+          // If we want to filter IP types (Patent vs Copyright), we likely need to filter on `qualification_name` or `business_type`.
+          // Let's try appending to 'q' for fuzzy search as a safe fallback, or if we had a 'type' field.
+          // The user said "add a classification filter".
+          if (currentIPCategory) {
+            // Mapping common terms to Chinese for search
+            const map = {
+              'patent': '专利',
+              'copyright': '软著',
+              'trademark': '商标'
+            };
+            params.append('q', map[currentIPCategory] || currentIPCategory);
+            // Note: This overrides the user's query if we just set 'q'. 
+            // Better: append to query.
+            if (query) {
+              params.set('q', `${query} ${map[currentIPCategory] || currentIPCategory}`);
+            } else {
+              params.set('q', map[currentIPCategory] || currentIPCategory);
+            }
+          }
+
+          const data = await apiCall(`/search/assets?${params.toString()}`);
+
+          if (data.total === 0) {
+            resultsDiv.innerHTML = '<p class="text-body" style="text-align: center; padding: 40px;">未找到相关知识产权</p>';
+            return;
+          }
+
+          let html = `<div style="margin-bottom: 12px;"><strong>找到 ${data.total} 条结果</strong></div>`;
+          html += '<div class="asset-grid">';
+
+          data.results.forEach(asset => {
+            html += `
+            <div class="asset-card">
+              <div class="asset-header">
+                <div class="asset-icon asset-icon-ip">
+                  📜
+                </div>
+                <div class="asset-title-group">
+                  <h3 class="asset-company">${asset.company_name}</h3>
+                  <p class="asset-name">${asset.qualification_name}</p>
+                </div>
+              </div>
+              <div class="asset-details">
+                 ${asset.business_type ? `
+                  <div class="asset-detail-row">
+                    <span class="asset-label">类型：</span>
+                    <span>${asset.business_type}</span>
+                  </div>` : ''}
+                 ${asset.expire_date ? `
+                  <div class="asset-detail-row">
+                    <span class="asset-label">日期：</span>
+                    <span>${asset.expire_date}</span>
+                  </div>` : ''}
+              </div>
+            </div>
+          `;
+          });
+
+          html += '</div>';
+          resultsDiv.innerHTML = html;
+        } catch (err) {
+          resultsDiv.innerHTML = `<p class="text-body" style="text-align: center; padding: 40px; color: red;">搜索失败: ${err.message}</p>`;
+        }
+      }
+
+      // Personnel Search Functions
+      function togglePersonnelFilters() {
+        const panel = document.getElementById('personnelFiltersPanel');
+        const toggleText = document.getElementById('personnelFilterToggleText');
+        const toggleIcon = document.getElementById('personnelFilterToggleIcon');
+
+        if (panel.style.display === 'none') {
+          panel.style.display = 'block';
+          toggleText.textContent = '隐藏筛选条件';
+          toggleIcon.textContent = '▲';
+        } else {
+          panel.style.display = 'none';
+          toggleText.textContent = '更多筛选条件';
+          toggleIcon.textContent = '▼';
+        }
+      }
+
+      function clearPersonnelFilters() {
+        document.getElementById('filterPersonnelStatus').value = '';
+        document.getElementById('filterPersonnelCompany').value = '';
+        document.getElementById('filterPersonnelDegree').value = '';
+        document.getElementById('filterPersonnelCertificate').value = '';
+        searchEmployees();
+      }
+
+      async function searchEmployees() {
+        const query = document.getElementById('personnelSearchInput').value.trim();
+        const resultsDiv = document.getElementById('personnelSearchResults');
+
+        resultsDiv.innerHTML = '<p class="text-body" style="text-align: center; padding: 40px;">搜索中...</p>';
+
+        try {
+          const params = new URLSearchParams({ limit: '20' });
+
+          if (query) params.append('q', query);
+
+          // Add filters
+          const status = document.getElementById('filterPersonnelStatus').value;
+          const company = document.getElementById('filterPersonnelCompany').value;
+          const degree = document.getElementById('filterPersonnelDegree').value;
+          const certificate = document.getElementById('filterPersonnelCertificate').value;
+
+          if (status) params.append('status', status);
+          if (company) params.append('company', company);
+          if (degree) params.append('degree', degree);
+          if (certificate) params.append('certificate_name', certificate);
+
+          const data = await apiCall(`/search/employees?${params.toString()}`);
+
+          if (data.total === 0) {
+            resultsDiv.innerHTML = '<p class="text-body" style="text-align: center; padding: 40px;">未找到相关员工</p>';
+            return;
+          }
+
+          let html = `<div style="margin-bottom: 12px;"><strong>找到 ${data.total} 条结果</strong></div>`;
+
+          data.results.forEach(employee => {
+            // Build certificates badges
+            const certBadges = employee.certificates.map(cert =>
+              `<span class="tag tag-yellow">${cert.certificate_name || cert.certificate_type}</span>`
+            ).join('');
+
+            // Build educations text
+            const eduText = employee.educations.map(edu =>
+              `${edu.degree || ''} ${edu.major || ''} (${edu.school || ''})`
+            ).join(', ') || '无学历信息';
+
+            html += `
+            <div class="result-card">
+              <div class="result-header">
+                <div class="result-title-group">
+                  <h3 class="result-title">
+                    ${employee.name || '未知'} 
+                    <span class="result-id">#${employee.employee_no}</span>
+                  </h3>
+                  <p class="result-description">
+                    ${employee.company || '-'} | ${employee.status || '未知状态'}
+                  </p>
+                </div>
+                ${employee.seniority_years ? `<span class="result-date">司龄: ${employee.seniority_years} 年</span>` : ''}
+              </div>
+
+              <div class="result-info-grid">
+                <div class="result-info-item" style="width: 100%;">
+                  🎓 <strong>学历：</strong>${eduText}
+                </div>
+                ${employee.industry_experience ? `<div class="result-info-item" style="width: 100%;">💼 <strong>行业经验:</strong> ${employee.industry_experience}</div>` : ''}
+              </div>
+
+              ${certBadges ? `
+                <div class="result-tags">
+                  <div style="width: 100%; font-size: 12px; color: var(--color-text-secondary); margin-bottom: 4px;">证书</div>
+                  ${certBadges}
+                </div>` : ''}
+            </div>
+          `;
+          });
+
+          resultsDiv.innerHTML = html;
+        } catch (err) {
+          resultsDiv.innerHTML = `<p class="text-body" style="text-align: center; padding: 40px; color: red;">搜索失败: ${err.message}</p>`;
+        }
+      }
+
+      function switchSearchTab(tabName) {
+        // Update Tab Buttons
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+          // Only target the main search tabs, not the asset sub-category tabs
+          if (btn.id.startsWith('searchTab')) {
+            btn.classList.remove('active-tab');
+          }
+        });
+
+        const activeTabId = `searchTab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`;
+        const activeTabBtn = document.getElementById(activeTabId);
+        if (activeTabBtn) {
+          activeTabBtn.classList.add('active-tab');
+        }
+
+        // Update Content Visibility
+        document.querySelectorAll('.search-tab-content').forEach(content => {
+          content.style.display = 'none';
+        });
+
+        const activeContentId = `tab-content-${tabName}`;
+        const activeContent = document.getElementById(activeContentId);
+        if (activeContent) {
+          activeContent.style.display = 'block';
+        }
+      }
+
+    </script>
 </body>
 
 </html>

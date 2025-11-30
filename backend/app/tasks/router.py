@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import logging
+from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Response, UploadFile, status
@@ -39,11 +40,11 @@ class TaskResponse(BaseModel):
     status: TaskStatus
     retry_count: int
     max_retries: int
-    created_at: str
-    started_at: Optional[str] = None
-    completed_at: Optional[str] = None
+    created_at: datetime
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
     error: Optional[str] = None
-    metadata: Dict[str, Any] = Field(default_factory=dict)
+    task_metadata: Dict[str, Any] = Field(default_factory=dict)
 
     class Config:
         from_attributes = True
@@ -132,28 +133,32 @@ async def create_bidding_file_task(
     """Create a bidding analysis task from file upload."""
     task_service = TaskService(db)
 
-    # Read and encode file
-    file_bytes = await file.read()
-    file_base64 = base64.b64encode(file_bytes).decode("utf-8")
+    try:
+        # Read and encode file
+        file_bytes = await file.read()
+        file_base64 = base64.b64encode(file_bytes).decode("utf-8")
 
-    payload = {
-        "file_base64": file_base64,
-        "filename": file.filename,
-        "content_type": file.content_type,
-    }
+        payload = {
+            "file_base64": file_base64,
+            "filename": file.filename,
+            "content_type": file.content_type,
+        }
 
-    task = task_service.create_task(
-        task_type=TaskType.BIDDING_ANALYSIS,
-        user_id=current_user.id,
-        payload=payload,
-        max_retries=max_retries,
-        metadata={"source": "file", "filename": file.filename},
-    )
+        task = task_service.create_task(
+            task_type=TaskType.BIDDING_ANALYSIS,
+            user_id=current_user.id,
+            payload=payload,
+            max_retries=max_retries,
+            metadata={"source": "file", "filename": file.filename},
+        )
 
-    logger.info(
-        f"Created bidding file analysis task {task.id} for user {current_user.id} (file={file.filename})"
-    )
-    return task
+        logger.info(
+            f"Created bidding file analysis task {task.id} for user {current_user.id} (file={file.filename})"
+        )
+        return task
+    except Exception as e:
+        logger.error(f"Error creating bidding task: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/", response_model=TaskListResponse)

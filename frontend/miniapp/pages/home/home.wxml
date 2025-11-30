@@ -1,0 +1,42 @@
+<view class="container">
+  <!-- Welcome Card -->
+  <view class="welcome-card">
+    <view class="welcome-greeting">欢迎回来</view>
+    <view class="welcome-name">{{userInfo.name || '用户'}}</view>
+  </view>
+
+  <!-- Quick Actions -->
+  <view class="section-title">快速操作</view>
+  <view class="action-grid">
+    <view class="action-card" bindtap="navigateToSearch" data-tab="contracts">
+      <view class="action-icon">📝</view>
+      <view class="action-title">查合同</view>
+      <view class="action-desc">合同业绩查询</view>
+    </view>
+    <view class="action-card" bindtap="navigateToSearch" data-tab="qualifications">
+      <view class="action-icon">🏆</view>
+      <view class="action-title">查资质</view>
+      <view class="action-desc">企业资质查询</view>
+    </view>
+    <view class="action-card" bindtap="navigateToSearch" data-tab="ip">
+      <view class="action-icon">💼</view>
+      <view class="action-title">查知产</view>
+      <view class="action-desc">专利软著商标</view>
+    </view>
+    <view class="action-card" bindtap="navigateToSearch" data-tab="personnel">
+      <view class="action-icon">👥</view>
+      <view class="action-title">查人员</view>
+      <view class="action-desc">人员证书查询</view>
+    </view>
+  </view>
+
+  <!-- Recent Activity -->
+  <view class="section-title">最近使用</view>
+  <view class="recent-activity">
+    <view class="empty-state">
+      <view class="empty-icon">📋</view>
+      <view class="empty-text">暂无最近活动</view>
+    </view>
+  </view>
+</view>
+<!-- Force Update: v3 -->

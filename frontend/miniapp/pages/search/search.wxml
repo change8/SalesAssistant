@@ -1,0 +1,273 @@
+<view class="container">
+  <!-- Tabs (Moved to Top) -->
+  <view class="tabs">
+    <view 
+      wx:for="{{tabs}}" 
+      wx:key="index"
+      class="tab-item {{activeTab === index ? 'active' : ''}}"
+      data-index="{{index}}"
+      bindtap="switchTab"
+    >
+      {{item}}
+    </view>
+  </view>
+
+  <!-- Search Bar -->
+  <view class="search-bar">
+    <input 
+      class="search-input" 
+      placeholder="{{placeholderText}}"
+      value="{{searchQuery}}"
+      bindinput="onSearchInput"
+      bindconfirm="performSearch"
+      confirm-type="search"
+    />
+    <view wx:if="{{searchQuery}}" class="clear-btn" bindtap="onClearSearch">
+      <icon type="clear" size="14" color="#d1d5db"/>
+    </view>
+    <view class="filter-btn" bindtap="openFilter">
+      <image wx:if="{{hasActiveFilters}}" src="../../assets/filter_active.png" class="filter-icon-img" mode="aspectFit"></image>
+      <image wx:else src="../../assets/filter_gray.png" class="filter-icon-img" mode="aspectFit"></image>
+    </view>
+  </view>
+
+  <!-- Quick Tags -->
+  <scroll-view scroll-x class="quick-tags" enable-flex>
+    <!-- Contract Tags -->
+    <block wx:if="{{activeTab === 0}}">
+      <view class="chip {{quickTags.fp ? 'active' : ''}}" bindtap="toggleQuickTag" data-type="fp">只看 FP</view>
+      <view class="chip {{quickTags.time === '3' ? 'active' : ''}}" bindtap="toggleQuickTag" data-type="time" data-value="3">近 3 年</view>
+      <view class="chip {{quickTags.time === '5' ? 'active' : ''}}" bindtap="toggleQuickTag" data-type="time" data-value="5">近 5 年</view>
+      <view class="chip {{quickTags.amount === '300' ? 'active' : ''}}" bindtap="toggleQuickTag" data-type="amount" data-value="300">300万+</view>
+      <view class="chip {{quickTags.amount === '500' ? 'active' : ''}}" bindtap="toggleQuickTag" data-type="amount" data-value="500">500万+</view>
+      <view class="chip {{quickTags.amount === '800' ? 'active' : ''}}" bindtap="toggleQuickTag" data-type="amount" data-value="800">800万+</view>
+      <view class="chip {{quickTags.amount === '1000' ? 'active' : ''}}" bindtap="toggleQuickTag" data-type="amount" data-value="1000">1000万+</view>
+      <view class="chip {{quickTags.status === 'completed' ? 'active' : ''}}" bindtap="toggleQuickTag" data-type="status" data-value="completed">只看完结</view>
+    </block>
+
+    <!-- Qualification Tags -->
+    <block wx:if="{{activeTab === 1}}">
+      <view class="chip {{quickTags.group === '1100' ? 'active' : ''}}" bindtap="toggleQuickTag" data-type="group" data-value="1100">只看集团 (1100)</view>
+      <view class="chip {{quickTags.notExpired ? 'active' : ''}}" bindtap="toggleQuickTag" data-type="notExpired">未过期</view>
+    </block>
+
+    <!-- IP Tags -->
+    <block wx:if="{{activeTab === 2}}">
+      <view class="chip {{quickTags.group === '1100' ? 'active' : ''}}" bindtap="toggleQuickTag" data-type="group" data-value="1100">只看集团 (1100)</view>
+      <view class="chip {{quickTags.notExpired ? 'active' : ''}}" bindtap="toggleQuickTag" data-type="notExpired">未过期</view>
+      <view class="chip {{quickTags.ipCategory === 'patent' ? 'active' : ''}}" bindtap="toggleQuickTag" data-type="ipCategory" data-value="patent">专利</view>
+      <view class="chip {{quickTags.ipCategory === 'copyright' ? 'active' : ''}}" bindtap="toggleQuickTag" data-type="ipCategory" data-value="copyright">软著</view>
+      <view class="chip {{quickTags.ipCategory === 'trademark' ? 'active' : ''}}" bindtap="toggleQuickTag" data-type="ipCategory" data-value="trademark">商标</view>
+    </block>
+  </scroll-view>
+
+  <!-- Results -->
+  <view class="results">
+    <!-- Loading -->
+    <view wx:if="{{loading && results.length === 0}}" class="loading">
+      <text>加载中...</text>
+    </view>
+
+    <!-- Empty -->
+    <view wx:elif="{{!loading && results.length === 0}}" class="empty">
+      <text class="icon">🔍</text>
+      <text class="message">{{searchQuery ? '未找到相关结果' : '输入关键词开始搜索'}}</text>
+      
+      <!-- Helper Text -->
+      <view class="search-helper" wx:if="{{!searchQuery}}">
+        <text wx:if="{{activeTab === 0}}">可筛选 2015--2025 十年内所有合同</text>
+        <text wx:elif="{{activeTab === 1}}">可筛选所有资质</text>
+        <text wx:elif="{{activeTab === 2}}">可筛选所有知识产权</text>
+        <text wx:elif="{{activeTab === 3}}">仅有小部分人员信息，若搜索不到相关证书，请联系投标管理部“陈晨、张妍”进行查询</text>
+      </view>
+    </view>
+
+    <!-- Contract Results -->
+    <block wx:if="{{activeTab === 0}}">
+      <view wx:for="{{results}}" wx:key="id" class="card">
+        <view class="card-header">
+          <text>{{item.contract_title || item.project_name || '未命名合同'}}</text>
+          <view class="copy-btn" catchtap="copyItem" data-item="{{item}}">复制</view>
+        </view>
+        <view class="card-body">
+          <view class="tags">
+            <text class="tag tag-primary">{{item.contract_number || '无编号'}}</text>
+            <text wx:if="{{item.contract_status}}" class="tag tag-success">{{item.contract_status}}</text>
+          </view>
+          <view class="info">
+            <text>客户: {{item.customer_name || '-'}}</text>
+            <text>金额: {{item.contract_amount || '-'}}</text>
+            <text>签订: {{item.signing_date || '-'}}</text>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!-- Qualification/IP Results -->
+    <block wx:if="{{activeTab === 1 || activeTab === 2}}">
+      <view wx:for="{{results}}" wx:key="id" class="card">
+        <view class="card-header">{{item.qualification_name || '未命名'}}</view>
+        <view class="card-body">
+          <view class="tags">
+            <text wx:if="{{item.company_name}}" class="tag tag-primary">{{item.company_name}}</text>
+            <text wx:if="{{item.business_type}}" class="tag tag-secondary">{{item.business_type}}</text>
+          </view>
+          <view class="info">
+            <text wx:if="{{item.qualification_level}}">级别: {{item.qualification_level}}</text>
+            <text>到期: {{item.expire_date || '-'}}</text>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!-- Personnel Results -->
+    <block wx:if="{{activeTab === 3}}">
+      <view wx:for="{{results}}" wx:key="id" class="card">
+        <view class="card-header">{{item.name || '未命名'}}</view>
+        <view class="card-body">
+          <view class="tags">
+            <text wx:if="{{item.employee_no}}" class="tag tag-primary">{{item.employee_no}}</text>
+            <text wx:if="{{item.company}}" class="tag tag-secondary">{{item.company}}</text>
+          </view>
+          <view class="info">
+            <text wx:if="{{item.school}}">学校: {{item.school}}</text>
+            <text wx:if="{{item.degree}}">学历: {{item.degree}}</text>
+          </view>
+          <view wx:if="{{item.certificates && item.certificates.length > 0}}" class="certificates">
+            <text wx:for="{{item.certificates}}" wx:for-item="cert" wx:key="id" class="tag tag-warning">
+              {{cert.certificate_name}}
+            </text>
+          </view>
+        </view>
+      </view>
+    </block>
+
+    <!-- Load More -->
+    <view wx:if="{{hasMore}}" class="load-more">
+      <button wx:if="{{!loading}}" class="load-more-btn" bindtap="loadMore">加载更多</button>
+      <text wx:else>加载中...</text>
+    </view>
+  </view>
+
+  <!-- Filter Drawer -->
+  <view class="filter-drawer {{showFilter ? 'open' : ''}}">
+    <view class="filter-mask" bindtap="closeFilter"></view>
+    <view class="filter-content">
+      <view class="filter-header">
+        <text>筛选条件</text>
+        <view class="close-btn" bindtap="closeFilter">×</view>
+      </view>
+      
+      <scroll-view scroll-y class="filter-body">
+        <!-- Contract Filters -->
+        <block wx:if="{{activeTab === 0}}">
+          <view class="filter-group">
+            <view class="filter-label">行业</view>
+            <input class="filter-input" placeholder="请输入行业" data-field="industry" bindinput="onFilterInput" value="{{filters.industry}}" />
+          </view>
+          <view class="filter-group">
+            <view class="filter-label">合同类型</view>
+            <input class="filter-input" placeholder="请输入类型" data-field="type" bindinput="onFilterInput" value="{{filters.type}}" />
+          </view>
+          <view class="filter-group">
+            <view class="filter-label">客户名称</view>
+            <input class="filter-input" placeholder="请输入客户名称" data-field="customer" bindinput="onFilterInput" value="{{filters.customer}}" />
+          </view>
+          <view class="filter-group">
+            <view class="filter-label">合同状态</view>
+            <view class="tag-group">
+              <view class="filter-tag {{filters.status === '已完结' ? 'active' : ''}}" data-field="status" data-value="已完结" bindtap="onFilterTag">已完结</view>
+              <view class="filter-tag {{filters.status === '进行中' ? 'active' : ''}}" data-field="status" data-value="进行中" bindtap="onFilterTag">进行中</view>
+            </view>
+          </view>
+          <view class="filter-group">
+            <view class="filter-label">金额范围 (万)</view>
+            <view class="range-inputs">
+              <input class="filter-input small" placeholder="最小" type="number" data-field="minAmount" bindinput="onFilterInput" value="{{filters.minAmount}}" />
+              <text>-</text>
+              <input class="filter-input small" placeholder="最大" type="number" data-field="maxAmount" bindinput="onFilterInput" value="{{filters.maxAmount}}" />
+            </view>
+          </view>
+        </block>
+
+        <!-- Personnel Filters -->
+        <block wx:if="{{activeTab === 3}}">
+          <view class="filter-group">
+            <view class="filter-label">状态</view>
+            <view class="tag-group">
+              <view class="filter-tag {{filters.personnelStatus === '在职' ? 'active' : ''}}" data-field="personnelStatus" data-value="在职" bindtap="onFilterTag">在职</view>
+              <view class="filter-tag {{filters.personnelStatus === '离职' ? 'active' : ''}}" data-field="personnelStatus" data-value="离职" bindtap="onFilterTag">离职</view>
+            </view>
+          </view>
+          <view class="filter-group">
+            <view class="filter-label">公司</view>
+            <input class="filter-input" placeholder="公司/社保公司" data-field="personnelCompany" bindinput="onFilterInput" value="{{filters.personnelCompany}}" />
+          </view>
+          <view class="filter-group">
+            <view class="filter-label">学历</view>
+            <view class="tag-group">
+              <view class="filter-tag {{filters.personnelDegree === '本科' ? 'active' : ''}}" data-field="personnelDegree" data-value="本科" bindtap="onFilterTag">本科</view>
+              <view class="filter-tag {{filters.personnelDegree === '硕士' ? 'active' : ''}}" data-field="personnelDegree" data-value="硕士" bindtap="onFilterTag">硕士</view>
+              <view class="filter-tag {{filters.personnelDegree === '博士' ? 'active' : ''}}" data-field="personnelDegree" data-value="博士" bindtap="onFilterTag">博士</view>
+            </view>
+          </view>
+          <view class="filter-group">
+            <view class="filter-label">证书名称</view>
+            <input class="filter-input" placeholder="请输入证书名称" data-field="personnelCertificate" bindinput="onFilterInput" value="{{filters.personnelCertificate}}" />
+          </view>
+        </block>
+
+        <!-- IP Filters -->
+        <block wx:if="{{activeTab === 2}}">
+          <view class="filter-group">
+            <view class="filter-label">公司名称</view>
+            <input class="filter-input" placeholder="请输入公司名称" data-field="companyName" bindinput="onFilterInput" value="{{filters.companyName}}" />
+          </view>
+          <view class="filter-group">
+            <view class="filter-label">公司编号</view>
+            <input class="filter-input" placeholder="请输入公司编号" data-field="companyNumber" bindinput="onFilterInput" value="{{filters.companyNumber}}" />
+          </view>
+          
+          <view class="filter-group">
+            <view class="filter-label">知识产权类别</view>
+            <picker bindchange="bindIPCategoryChange" value="{{filters.ipCategoryIndex}}" range="{{ipCategoryOptions}}">
+              <view class="filter-input picker-view">
+                {{ipCategoryOptions[filters.ipCategoryIndex]}}
+                <text class="picker-arrow">▼</text>
+              </view>
+            </picker>
+          </view>
+
+          <view class="filter-group">
+            <view class="filter-label">公司业务类型</view>
+            <picker bindchange="bindBusinessTypeChange" value="{{filters.businessTypeIndex}}" range="{{businessTypeOptions}}">
+              <view class="filter-input picker-view">
+                {{businessTypeOptions[filters.businessTypeIndex]}}
+                <text class="picker-arrow">▼</text>
+              </view>
+            </picker>
+          </view>
+        </block>
+
+        <!-- Empty State for other tabs (Qualifications) -->
+        <block wx:if="{{activeTab === 1}}">
+           <view class="filter-group">
+            <view class="filter-label">公司业务类型</view>
+            <picker bindchange="bindBusinessTypeChange" value="{{filters.businessTypeIndex}}" range="{{businessTypeOptions}}">
+              <view class="filter-input picker-view">
+                {{businessTypeOptions[filters.businessTypeIndex]}}
+                <text class="picker-arrow">▼</text>
+              </view>
+            </picker>
+          </view>
+        </block>
+      </scroll-view>
+
+      <view class="filter-footer">
+        <button class="reset-btn" bindtap="resetFilters">重置</button>
+        <button class="export-btn" bindtap="exportData">导出</button>
+        <button class="apply-btn" bindtap="applyFilters">确认</button>
+      </view>
+    </view>
+  </view>
+</view>

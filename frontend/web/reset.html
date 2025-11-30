@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>重置密码 - Sales Assistant</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        }
+
+        .auth-card {
+            width: 100%;
+            max-width: 400px;
+            padding: var(--space-10);
+        }
+
+        .brand-logo {
+            text-align: center;
+            margin-bottom: var(--space-8);
+        }
+
+        .brand-logo h1 {
+            font-size: var(--font-size-2xl);
+            font-weight: var(--font-weight-bold);
+            background: linear-gradient(45deg, var(--color-primary), #00C6FB);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card auth-card glass fade-in">
+        <div class="brand-logo">
+            <h1>重置密码</h1>
+            <p class="text-sm" style="margin-top: var(--space-2)">设置新的登录密码</p>
+        </div>
+
+        <form id="resetForm">
+            <div class="input-group">
+                <label class="input-label" for="phone">手机号</label>
+                <input type="tel" id="phone" class="input-field" placeholder="请输入手机号" required readonly>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label" for="token">验证码 (Token)</label>
+                <input type="text" id="token" class="input-field" placeholder="请输入重置验证码" required>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label" for="newPassword">新密码</label>
+                <input type="password" id="newPassword" class="input-field" placeholder="8位以上，包含字母和数字" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: var(--space-4)">
+                重置密码
+            </button>
+
+            <div class="text-center" style="margin-top: var(--space-6); text-align: center;">
+                <a href="login.html" class="text-sm" style="color: var(--color-text-secondary)">返回登录</a>
+            </div>
+        </form>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        // Pre-fill fields from URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        const phoneParam = urlParams.get('phone');
+        const tokenParam = urlParams.get('token');
+
+        if (phoneParam) document.getElementById('phone').value = phoneParam;
+        if (tokenParam) document.getElementById('token').value = tokenParam;
+
+        document.getElementById('resetForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const phone = document.getElementById('phone').value.trim();
+            const token = document.getElementById('token').value.trim();
+            const newPassword = document.getElementById('newPassword').value;
+
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerText;
+
+            btn.innerText = '提交中...';
+            btn.disabled = true;
+
+            try {
+                await apiCall('/auth/reset-password', 'POST', {
+                    phone,
+                    reset_token: token,
+                    new_password: newPassword
+                });
+
+                alert('密码重置成功！请使用新密码登录。');
+                window.location.href = 'login.html';
+
+            } catch (error) {
+                alert(error.message || '重置失败，请检查验证码是否过期');
+            } finally {
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+
+</html>

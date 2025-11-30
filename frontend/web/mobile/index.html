@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#667eea">
+    <title>销售助手</title>
+    <link rel="stylesheet" href="styles/mobile.css">
+    <style>
+        .welcome-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius-xl);
+            padding: var(--space-6);
+            margin: var(--space-4) 0;
+            box-shadow: var(--shadow-xl);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            animation: slideUp 0.6s ease-out;
+        }
+
+        .welcome-greeting {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: var(--space-1);
+        }
+
+        .welcome-name {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-start) 0%, var(--primary-end) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+            margin: var(--space-6) 0 var(--space-4);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-3);
+            animation: fadeIn 0.6s ease-out 0.2s both;
+        }
+
+        .action-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius-lg);
+            padding: var(--space-5);
+            text-align: center;
+            text-decoration: none;
+            color: inherit;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .action-card:active {
+            transform: scale(0.95);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .action-icon {
+            font-size: 48px;
+            margin-bottom: var(--space-3);
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+        }
+
+        .action-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--space-1);
+        }
+
+        .action-desc {
+            font-size: 13px;
+            color: var(--text-secondary);
+        }
+
+        .bidding-banner {
+            background: linear-gradient(135deg, rgba(240, 147, 251, 0.95) 0%, rgba(245, 87, 108, 0.95) 100%);
+            backdrop-filter: blur(20px);
+            border-radius: var(--radius-lg);
+            padding: var(--space-5);
+            margin: var(--space-4) 0;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            box-shadow: var(--shadow-lg);
+            animation: slideUp 0.6s ease-out 0.4s both;
+            transition: all 0.3s;
+        }
+
+        .bidding-banner:active {
+            transform: scale(0.98);
+        }
+
+        .bidding-icon {
+            width: 70px;
+            height: 70px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            margin-right: var(--space-4);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .bidding-content {
+            flex: 1;
+        }
+
+        .bidding-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: var(--space-1);
+        }
+
+        .bidding-desc {
+            font-size: 13px;
+            opacity: 0.95;
+        }
+
+        .bidding-arrow {
+            font-size: 24px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="mobile-header">
+        <div style="width: 44px;"></div>
+        <div class="title">销售助手</div>
+        <button class="menu-btn" onclick="showUserMenu()">👤</button>
+    </div>
+
+    <div class="mobile-content">
+        <div class="container">
+            <!-- Welcome Card -->
+            <div class="welcome-card">
+                <div class="welcome-greeting">欢迎回来</div>
+                <div class="welcome-name" id="userName">用户</div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="section-title">快速操作</div>
+            <div class="action-grid">
+                <a href="search.html?tab=contracts" class="action-card">
+                    <div class="action-icon">📝</div>
+                    <div class="action-title">查合同</div>
+                    <div class="action-desc">合同业绩查询</div>
+                </a>
+                <a href="search.html?tab=qualifications" class="action-card">
+                    <div class="action-icon">🏆</div>
+                    <div class="action-title">查资质</div>
+                    <div class="action-desc">企业资质查询</div>
+                </a>
+                <a href="search.html?tab=ip" class="action-card">
+                    <div class="action-icon">💼</div>
+                    <div class="action-title">查知产</div>
+                    <div class="action-desc">专利软著商标</div>
+                </a>
+                <a href="search.html?tab=personnel" class="action-card">
+                    <div class="action-icon">👥</div>
+                    <div class="action-title">查人员</div>
+                    <div class="action-desc">人员证书查询</div>
+                </a>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="section-title">最近使用</div>
+            <div id="recentActivity">
+                <div class="card">
+                    <div style="text-align: center; padding: var(--space-6); color: var(--text-secondary);">
+                        <div style="font-size: 48px; opacity: 0.3; margin-bottom: var(--space-3);">📋</div>
+                        <div style="font-size: 14px;">暂无最近活动</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <div class="bottom-nav">
+        <a href="index.html" class="bottom-nav-item active">
+            <div class="icon">🏠</div>
+            <div>首页</div>
+        </a>
+        <a href="search.html" class="bottom-nav-item">
+            <div class="icon">🔍</div>
+            <div>搜索</div>
+        </a>
+        <a href="#" class="bottom-nav-item" onclick="showUserMenu(); return false;">
+            <div class="icon">👤</div>
+            <div>我的</div>
+        </a>
+    </div>
+
+    <!-- User Menu Modal -->
+    <div id="userMenuModal"
+        style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999; backdrop-filter: blur(4px);"
+        onclick="hideUserMenu()">
+        <div style="position: absolute; bottom: 0; left: 0; right: 0; background: white; border-radius: var(--radius-xl) var(--radius-xl) 0 0; padding: var(--space-6); animation: slideUpModal 0.3s ease;"
+            onclick="event.stopPropagation()">
+            <div style="text-align: center; margin-bottom: var(--space-6);">
+                <div
+                    style="width: 80px; height: 80px; margin: 0 auto var(--space-3); background: linear-gradient(135deg, var(--primary-start) 0%, var(--primary-end) 100%); border-radius: var(--radius-full); display: flex; align-items: center; justify-content: center; font-size: 36px; color: white; box-shadow: var(--shadow-lg);">
+                    👤
+                </div>
+                <div style="font-size: 20px; font-weight: 600; color: var(--text-primary);" id="modalUserName">用户</div>
+                <div style="font-size: 14px; color: var(--text-secondary); margin-top: var(--space-1);"
+                    id="modalUserRole">普通用户</div>
+            </div>
+
+            <div style="border-top: 2px solid var(--border-color); padding-top: var(--space-4);">
+                <button onclick="handleLogout()" class="btn btn-secondary btn-block"
+                    style="margin-bottom: var(--space-3);">
+                    退出登录
+                </button>
+                <button onclick="hideUserMenu()" class="btn btn-secondary btn-block">
+                    取消
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="scripts/mobile.js"></script>
+    <script>
+        checkAuth(true);
+
+        const userName = storage.get('sa_user_name') || '用户';
+        const userRole = storage.get('sa_user_role') || 'user';
+        document.getElementById('userName').textContent = userName;
+        document.getElementById('modalUserName').textContent = userName;
+        document.getElementById('modalUserRole').textContent = userRole === 'admin' ? '管理员' : '普通用户';
+
+        loadRecentActivity();
+
+        function loadRecentActivity() {
+            const recent = storage.get('recent_searches') || [];
+            if (recent.length === 0) return;
+
+            const container = document.getElementById('recentActivity');
+            container.innerHTML = recent.slice(0, 3).map(item => `
+        <a href="search.html?tab=${item.type}&q=${encodeURIComponent(item.query)}" class="card" style="text-decoration: none; color: inherit; display: flex; align-items: center; margin-bottom: var(--space-2);">
+          <div style="flex: 1;">
+            <div style="font-size: 15px; font-weight: 500; color: var(--text-primary);">${item.query}</div>
+            <div style="font-size: 13px; color: var(--text-secondary); margin-top: var(--space-1);">${getTypeLabel(item.type)} · ${formatDate(item.timestamp)}</div>
+          </div>
+          <div style="font-size: 20px; color: var(--text-tertiary);">→</div>
+        </a>
+      `).join('');
+        }
+
+        function getTypeLabel(type) {
+            const labels = {
+                contracts: '合同',
+                qualifications: '资质',
+                ip: '知识产权',
+                personnel: '人员'
+            };
+            return labels[type] || type;
+        }
+
+        function showUserMenu() {
+            document.getElementById('userMenuModal').style.display = 'block';
+        }
+
+        function hideUserMenu() {
+            document.getElementById('userMenuModal').style.display = 'none';
+        }
+
+        function handleLogout() {
+            if (confirm('确定要退出登录吗？')) {
+                auth.logout();
+            }
+        }
+
+        const modalStyle = document.createElement('style');
+        modalStyle.textContent = `
+      @keyframes slideUpModal {
+        from {
+          transform: translateY(100%);
+        }
+        to {
+          transform: translateY(0);
+        }
+      }
+    `;
+        document.head.appendChild(modalStyle);
+    </script>
+</body>
+
+</html>

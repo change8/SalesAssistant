@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#667eea">
+  <title>搜索 - 销售助手</title>
+  <link rel="stylesheet" href="styles/mobile.css">
+</head>
+
+<body>
+  <div class="mobile-header">
+    <button class="back-btn" onclick="history.back()">←</button>
+    <div class="title">智能搜索</div>
+    <div style="width: 44px;"></div>
+  </div>
+
+  <div class="mobile-content">
+    <div class="container">
+      <!-- Search Bar with Icon -->
+      <div class="search-bar animate-slide-up">
+        <span class="search-icon">🔍</span>
+        <input type="search" class="search-input" id="searchInput" placeholder="输入关键词搜索..." autocomplete="off">
+        <button class="search-btn" onclick="performSearch()">
+          <span>→</span>
+        </button>
+      </div>
+
+      <!-- Category Tabs -->
+      <div class="tabs animate-slide-up" style="animation-delay: 0.1s;">
+        <button class="tab-item active" data-tab="contracts" onclick="switchTab('contracts')">📝 合同</button>
+        <button class="tab-item" data-tab="qualifications" onclick="switchTab('qualifications')">🏆 资质</button>
+        <button class="tab-item" data-tab="ip" onclick="switchTab('ip')">💼 知产</button>
+        <button class="tab-item" data-tab="personnel" onclick="switchTab('personnel')">👥 人员</button>
+      </div>
+
+      <!-- Filter Chips Container -->
+      <div id="filterChipsContainer" class="animate-slide-up" style="animation-delay: 0.2s;"></div>
+
+      <!-- Filter Toggle Button -->
+      <button class="filter-toggle animate-slide-up" style="animation-delay: 0.3s;" onclick="toggleFilters()">
+        <span class="icon">⚙️</span>
+        <span id="filterToggleText">高级筛选</span>
+        <span class="icon" id="filterToggleIcon">▼</span>
+      </button>
+
+      <!-- Filter Panel -->
+      <div id="filterPanel" class="filter-panel" style="display: none;">
+        <div class="filter-panel-header">
+          <div class="filter-panel-title">筛选条件</div>
+          <button class="filter-panel-close" onclick="toggleFilters()">✕</button>
+        </div>
+        <div id="filterPanelContent"></div>
+        <div style="display: flex; gap: var(--space-2); margin-top: var(--space-4);">
+          <button class="btn btn-secondary" style="flex: 1;" onclick="clearFilters()">清除</button>
+          <button class="btn btn-primary" style="flex: 2;" onclick="applyFilters()">应用筛选</button>
+        </div>
+      </div>
+
+      <!-- Results Container -->
+      <div id="resultsContainer" class="animate-fade-in">
+        <div class="empty-state">
+          <div class="icon">🔍</div>
+          <div class="message">输入关键词开始搜索</div>
+        </div>
+      </div>
+
+      <!-- Load More -->
+      <div id="loadMoreContainer" style="display: none; text-align: center; padding: var(--space-5);">
+        <button class="btn btn-secondary btn-sm" onclick="loadMore()">加载更多</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Navigation -->
+  <div class="bottom-nav">
+    <a href="index.html" class="bottom-nav-item">
+      <div class="icon">🏠</div>
+      <div>首页</div>
+    </a>
+    <a href="search.html" class="bottom-nav-item active">
+      <div class="icon">🔍</div>
+      <div>搜索</div>
+    </a>
+    <a href="#" class="bottom-nav-item" onclick="window.location.href='index.html'; return false;">
+      <div class="icon">👤</div>
+      <div>我的</div>
+    </a>
+  </div>
+
+  <script src="scripts/mobile.js"></script>
+  <script>
+    checkAuth(true);
+
+    let currentTab = 'contracts';
+    let currentPage = 0;
+    let hasMore = false;
+    let isLoading = false;
+    let activeFilters = {};
+
+    // Initialize from URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const initialTab = urlParams.get('tab');
+    const initialQuery = urlParams.get('q');
+
+    if (initialTab) {
+      currentTab = initialTab;
+      switchTab(initialTab, false);
+    }
+
+    if (initialQuery) {
+      document.getElementById('searchInput').value = initialQuery;
+      performSearch();
+    }
+
+    // Search on Enter
+    document.getElementById('searchInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        performSearch();
+      }
+    });
+
+    function switchTab(tab, clearResults = true) {
+      currentTab = tab;
+      currentPage = 0;
+      activeFilters = {};
+
+      // Update tab UI
+      document.querySelectorAll('.tab-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.tab === tab);
+      });
+
+      // Update URL
+      const url = new URL(window.location);
+      url.searchParams.set('tab', tab);
+      window.history.pushState({}, '', url);
+
+      // Update filter chips and panel
+      updateFilterUI();
+
+      if (clearResults) {
+        const query = document.getElementById('searchInput').value.trim();
+        if (query) {
+          performSearch();
+        } else {
+          showEmpty(document.getElementById('resultsContainer'), '输入关键词开始搜索');
+        }
+      }
+    }
+
+    function updateFilterUI() {
+      const chipsContainer = document.getElementById('filterChipsContainer');
+      const panelContent = document.getElementById('filterPanelContent');
+
+      // Clear existing
+      chipsContainer.innerHTML = '';
+      panelContent.innerHTML = '';
+
+      // Add filter chips and panel based on tab
+      switch (currentTab) {
+        case 'contracts':
+          addContractFilters(chipsContainer, panelContent);
+          break;
+        case 'qualifications':
+          addQualificationFilters(chipsContainer, panelContent);
+          break;
+        case 'ip':
+          addIPFilters(chipsContainer, panelContent);
+          break;
+        case 'personnel':
+          addPersonnelFilters(chipsContainer, panelContent);
+          break;
+      }
+    }
+
+    function addContractFilters(chipsContainer, panelContent) {
+      // Quick filter chips
+      chipsContainer.innerHTML = `
+        <div class="filter-chips">
+          <button class="chip" data-filter="fp" onclick="toggleChip(this, 'fp', 'true')">
+            <span class="icon">⚡</span>只看 FP
+          </button>
+          <button class="chip" data-filter="time_3" onclick="toggleChip(this, 'time', '3')">近 3 年</button>
+          <button class="chip" data-filter="time_5" onclick="toggleChip(this, 'time', '5')">近 5 年</button>
+          <button class="chip" data-filter="amount_300" onclick="toggleChip(this, 'amount', '300')">300万+</button>
+          <button class="chip" data-filter="amount_500" onclick="toggleChip(this, 'amount', '500')">500万+</button>
+          <button class="chip" data-filter="amount_1000" onclick="toggleChip(this, 'amount', '1000')">1000万+</button>
+          <button class="chip" data-filter="status" onclick="toggleChip(this, 'status', 'completed')">只看完结</button>
+        </div>
+      `;
+
+      // Advanced filter panel
+      panelContent.innerHTML = `
+        <div class="form-group">
+          <label class="form-label">行业</label>
+          <input type="text" class="form-input" id="filterIndustry" placeholder="输入行业">
+        </div>
+        <div class="form-group">
+          <label class="form-label">合同类型</label>
+          <input type="text" class="form-input" id="filterType" placeholder="输入类型">
+        </div>
+        <div class="form-group">
+          <label class="form-label">客户名称</label>
+          <input type="text" class="form-input" id="filterCustomer" placeholder="输入客户名称">
+        </div>
+        <div class="form-group">
+          <label class="form-label">合同状态</label>
+          <select class="form-select" id="filterStatus">
+            <option value="">全部</option>
+            <option value="已完结">已完结</option>
+            <option value="进行中">进行中</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">金额范围 (万)</label>
+          <div style="display: flex; gap: var(--space-2); align-items: center;">
+            <input type="number" class="form-input" id="filterMinAmount" placeholder="最小" style="flex: 1;">
+            <span style="color: var(--text-tertiary);">-</span>
+            <input type="number" class="form-input" id="filterMaxAmount" placeholder="最大" style="flex: 1;">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">签订日期</label>
+          <div style="display: flex; gap: var(--space-2); align-items: center;">
+            <input type="date" class="form-input" id="filterStartDate" style="flex: 1;">
+            <span style="color: var(--text-tertiary);">-</span>
+            <input type="date" class="form-input" id="filterEndDate" style="flex: 1;">
+          </div>
+        </div>
+      `;
+    }
+
+    function addQualificationFilters(chipsContainer, panelContent) {
+      chipsContainer.innerHTML = `
+        <div class="filter-chips">
+          <button class="chip active" data-filter="group" onclick="toggleChip(this, 'group', '1100')">
+            <span class="icon">🏢</span>只看集团 (1100)
+          </button>
+        </div>
+      `;
+      activeFilters.group = '1100'; // Default active
+      panelContent.innerHTML = '<div style="color: var(--text-secondary); text-align: center; padding: var(--space-4);">暂无更多筛选选项</div>';
+    }
+
+    function addIPFilters(chipsContainer, panelContent) {
+      chipsContainer.innerHTML = `
+        <div class="filter-chips">
+          <button class="chip" data-filter="patent" onclick="toggleChip(this, 'business_type', 'patent')">
+            <span class="icon">📜</span>专利
+          </button>
+          <button class="chip" data-filter="copyright" onclick="toggleChip(this, 'business_type', 'copyright')">
+            <span class="icon">💻</span>软著
+          </button>
+          <button class="chip" data-filter="trademark" onclick="toggleChip(this, 'business_type', 'trademark')">
+            <span class="icon">®️</span>商标
+          </button>
+        </div>
+      `;
+      panelContent.innerHTML = '<div style="color: var(--text-secondary); text-align: center; padding: var(--space-4);">暂无更多筛选选项</div>';
+    }
+
+    function addPersonnelFilters(chipsContainer, panelContent) {
+      chipsContainer.innerHTML = '<div style="color: var(--text-secondary); font-size: 13px; padding: var(--space-2);">使用高级筛选查找人员</div>';
+
+      panelContent.innerHTML = `
+        <div class="form-group">
+          <label class="form-label">状态</label>
+          <select class="form-select" id="filterPersonnelStatus">
+            <option value="">全部</option>
+            <option value="在职">在职</option>
+            <option value="离职">离职</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">公司</label>
+          <input type="text" class="form-input" id="filterPersonnelCompany" placeholder="公司/社保公司">
+        </div>
+        <div class="form-group">
+          <label class="form-label">学历</label>
+          <select class="form-select" id="filterPersonnelDegree">
+            <option value="">全部</option>
+            <option value="本科">本科</option>
+            <option value="硕士">硕士</option>
+            <option value="博士">博士</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">证书名称</label>
+          <input type="text" class="form-input" id="filterPersonnelCertificate" placeholder="证书名称">
+        </div>
+      `;
+    }
+
+    function toggleChip(chip, filterKey, filterValue) {
+      const isActive = chip.classList.contains('active');
+
+      // For single-select filters, deactivate others in the same group
+      if (['time', 'amount', 'business_type'].includes(filterKey)) {
+        document.querySelectorAll(`.chip[data-filter^="${filterKey}"]`).forEach(c => {
+          c.classList.remove('active');
+        });
+      }
+
+      if (isActive) {
+        chip.classList.remove('active');
+        delete activeFilters[filterKey];
+      } else {
+        chip.classList.add('active');
+        activeFilters[filterKey] = filterValue;
+      }
+
+      performSearch();
+    }
+
+    function toggleFilters() {
+      const panel = document.getElementById('filterPanel');
+      const toggle = document.querySelector('.filter-toggle');
+      const icon = document.getElementById('filterToggleIcon');
+      const text = document.getElementById('filterToggleText');
+
+      if (panel.style.display === 'none') {
+        panel.style.display = 'block';
+        // Small delay to allow display:block to apply before adding class for animation
+        setTimeout(() => panel.classList.add('open'), 10);
+        toggle.classList.add('open');
+        icon.textContent = '▲';
+        text.textContent = '收起筛选';
+      } else {
+        panel.classList.remove('open');
+        toggle.classList.remove('open');
+        icon.textContent = '▼';
+        text.textContent = '高级筛选';
+        // Wait for animation to finish before hiding
+        setTimeout(() => panel.style.display = 'none', 300);
+      }
+    }
+
+    function applyFilters() {
+      // Collect advanced filter values
+      switch (currentTab) {
+        case 'contracts':
+          if (document.getElementById('filterIndustry')?.value) {
+            activeFilters.industry = document.getElementById('filterIndustry').value;
+          }
+          if (document.getElementById('filterType')?.value) {
+            activeFilters.type = document.getElementById('filterType').value;
+          }
+          if (document.getElementById('filterCustomer')?.value) {
+            activeFilters.customer = document.getElementById('filterCustomer').value;
+          }
+          if (document.getElementById('filterStatus')?.value) {
+            activeFilters.status = document.getElementById('filterStatus').value;
+          }
+          if (document.getElementById('filterMinAmount')?.value) {
+            activeFilters.min_amount = document.getElementById('filterMinAmount').value;
+          }
+          if (document.getElementById('filterMaxAmount')?.value) {
+            activeFilters.max_amount = document.getElementById('filterMaxAmount').value;
+          }
+          if (document.getElementById('filterStartDate')?.value) {
+            activeFilters.start_date = document.getElementById('filterStartDate').value;
+          }
+          if (document.getElementById('filterEndDate')?.value) {
+            activeFilters.end_date = document.getElementById('filterEndDate').value;
+          }
+          break;
+        case 'personnel':
+          if (document.getElementById('filterPersonnelStatus')?.value) {
+            activeFilters.personnel_status = document.getElementById('filterPersonnelStatus').value;
+          }
+          if (document.getElementById('filterPersonnelCompany')?.value) {
+            activeFilters.personnel_company = document.getElementById('filterPersonnelCompany').value;
+          }
+          if (document.getElementById('filterPersonnelDegree')?.value) {
+            activeFilters.personnel_degree = document.getElementById('filterPersonnelDegree').value;
+          }
+          if (document.getElementById('filterPersonnelCertificate')?.value) {
+            activeFilters.personnel_certificate = document.getElementById('filterPersonnelCertificate').value;
+          }
+          break;
+      }
+
+      toggleFilters();
+      performSearch();
+    }
+
+    function clearFilters() {
+      activeFilters = {};
+
+      // Clear chips
+      document.querySelectorAll('.chip').forEach(chip => {
+        if (!chip.dataset.filter || chip.dataset.filter !== 'group' || currentTab !== 'qualifications') {
+          chip.classList.remove('active');
+        }
+      });
+
+      // Reset qualification default
+      if (currentTab === 'qualifications') {
+        activeFilters.group = '1100';
+        document.querySelector('.chip[data-filter="group"]')?.classList.add('active');
+      }
+
+      // Clear form inputs
+      document.querySelectorAll('.form-input, .form-select').forEach(input => {
+        input.value = '';
+      });
+
+      performSearch();
+    }
+
+    async function performSearch() {
+      const query = document.getElementById('searchInput').value.trim();
+      if (!query) {
+        showToast('请输入搜索关键词', 'error');
+        return;
+      }
+
+      currentPage = 0;
+      isLoading = true;
+
+      const container = document.getElementById('resultsContainer');
+      showLoading(container);
+
+      try {
+        const results = await searchByTab(currentTab, query, 0);
+        displayResults(results);
+        saveRecentSearch(currentTab, query);
+      } catch (error) {
+        showError(container, error.message || '搜索失败');
+      } finally {
+        isLoading = false;
+      }
+    }
+
+    async function searchByTab(tab, query, offset) {
+      const limit = 20;
+      let endpoint, params;
+
+      params = { q: query, limit, offset, ...activeFilters };
+
+      switch (tab) {
+        case 'contracts':
+          endpoint = '/search/contracts';
+          break;
+        case 'qualifications':
+          endpoint = '/search/assets';
+          params.category = 'qualification';
+          break;
+        case 'ip':
+          endpoint = '/search/assets';
+          params.category = 'intellectual_property';
+          break;
+        case 'personnel':
+          endpoint = '/search/employees';
+          break;
+      }
+
+      const queryString = new URLSearchParams(params).toString();
+      return await apiCall(`${endpoint}?${queryString}`);
+    }
+
+    function displayResults(data) {
+      const container = document.getElementById('resultsContainer');
+      const results = data.results || [];
+      const total = data.total || 0;
+
+      if (results.length === 0) {
+        showEmpty(container, '未找到相关结果');
+        document.getElementById('loadMoreContainer').style.display = 'none';
+        return;
+      }
+
+      container.innerHTML = results.map(item => renderResultCard(item, currentTab)).join('');
+
+      // Show/hide load more button
+      hasMore = (currentPage + 1) * 20 < total;
+      document.getElementById('loadMoreContainer').style.display = hasMore ? 'block' : 'none';
+    }
+
+    function renderResultCard(item, type) {
+      switch (type) {
+        case 'contracts':
+          return `
+            <div class="card animate-slide-up">
+              <div class="card-header">
+                <span>📝</span>
+                <span>${truncate(item.contract_title || item.project_name || '未命名合同', 40)}</span>
+              </div>
+              <div class="card-body">
+                <div style="margin-bottom: var(--space-3);">
+                  <span class="tag tag-primary">${item.contract_number || '无编号'}</span>
+                  ${item.contract_status ? `<span class="tag tag-success">${item.contract_status}</span>` : ''}
+                  ${item.is_fp ? '<span class="tag tag-warning">FP</span>' : ''}
+                </div>
+                <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.8;">
+                  <div><strong>客户:</strong> ${item.customer_name || '-'}</div>
+                  <div><strong>金额:</strong> ${formatAmount(item.contract_amount)}</div>
+                  <div><strong>签订:</strong> ${formatDate(item.signing_date)}</div>
+                  ${item.industry ? `<div><strong>行业:</strong> ${item.industry}</div>` : ''}
+                </div>
+              </div>
+            </div>
+          `;
+        case 'qualifications':
+        case 'ip':
+          const isExpired = item.expire_date && new Date(item.expire_date) < new Date();
+          return `
+            <div class="card animate-slide-up">
+              <div class="card-header" style="${isExpired ? 'color: var(--danger-color);' : ''}">
+                <span>${type === 'qualifications' ? '🏆' : '💼'}</span>
+                <span>${truncate(item.qualification_name || '未命名', 40)}</span>
+              </div>
+              <div class="card-body">
+                <div style="margin-bottom: var(--space-3);">
+                  ${item.company_name ? `<span class="tag tag-primary">${item.company_name}</span>` : ''}
+                  ${item.business_type ? `<span class="tag tag-secondary">${item.business_type}</span>` : ''}
+                  ${isExpired ? '<span class="tag tag-danger">已过期</span>' : '<span class="tag tag-success">有效</span>'}
+                </div>
+                <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.8;">
+                  ${item.qualification_level ? `<div><strong>级别:</strong> ${item.qualification_level}</div>` : ''}
+                  <div><strong>到期:</strong> ${formatDate(item.expire_date)}</div>
+                </div>
+              </div>
+            </div>
+          `;
+        case 'personnel':
+          return `
+            <div class="card animate-slide-up">
+              <div class="card-header">
+                <span>👤</span>
+                <span>${item.name || '未命名'}</span>
+              </div>
+              <div class="card-body">
+                <div style="margin-bottom: var(--space-3);">
+                  ${item.employee_no ? `<span class="tag tag-primary">${item.employee_no}</span>` : ''}
+                  ${item.company ? `<span class="tag tag-secondary">${item.company}</span>` : ''}
+                </div>
+                <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.8; margin-bottom: var(--space-2);">
+                  ${item.school ? `<div><strong>学校:</strong> ${item.school}</div>` : ''}
+                  ${item.degree ? `<div><strong>学历:</strong> ${item.degree}</div>` : ''}
+                </div>
+                ${item.certificates && item.certificates.length > 0 ? `
+                  <div style="margin-top: var(--space-3); padding-top: var(--space-3); border-top: 1px solid var(--border-color);">
+                    ${item.certificates.map(cert => `
+                      <span class="tag tag-warning">${cert.certificate_name}</span>
+                    `).join('')}
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+          `;
+      }
+    }
+
+    async function loadMore() {
+      if (isLoading || !hasMore) return;
+
+      currentPage++;
+      isLoading = true;
+
+      const query = document.getElementById('searchInput').value.trim();
+      const loadMoreBtn = document.querySelector('#loadMoreContainer button');
+      loadMoreBtn.disabled = true;
+      loadMoreBtn.textContent = '加载中...';
+
+      try {
+        const results = await searchByTab(currentTab, query, currentPage * 20);
+        const container = document.getElementById('resultsContainer');
+        container.innerHTML += results.results.map(item => renderResultCard(item, currentTab)).join('');
+
+        hasMore = (currentPage + 1) * 20 < results.total;
+        document.getElementById('loadMoreContainer').style.display = hasMore ? 'block' : 'none';
+      } catch (error) {
+        showToast('加载失败', 'error');
+      } finally {
+        isLoading = false;
+        loadMoreBtn.disabled = false;
+        loadMoreBtn.textContent = '加载更多';
+      }
+    }
+
+    function saveRecentSearch(type, query) {
+      const recent = storage.get('recent_searches') || [];
+      recent.unshift({
+        type,
+        query,
+        timestamp: new Date().toISOString()
+      });
+      storage.set('recent_searches', recent.slice(0, 10));
+    }
+
+    // Initialize filter UI
+    updateFilterUI();
+  </script>
+</body>
+
+</html>

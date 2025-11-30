@@ -38,11 +38,9 @@ let pollTimer = null
 
 function getAuthHeaders() {
   try {
-    const raw = window.localStorage.getItem('sa_auth_token');
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    if (!parsed?.token) return {};
-    return { Authorization: `Bearer ${parsed.token}` };
+    const token = window.localStorage.getItem('sa_token');
+    if (!token) return {};
+    return { Authorization: `Bearer ${token}` };
   } catch (error) {
     console.warn('无法读取登录凭据', error);
     return {};

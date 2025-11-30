@@ -9,6 +9,7 @@ from typing import Optional, Tuple
 import jwt
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 
 from backend.app.auth import models, schemas
 from backend.app.core.config import settings
@@ -63,10 +64,25 @@ def get_user_by_wechat_openid(db: Session, openid: str) -> Optional[models.User]
 def create_user(db: Session, user_in: schemas.UserCreate) -> models.User:
     if get_user_by_phone(db, user_in.phone):
         raise UserAlreadyExistsError("手机号已注册")
+    # Check if username already exists
+    if user_in.username:
+        stmt = select(models.User).where(models.User.username == user_in.username)
+        result = db.execute(stmt)
+        if result.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="用户名已存在",
+            )
+
     user = models.User(
         phone=user_in.phone,
         full_name=user_in.full_name,
         password_hash=hash_password(user_in.password),
+        email=user_in.email,
+        security_question=user_in.security_question,
+        security_answer=user_in.security_answer,
+        username=user_in.username,
+        role="user",  # Default role
     )
     db.add(user)
     db.commit()
@@ -74,10 +90,20 @@ def create_user(db: Session, user_in: schemas.UserCreate) -> models.User:
     return user
 
 
-def authenticate_user(db: Session, phone: str, password: str) -> models.User:
-    user = get_user_by_phone(db, phone)
-    if not user or not verify_password(password, user.password_hash):
-        raise AuthenticationError("手机号或密码错误")
+def authenticate_user(db: Session, identifier: str, password: str) -> models.User:
+    # Try to find by phone first
+    user = get_user_by_phone(db, identifier)
+    
+    # If not found by phone, try by username
+    if not user:
+        stmt = select(models.User).where(models.User.username == identifier)
+        result = db.execute(stmt)
+        user = result.scalar_one_or_none()
+
+    if not user:
+        raise AuthenticationError("用户不存在")
+    if not verify_password(password, user.password_hash):
+        raise AuthenticationError("密码错误")
     if not user.is_active:
         raise AuthenticationError("账号已被禁用")
     return user
@@ -120,7 +146,19 @@ def reset_password(db: Session, phone: str, token: str, new_password: str) -> mo
     user = get_user_by_phone(db, phone)
     if not user or not user.reset_token:
         raise PasswordResetError("找回密码请求不存在或已失效")
-    if not user.reset_token_expires_at or user.reset_token_expires_at < datetime.now(tz=timezone.utc):
+    if not user.reset_token_expires_at:
+        user.reset_token = None
+        user.reset_token_expires_at = None
+        db.add(user)
+        db.commit()
+        raise PasswordResetError("重置链接已失效")
+
+    # Handle timezone awareness for comparison
+    expires_at = user.reset_token_expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+        
+    if expires_at < datetime.now(tz=timezone.utc):
         user.reset_token = None
         user.reset_token_expires_at = None
         db.add(user)

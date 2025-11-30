@@ -1,0 +1,110 @@
+page {
+  background-color: #f8faff;
+  padding-bottom: 40rpx;
+}
+
+.container {
+  padding: 32rpx;
+}
+
+/* Welcome Card */
+.welcome-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+  border-radius: 32rpx;
+  padding: 48rpx;
+  margin-bottom: 48rpx;
+  box-shadow: 0 20rpx 40rpx rgba(51, 102, 255, 0.08);
+  border: 2rpx solid rgba(255, 255, 255, 0.6);
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-greeting {
+  font-size: 28rpx;
+  color: #6b7280;
+  margin-bottom: 12rpx;
+}
+
+.welcome-name {
+  font-size: 48rpx;
+  font-weight: 700;
+  background: linear-gradient(135deg, #3366ff 0%, #6366f1 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Section Title */
+.section-title {
+  font-size: 34rpx;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 32rpx;
+  padding-left: 8rpx;
+}
+
+/* Action Grid */
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 24rpx;
+  margin-bottom: 48rpx;
+}
+
+.action-card {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 24rpx;
+  padding: 40rpx 32rpx;
+  text-align: center;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.02);
+  border: 1rpx solid rgba(255, 255, 255, 0.6);
+  transition: all 0.3s ease;
+}
+
+.action-card:active {
+  transform: scale(0.96);
+  background: #ffffff;
+}
+
+.action-icon {
+  font-size: 64rpx;
+  margin-bottom: 24rpx;
+}
+
+.action-title {
+  font-size: 30rpx;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 8rpx;
+}
+
+.action-desc {
+  font-size: 24rpx;
+  color: #9ca3af;
+}
+
+/* Recent Activity */
+.recent-activity {
+  background: #ffffff;
+  border-radius: 24rpx;
+  padding: 48rpx;
+  min-height: 200rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.02);
+}
+
+.empty-state {
+  text-align: center;
+  color: #9ca3af;
+}
+
+.empty-icon {
+  font-size: 64rpx;
+  margin-bottom: 16rpx;
+  opacity: 0.5;
+}
+
+.empty-text {
+  font-size: 28rpx;
+}

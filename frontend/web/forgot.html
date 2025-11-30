@@ -63,7 +63,33 @@
   <script>
     document.getElementById('forgotForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      alert('找回密码功能暂未开放，请联系管理员重置。');
+      const phone = document.getElementById('phone').value.trim();
+      const btn = e.target.querySelector('button[type="submit"]');
+      const originalText = btn.innerText;
+
+      btn.innerText = '发送中...';
+      btn.disabled = true;
+
+      try {
+        const response = await apiCall('/auth/forgot-password', 'POST', { phone });
+        // For MVP/Testing, we might show the token or just say check SMS
+        // Since we don't have SMS, we'll simulate it by redirecting to reset page with token if returned (for dev convenience)
+        // OR just tell them to go to reset page.
+        // The backend returns { reset_token: "...", expires_at: "..." }
+
+        console.log('Reset Token:', response.reset_token); // For debugging/demo
+
+        // In a real app, this would be sent via SMS. 
+        // Here we'll redirect to reset.html with the token pre-filled or just show it.
+        alert(`重置链接已发送 (模拟短信)\nToken: ${response.reset_token}\n点击确定前往重置页面`);
+        window.location.href = `reset.html?phone=${phone}&token=${response.reset_token}`;
+
+      } catch (error) {
+        alert(error.message || '发送失败，请重试');
+      } finally {
+        btn.innerText = originalText;
+        btn.disabled = false;
+      }
     });
   </script>
 </body>

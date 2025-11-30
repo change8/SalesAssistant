@@ -1,6 +1,8 @@
 {
   "pages": [
-    "pages/tools/tools",
+    "pages/home/home",
+    "pages/search/search",
+    "pages/bidding/bidding",
     "pages/tasks/tasks",
     "pages/profile/profile",
     "pages/login/login",
@@ -21,16 +23,16 @@
     "borderStyle": "white",
     "list": [
       {
-        "pagePath": "pages/tools/tools",
-        "text": "工具",
-        "iconPath": "assets/tools.png",
-        "selectedIconPath": "assets/tools-active.png"
+        "pagePath": "pages/home/home",
+        "text": "首页",
+        "iconPath": "assets/home.png",
+        "selectedIconPath": "assets/home-active.png"
       },
       {
-        "pagePath": "pages/tasks/tasks",
-        "text": "任务",
-        "iconPath": "assets/tasks.png",
-        "selectedIconPath": "assets/tasks-active.png"
+        "pagePath": "pages/search/search",
+        "text": "搜索",
+        "iconPath": "assets/search.png",
+        "selectedIconPath": "assets/search-active.png"
       },
       {
         "pagePath": "pages/profile/profile",
