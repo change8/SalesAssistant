@@ -5,7 +5,7 @@ from sqlalchemy import or_, and_, func, select, case
 import re
 import csv
 import io
-from datetime import datetime
+from datetime import datetime, timezone
 
 from backend.app.search import models, schemas
 from backend.app.search.contracts_models import ExistingContract
@@ -35,13 +35,35 @@ def extract_industry(customer_name: str) -> Optional[str]:
     return match.group(1) if match else None
 
 
+from backend.app.auth import models as auth_models
+import json
+
+def _log_search_history(db: Session, user_id: int, query: str, filters: dict) -> None:
+    try:
+        # Filter out None values and empty strings to save space
+        clean_filters = {k: v for k, v in filters.items() if v}
+        history = auth_models.SearchHistory(
+            user_id=user_id,
+            query=query,
+            filters=json.dumps(clean_filters, ensure_ascii=False),
+            search_time=datetime.now(timezone.utc)
+        )
+        db.add(history)
+        db.commit()
+    except Exception as e:
+        print(f"Failed to log search history: {e}")
+
 def search_contracts(
-    db: Session,  # Not used for contracts, kept for API consistency
-    params: schemas.ContractSearchParams
+    db: Session,
+    params: schemas.ContractSearchParams,
+    current_user: Optional[auth_models.User] = None
 ) -> Tuple[List[dict], int]:
     """
     Enhanced contract search from existing contracts.db with fuzzy matching, filters, and relevance sorting.
     """
+    if current_user:
+        _log_search_history(db, current_user.id, params.q, params.dict(exclude={'q', 'limit', 'offset'}))
+
     contracts_db = ContractsSessionLocal()
     
     try:
@@ -193,12 +215,16 @@ def search_contracts(
 
 def search_assets(
     db: Session,  # Not used, kept for consistency
-    params: schemas.AssetSearchParams
+    params: schemas.AssetSearchParams,
+    current_user: Optional[auth_models.User] = None
 ) -> Tuple[List[dict], int]:
     """
     Search assets (Intellectual Property) from contracts.db.
     Note: This now specifically targets IntellectualPropertyAsset for the 'assets' endpoint (IP tab).
     """
+    if current_user:
+        _log_search_history(db, current_user.id, params.q, params.dict(exclude={'q', 'limit', 'offset'}))
+
     contracts_db = ContractsSessionLocal()
     
     try:
@@ -278,11 +304,15 @@ def search_assets(
 
 def search_qualifications(
     db: Session,
-    params: schemas.QualificationSearchParams
+    params: schemas.QualificationSearchParams,
+    current_user: Optional[auth_models.User] = None
 ) -> Tuple[List[dict], int]:
     """
     Search qualifications from contracts.db (QualificationAsset).
     """
+    if current_user:
+        _log_search_history(db, current_user.id, params.q, params.dict(exclude={'q', 'limit', 'offset'}))
+
     contracts_db = ContractsSessionLocal()
     try:
         query = select(QualificationAsset)
@@ -398,11 +428,15 @@ def get_qualification_by_id(db: Session, qual_id: int) -> Optional[dict]:
 
 def search_employees(
     db: Session,  # Not used for employees, kept for API consistency
-    params: schemas.EmployeeSearchParams
+    params: schemas.EmployeeSearchParams,
+    current_user: Optional[auth_models.User] = None
 ) -> Tuple[List[dict], int]:
     """
     Search employees from contracts.db with fuzzy matching and filters.
     """
+    if current_user:
+        _log_search_history(db, current_user.id, params.q, params.dict(exclude={'q', 'limit', 'offset'}))
+
     from backend.app.search.employee_models import Employee, EmployeeEducation, EmployeeCertificate
     
     contracts_db = ContractsSessionLocal()

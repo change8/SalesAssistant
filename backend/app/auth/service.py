@@ -87,6 +87,14 @@ def create_user(db: Session, user_in: schemas.UserCreate) -> models.User:
     db.add(user)
     db.commit()
     db.refresh(user)
+    
+    # Generate default username if not provided
+    if not user.username:
+        user.username = f"用户 {user.id + 2800}"
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        
     return user
 
 
@@ -106,6 +114,8 @@ def authenticate_user(db: Session, identifier: str, password: str) -> models.Use
         raise AuthenticationError("密码错误")
     if not user.is_active:
         raise AuthenticationError("账号已被禁用")
+        
+    _log_login_history(db, user.id, "password")
     return user
 
 
@@ -219,6 +229,7 @@ def login_with_wechat(
     user = get_user_by_wechat_openid(db, session_payload.openid)
     if user:
         _update_wechat_metadata(user, session_payload, phone, db)
+        _log_login_history(db, user.id, "wechat")
         return user
 
     user = get_user_by_phone(db, phone)
@@ -232,6 +243,7 @@ def login_with_wechat(
         db.add(user)
         db.commit()
         db.refresh(user)
+        _log_login_history(db, user.id, "wechat")
         return user
 
     random_password = _generate_random_password()
@@ -245,6 +257,14 @@ def login_with_wechat(
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+    
+    # Generate default username
+    new_user.username = f"用户 {new_user.id + 2800}"
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    _log_login_history(db, new_user.id, "wechat")
     return new_user
 
 
@@ -260,15 +280,18 @@ def _bind_wechat_identity(user: models.User, payload) -> None:
         user.wechat_unionid = payload.unionid
 
 
-def _update_wechat_metadata(user: models.User, payload, phone: str, db: Session) -> None:
-    changed = False
-    if not user.phone:
-        user.phone = phone
-        changed = True
-    if payload.unionid and user.wechat_unionid != payload.unionid:
-        user.wechat_unionid = payload.unionid
-        changed = True
     if changed:
         db.add(user)
         db.commit()
         db.refresh(user)
+
+
+def _log_login_history(db: Session, user_id: int, method: str, ip_address: Optional[str] = None) -> None:
+    history = models.LoginHistory(
+        user_id=user_id,
+        login_method=method,
+        ip_address=ip_address,
+        login_time=datetime.now(tz=timezone.utc)
+    )
+    db.add(history)
+    db.commit()

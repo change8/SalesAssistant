@@ -14,6 +14,11 @@ App({
     const storedToken = wx.getStorageSync('sa_token');
     if (storedToken) {
       this.globalData.token = storedToken;
+    } else {
+      // Force login
+      wx.reLaunch({
+        url: '/pages/login/login'
+      });
     }
     const storedUser = wx.getStorageSync('sa_user');
     if (storedUser) {

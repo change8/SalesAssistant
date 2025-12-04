@@ -39,3 +39,23 @@ class User(TimestampMixin, Base):
 
     # Relationships
     tasks: Mapped[List["Task"]] = relationship("Task", back_populates="user", lazy="select")
+
+
+class LoginHistory(Base):
+    __tablename__ = "login_history"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, index=True)
+    login_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now)
+    ip_address: Mapped[Optional[str]] = mapped_column(String(45), nullable=True)
+    login_method: Mapped[str] = mapped_column(String(20), nullable=False)  # 'phone', 'wechat', etc.
+
+
+class SearchHistory(Base):
+    __tablename__ = "search_history"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(Integer, index=True)
+    query: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    search_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.now)
+    filters: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)  # JSON string of filters

@@ -4,6 +4,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from typing import Optional
 
+from backend.app.core import dependencies
 from backend.app.core.dependencies import get_db
 from backend.app.search import service, schemas
 
@@ -65,7 +66,8 @@ def search_contracts(
     end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     limit: int = Query(50, le=100, description="Max results"),
     offset: int = Query(0, ge=0, description="Offset"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user = Depends(dependencies.get_current_user)
 ):
     """
     Enhanced contract search with fuzzy matching, filters, and relevance sorting.
@@ -89,7 +91,7 @@ def search_contracts(
         offset=offset
     )
     
-    results, total = service.search_contracts(db, params)
+    results, total = service.search_contracts(db, params, current_user)
     
     return schemas.SearchResponse(
         total=total,
@@ -106,7 +108,8 @@ def search_assets(
     company: Optional[str] = Query(None, description="Filter by company"),
     limit: int = Query(50, le=100, description="Max results"),
     offset: int = Query(0, ge=0, description="Offset"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user = Depends(dependencies.get_current_user)
 ):
     """
     Search assets (qualifications & intellectual property).
@@ -122,7 +125,7 @@ def search_assets(
         offset=offset
     )
     
-    results, total = service.search_assets(db, params)
+    results, total = service.search_assets(db, params, current_user)
     
     return schemas.SearchResponse(
         total=total,
@@ -139,7 +142,8 @@ def search_qualifications(
     status: Optional[str] = Query(None, description="Filter by status"),
     limit: int = Query(50, le=100, description="Max results"),
     offset: int = Query(0, ge=0, description="Offset"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user = Depends(dependencies.get_current_user)
 ):
     """
     Search qualifications with fuzzy matching.
@@ -155,7 +159,7 @@ def search_qualifications(
         offset=offset
     )
     
-    results, total = service.search_qualifications(db, params)
+    results, total = service.search_qualifications(db, params, current_user)
     
     return schemas.SearchResponse(
         total=total,
@@ -174,7 +178,8 @@ def search_employees(
     certificate_name: Optional[str] = Query(None, description="Filter by certificate name"),
     limit: int = Query(50, le=100, description="Max results"),
     offset: int = Query(0, ge=0, description="Offset"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user = Depends(dependencies.get_current_user)
 ):
     """
     Search employees with fuzzy matching and filters.
@@ -193,7 +198,7 @@ def search_employees(
         offset=offset
     )
     
-    results, total = service.search_employees(db, params)
+    results, total = service.search_employees(db, params, current_user)
     
     return schemas.SearchResponse(
         total=total,
