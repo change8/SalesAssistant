@@ -214,6 +214,92 @@
       </view>
     </block>
 
+    <!-- Company Results -->
+    <block wx:if="{{activeTab === 4}}">
+      <view wx:for="{{results}}" wx:key="id" class="card" bindtap="showCompanyDetail" data-item="{{item}}">
+        <view class="card-header">
+           <view class="title-row">
+            <text class="title">{{item.name || '未命名公司'}}</text>
+          </view>
+          <view class="copy-btn" catchtap="copyItem" data-item="{{item}}">复制</view>
+        </view>
+        <view class="card-body">
+           <view class="tags">
+            <text wx:if="{{item.code}}" class="tag tag-primary">{{item.code}}</text>
+            <text wx:if="{{item.operating_state}}" class="tag tag-success">{{item.operating_state}}</text>
+          </view>
+          <view class="info">
+            <view class="info-row" wx:if="{{item.nuccn}}">
+              <text class="info-label">统一信用代码:</text>
+              <text class="info-value">{{item.nuccn}}</text>
+            </view>
+             <view class="info-row" wx:if="{{item.legal_person}}">
+              <text class="info-label">法人:</text>
+              <text class="info-value">{{item.legal_person}}</text>
+            </view>
+          </view>
+        </view>
+      </view>
+    </block>
+    
+    <!-- Company Detail Popup -->
+    <view class="detail-popup {{showCompanyDetail ? 'open' : ''}}" wx:if="{{activeTab === 4}}">
+      <view class="detail-mask" bindtap="closeCompanyDetail"></view>
+      <view class="detail-content">
+        <view class="detail-header">
+          <text>公司详情</text>
+          <view class="close-btn" bindtap="closeCompanyDetail">×</view>
+        </view>
+        <scroll-view scroll-y class="detail-body">
+          <view class="detail-title">{{selectedCompany.name}}</view>
+          
+          <view class="detail-tags">
+            <text wx:if="{{selectedCompany.code}}" class="tag tag-primary">{{selectedCompany.code}}</text>
+            <text wx:if="{{selectedCompany.operating_state}}" class="tag tag-success">{{selectedCompany.operating_state}}</text>
+          </view>
+
+          <view class="detail-section">
+             <view class="detail-row" wx:if="{{selectedCompany.nuccn}}">
+              <text class="label">统一信用代码</text>
+              <text class="value">{{selectedCompany.nuccn}}</text>
+            </view>
+            <view class="detail-row" wx:if="{{selectedCompany.legal_person}}">
+              <text class="label">法定代表人</text>
+              <text class="value">{{selectedCompany.legal_person}}</text>
+            </view>
+            <view class="detail-row" wx:if="{{selectedCompany.registered_capital}}">
+              <text class="label">注册资本</text>
+              <text class="value">{{selectedCompany.registered_capital}} {{selectedCompany.currency || ''}}</text>
+            </view>
+             <view class="detail-row" wx:if="{{selectedCompany.setup_date}}">
+              <text class="label">成立日期</text>
+              <text class="value">{{selectedCompany.setup_date}}</text>
+            </view>
+            <view class="detail-row" wx:if="{{selectedCompany.registered_address}}">
+              <text class="label">注册地址</text>
+              <text class="value">{{selectedCompany.registered_address}}</text>
+            </view>
+             <view class="detail-row" wx:if="{{selectedCompany.operating_period}}">
+              <text class="label">经营期限</text>
+              <text class="value">{{selectedCompany.operating_period}}</text>
+            </view>
+            <view class="detail-row" wx:if="{{selectedCompany.company_type}}">
+              <text class="label">公司类型</text>
+              <text class="value">{{selectedCompany.company_type}}</text>
+            </view>
+          </view>
+
+          <view class="detail-section">
+            <view class="section-title">经营范围</view>
+            <view class="description">{{selectedCompany.business_scope || '无'}}</view>
+          </view>
+        </scroll-view>
+        <view class="detail-footer">
+          <button class="copy-full-btn" bindtap="copyCompanyFull" data-item="{{selectedCompany}}">复制全部信息</button>
+        </view>
+      </view>
+    </view>
+
     <!-- Load More -->
     <view wx:if="{{hasMore}}" class="load-more">
       <button wx:if="{{!loading}}" class="load-more-btn" bindtap="loadMore">加载更多</button>

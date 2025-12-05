@@ -2,13 +2,27 @@
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-from typing import Optional
+from typing import Optional, List
 
+from backend.app.auth import models as auth_models
 from backend.app.core import dependencies
 from backend.app.core.dependencies import get_db
 from backend.app.search import service, schemas
+from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/search", tags=["search"])
+
+
+class SearchParams(BaseModel):
+    query: str
+    page: int = 1
+    page_size: int = 20
+    filters: dict = {}
+
+class CompanySearchParams(BaseModel):
+    query: str
+    page: int = 1
+    page_size: int = 20
 
 
 @router.get("/contracts/export")
@@ -207,6 +221,29 @@ def search_employees(
         limit=limit
     )
 
+
+@router.post("/companies")
+def search_companies(
+    params: CompanySearchParams,
+    current_user: auth_models.User = Depends(dependencies.get_current_user),
+    db: Session = Depends(dependencies.get_db),
+):
+    """Search for companies."""
+    search_params = params.dict()
+    return service.search_companies(db, search_params, current_user)
+
+
+@router.get("/companies/{company_id}")
+def get_company_detail(
+    company_id: int,
+    current_user: auth_models.User = Depends(dependencies.get_current_user),
+    db: Session = Depends(dependencies.get_db),
+):
+    """Get company details."""
+    company = service.get_company_detail(db, company_id, current_user)
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    return company
 
 @router.get("/contracts/{contract_id}", response_model=schemas.ContractRead)
 def get_contract(contract_id: int, db: Session = Depends(get_db)):

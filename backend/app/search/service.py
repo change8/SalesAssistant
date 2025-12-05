@@ -1,19 +1,24 @@
 """Enhanced service layer for Simple Search feature."""
-from typing import Optional, List, Tuple, Any
+from typing import Optional, List, Tuple, Any, Dict
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, and_, func, select, case
+from sqlalchemy import or_, and_, func, select, case, desc
 import re
 import csv
 import io
 from datetime import datetime, timezone
+import json
+from enum import Enum, unique
 
 from backend.app.search import models, schemas
 from backend.app.search.contracts_models import ExistingContract
 from backend.app.search.assets_models import QualificationAsset, IntellectualPropertyAsset
+from backend.app.search.employee_models import Employee, EmployeeCertificate, EmployeeEducation
+from backend.app.search.company_models import Company
 from backend.app.core.database import ContractsSessionLocal
 
 
 from backend.app.common.currency_service import convert_and_format
+from backend.app.auth import models as auth_models
 
 def parse_amount_string(amount_str: str) -> Optional[float]:
     """Parse amount string like '中国人民币 526,548.00' to float."""
@@ -634,5 +639,73 @@ def export_contracts(
         
         return byte_output
         
+    finally:
+        contracts_db.close()
+
+
+def search_companies(
+    db: Session,
+    params: Dict[str, Any],
+    current_user: auth_models.User
+) -> Dict[str, Any]:
+    """Search for companies based on filters."""
+    # Use contracts_db session for querying companies
+    contracts_db = ContractsSessionLocal()
+    try:
+        query = select(Company)
+
+        # Basic search query (searches name or code)
+        if params.get("query"):
+            search_term = f"%{params['query']}%"
+            query = query.where(
+                or_(
+                    Company.name.ilike(search_term),
+                    Company.code.ilike(search_term),
+                )
+            )
+
+        # Pagination
+        page = int(params.get("page", 1))
+        page_size = int(params.get("page_size", 20))
+        offset = (page - 1) * page_size
+
+        # Count total
+        count_query = select(func.count()).select_from(query.subquery())
+        total = contracts_db.scalar(count_query) or 0
+
+        # Apply limits
+        query = query.offset(offset).limit(page_size)
+        
+        # Execute
+        results = contracts_db.execute(query).scalars().all()
+
+        # Log search history (using the main db session passed in arguments)
+        _log_search_history(db, current_user.id, params.get("query", ""), {
+            "page": page,
+            "type": "company"
+        })
+
+        return {
+            "total": total,
+            "items": results,
+            "page": page,
+            "page_size": page_size
+        }
+    finally:
+        contracts_db.close()
+
+
+def get_company_detail(
+    db: Session,
+    company_id: int,
+    current_user: auth_models.User
+) -> Optional[Company]:
+    """Get detailed information for a specific company."""
+    contracts_db = ContractsSessionLocal()
+    try:
+        company = contracts_db.get(Company, company_id)
+        if company:
+            _log_search_history(db, current_user.id, f"company_id:{company_id}", {"type": "company_detail"})
+        return company
     finally:
         contracts_db.close()

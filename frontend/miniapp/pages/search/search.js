@@ -2,7 +2,7 @@ const api = require('../../utils/api');
 
 Page({
     data: {
-        tabs: ['合同', '资质', '知产', '人员'],
+        tabs: ['合同搜索', '资质查询', '知识产权', '人员证书', '公司分支'],
         activeTab: 0,
         searchQuery: '',
         placeholderText: '合同名称、行业、客户名称、合同编号..',
@@ -123,7 +123,7 @@ Page({
         const field = e.currentTarget.dataset.field;
         const value = e.detail.value;
         this.setData({
-            [`filters.${field}`]: value
+            [`filters.${field} `]: value
         });
     },
 
@@ -133,7 +133,7 @@ Page({
         const currentValue = this.data.filters[field];
         // Toggle if same value, else set new value
         this.setData({
-            [`filters.${field}`]: currentValue === value ? '' : value
+            [`filters.${field} `]: currentValue === value ? '' : value
         });
     },
 
@@ -180,9 +180,11 @@ Page({
         const item = e.currentTarget.dataset.item;
         let text = '';
         if (this.data.activeTab === 0) { // Contract
-            text = `合同编号: ${item.contract_number || '-'}\n合同名称: ${item.contract_title || item.project_name}\n客户: ${item.customer_name || '-'}\n金额: ${item.contract_amount || '-'}\n签订时间: ${item.signing_date || '-'}`;
+            text = `合同编号: ${item.contract_number || '-'} \n合同名称: ${item.contract_title || item.project_name} \n客户: ${item.customer_name || '-'} \n金额: ${item.contract_amount || '-'} \n签订时间: ${item.signing_date || '-'} `;
         } else if (this.data.activeTab === 1 || this.data.activeTab === 2) { // Qual/IP
-            text = `名称: ${item.qualification_name}\n公司: ${item.company_name}\n类型: ${item.business_type || '-'}`;
+            text = `名称: ${item.qualification_name} \n公司: ${item.company_name} \n类型: ${item.business_type || '-'} `;
+        } else if (this.data.activeTab === 4) { // Company
+            text = `公司名称: ${item.name}\n公司编号: ${item.code || '-'}\n统一信用代码: ${item.nuccn || '-'}`;
         } else if (type === 'group') {
             const val = e.currentTarget.dataset.value;
             const current = this.data.quickTags.group;
@@ -191,7 +193,7 @@ Page({
             });
             this.performSearch();
         } else { // Personnel
-            text = `姓名: ${item.name}\n工号: ${item.employee_no || '-'}\n公司: ${item.company || '-'}`;
+            text = `姓名: ${item.name} \n工号: ${item.employee_no || '-'} \n公司: ${item.company || '-'} `;
         }
 
         wx.setClipboardData({
@@ -366,6 +368,8 @@ Page({
                 return await api.searchIP(params);
             case 3: // 人员
                 return await api.searchPersonnel(params);
+            case 4: // 公司
+                return await api.searchCompanies(params);
             default:
                 return { results: [], total: 0 };
         }
@@ -495,6 +499,39 @@ Page({
         this.setData({
             showDetail: false,
             selectedContract: null
+        });
+    },
+
+    // --- Company Detail Popup ---
+    showCompanyDetail(e) {
+        const item = e.currentTarget.dataset.item;
+        this.setData({
+            selectedCompany: item,
+            showCompanyDetail: true
+        });
+    },
+
+    closeCompanyDetail() {
+        this.setData({
+            showCompanyDetail: false,
+            selectedCompany: null
+        });
+    },
+
+    copyCompanyFull(e) {
+        const item = e.currentTarget.dataset.item;
+        let text = `公司名称: ${item.name}\n公司编号: ${item.code || '-'}\n` +
+            `统一信用代码: ${item.nuccn || '-'}\n` +
+            `法人: ${item.legal_person || '-'}\n` +
+            `成立日期: ${item.setup_date || '-'}\n` +
+            `注册资本: ${item.registered_capital || '-'}\n` +
+            `经营状态: ${item.operating_state || '-'}\n` +
+            `注册地址: ${item.registered_address || '-'}\n` +
+            `经营范围: ${item.business_scope || '-'}`;
+
+        wx.setClipboardData({
+            data: text,
+            success: () => wx.showToast({ title: '已复制全部', icon: 'success' })
         });
     }
 });
