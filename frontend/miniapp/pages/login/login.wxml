@@ -18,7 +18,6 @@
   </view>
 
   <button class="wechat-btn" open-type="getPhoneNumber" bindgetphonenumber="onGetPhoneNumber">
-    <image src="../../assets/wechat.png" class="wechat-icon" />
     <text>微信手机号一键登录</text>
   </button>
 </view>
