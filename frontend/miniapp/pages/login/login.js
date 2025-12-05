@@ -98,7 +98,17 @@ Page({
 
     } catch (error) {
       console.error('WeChat Login failed:', error);
-      wx.showToast({ title: error.message || '登录失败', icon: 'none' });
+      const errorMessage = error.message || '登录失败';
+      if (errorMessage.length > 20) {
+        wx.showModal({
+          title: '提示',
+          content: errorMessage,
+          showCancel: false,
+          confirmText: '知道了'
+        });
+      } else {
+        wx.showToast({ title: errorMessage, icon: 'none' });
+      }
     } finally {
       this.setData({ loading: false });
     }

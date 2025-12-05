@@ -62,6 +62,13 @@ def get_user_by_wechat_openid(db: Session, openid: str) -> Optional[models.User]
 
 
 def create_user(db: Session, user_in: schemas.UserCreate) -> models.User:
+    if not settings.allow_open_registration:
+        # Check if user exists (whitelist mode)
+        # In whitelist mode, users must be pre-seeded. We don't allow registration of new phones.
+        # But wait, create_user is for registration. If user exists, it raises UserAlreadyExistsError.
+        # So in restricted mode, create_user is effectively disabled for new phones.
+        raise AuthenticationError("系统暂未开放注册")
+
     if get_user_by_phone(db, user_in.phone):
         raise UserAlreadyExistsError("手机号已注册")
     # Check if username already exists
@@ -245,6 +252,11 @@ def login_with_wechat(
         db.refresh(user)
         _log_login_history(db, user.id, "wechat")
         return user
+
+    if not settings.allow_open_registration:
+        raise AuthenticationError(
+            "目前系统仅开放给软通工业互联内部同事使用，如您是工业互联部门同事，请使用公司预留电话进行微信认证登录或通过手机号+工号（密码）进行登录，如有问题，请联系小孙解决；"
+        )
 
     random_password = _generate_random_password()
     new_user = models.User(

@@ -27,6 +27,7 @@ class Settings(BaseSettings):
 
     cors_origins: List[str] = Field(default_factory=list)
 
+    allow_open_registration: bool = Field(default=False)
     bidding_async_mode_default: bool = Field(default=False)
     wechat_app_id: Optional[str] = Field(default=None)
     wechat_app_secret: Optional[str] = Field(default=None)
