@@ -43,6 +43,40 @@ def create_app() -> FastAPI:
     from backend.app.modules.bidding_v2.router import router as bidding_v2_router
     app.include_router(bidding_v2_router, prefix=f"{api_prefix}")
 
+    # Exception Handlers
+    from fastapi import Request
+    from fastapi.responses import JSONResponse
+    from backend.app.auth.service import AuthenticationError, UserAlreadyExistsError, PasswordPolicyError, PasswordResetError
+
+    @app.exception_handler(AuthenticationError)
+    async def auth_exception_handler(request: Request, exc: AuthenticationError):
+        return JSONResponse(
+            status_code=400,
+            content={"detail": str(exc)},
+        )
+
+    @app.exception_handler(UserAlreadyExistsError)
+    async def user_exists_handler(request: Request, exc: UserAlreadyExistsError):
+        return JSONResponse(
+            status_code=400,
+            content={"detail": str(exc)},
+        )
+    
+    @app.exception_handler(PasswordPolicyError)
+    async def password_policy_handler(request: Request, exc: PasswordPolicyError):
+        return JSONResponse(
+            status_code=400,
+            content={"detail": str(exc)},
+        )
+
+    @app.exception_handler(PasswordResetError)
+    async def password_reset_handler(request: Request, exc: PasswordResetError):
+        return JSONResponse(
+            status_code=400,
+            content={"detail": str(exc)},
+        )
+
+
     frontend_dir = Path(__file__).resolve().parent.parent.parent / "frontend" / "web"
     if frontend_dir.exists():
         app.mount("/web", StaticFiles(directory=str(frontend_dir), html=True), name="web")
