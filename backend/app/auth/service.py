@@ -287,11 +287,16 @@ def _bind_wechat_identity(user: models.User, payload) -> None:
 
 
 def _log_login_history(db: Session, user_id: int, method: str, ip_address: Optional[str] = None) -> None:
-    history = models.LoginHistory(
-        user_id=user_id,
-        login_method=method,
-        ip_address=ip_address,
-        login_time=datetime.now(tz=timezone.utc)
-    )
-    db.add(history)
-    db.commit()
+    try:
+        history = models.LoginHistory(
+            user_id=user_id,
+            login_method=method,
+            ip_address=ip_address,
+            login_time=datetime.now(tz=timezone.utc)
+        )
+        db.add(history)
+        db.commit()
+    except Exception as e:
+        print(f"Failed to log login history: {e}")
+        # Rollback in case of error to prevent session corruption
+        db.rollback()
