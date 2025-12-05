@@ -7,9 +7,11 @@
     <input class="input" type="password" placeholder="请输入密码" value="{{password}}" bindinput="onPasswordInput" />
   </view>
   <button class="btn" loading="{{loading}}" bindtap="onLogin">登录</button>
+  <!-- 
   <view class="helper">
     <text bindtap="onGoRegister" class="link">还没有账号？立即注册</text>
-  </view>
+  </view> 
+  -->
 
   <view class="divider">
     <view class="line"></view>
