@@ -29,7 +29,7 @@ class ExistingContract(ContractsBase):
     tags: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
     industry: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
     harvest_context: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    raw_payload: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    raw_payload: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     borrow_materials: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
     collected_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)

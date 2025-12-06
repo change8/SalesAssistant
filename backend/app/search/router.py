@@ -173,7 +173,7 @@ def search_qualifications(
     
     return schemas.SearchResponse(
         total=total,
-        results=[schemas.QualificationRead.from_orm(r) for r in results],
+        results=results, # Already dicts from service
         offset=offset,
         limit=limit
     )
@@ -274,4 +274,4 @@ def get_qualification(qual_id: int, db: Session = Depends(get_db)):
     if not qual:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Qualification not found")
-    return schemas.QualificationRead.from_orm(qual)
+    return qual

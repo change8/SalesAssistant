@@ -207,8 +207,33 @@ def search_contracts(
                 'description': contract.description,
                 'tags': contract.tags,
                 'industry': contract.industry,
-                'delivery_location': contract.raw_payload.get('delivery_location') if contract.raw_payload else None,
-                'delivery_team': contract.raw_payload.get('delivery_team') if contract.raw_payload else None,
+            # Safe parsing of raw_payload (stored as JSON string)
+            payload = {}
+            if contract.raw_payload:
+                if isinstance(contract.raw_payload, dict):
+                    payload = contract.raw_payload
+                else:
+                    try:
+                        payload = json.loads(contract.raw_payload)
+                    except:
+                        payload = {}
+            
+            contracts_list.append({
+                'id': contract.id,
+                'contract_title': contract.title,
+                'contract_number': contract.contract_number,
+                'customer_name': contract.customer_name,
+                'contract_amount': convert_and_format(contract.contract_amount),
+                'contract_amount_raw': amount_raw,
+                'signing_date': contract.signed_at,
+                'contract_type': contract_type,
+                'contract_status': contract.status,
+                'project_code': contract.project_code,
+                'description': contract.description,
+                'tags': contract.tags,
+                'industry': contract.industry,
+                'delivery_location': payload.get('delivery_location'),
+                'delivery_team': payload.get('delivery_team'),
                 'created_at': contract.created_at,
                 'updated_at': contract.updated_at
             })
@@ -401,8 +426,28 @@ def get_contract_by_id(db: Session, contract_id: int) -> Optional[dict]:
             'project_description': contract.description,
             'status': contract.status or 'active',
             'contract_type': contract_type,
-            'delivery_location': contract.raw_payload.get('delivery_location') if contract.raw_payload else None,
-            'delivery_team': contract.raw_payload.get('delivery_team') if contract.raw_payload else None,
+        payload = {}
+        if contract.raw_payload:
+            if isinstance(contract.raw_payload, dict):
+                payload = contract.raw_payload
+            else:
+                try:
+                    payload = json.loads(contract.raw_payload)
+                except:
+                    payload = {}
+
+        return {
+            'id': contract.id,
+            'project_name': contract.title,
+            'contract_number': contract.contract_number,
+            'client_name': contract.customer_name,
+            'contract_amount': convert_and_format(contract.contract_amount), # Schema expects Decimal/float? No, schema says Decimal, but we can pass float/str usually
+            'signing_date': contract.signed_at,
+            'project_description': contract.description,
+            'status': contract.status or 'active',
+            'contract_type': contract_type,
+            'delivery_location': payload.get('delivery_location'),
+            'delivery_team': payload.get('delivery_team'),
             'created_at': contract.created_at,
             'updated_at': contract.updated_at
         }
