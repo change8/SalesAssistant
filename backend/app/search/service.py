@@ -133,18 +133,7 @@ def search_contracts(
                     # 2. Must NOT contain '混合', '时间', 'Resource', 'TM'
                     # 3. Ideally '固定金额' is the primary tag (first one)
                     
-                    is_fixed = False
-                    if '固定金额' in tags_list:
-                        is_fixed = True
-                    
-                    # Exclusion criteria
-                    exclusions = ['混合模式', '时间资源', 'TM', 'T&M', 'Resource', 'Staffing', '计件计量']
-                    for ex in exclusions:
-                        if any(ex in t for t in tags_list):
-                            is_fixed = False
-                            break
-                    
-                    if is_fixed:
+                    if tags_list and tags_list[0] == '固定金额':
                         filtered_results.append(contract)
             all_results = filtered_results
         
