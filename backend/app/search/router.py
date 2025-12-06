@@ -218,17 +218,30 @@ def search_employees(
     )
 
 
-@router.post("/companies")
+@router.get("/companies")
 def search_companies(
-    params: schemas.CompanySearchParams,
+    q: Optional[str] = Query(None, description="Search query"),
+    status: Optional[str] = Query(None, description="Filter by status"),
+    start_date: Optional[str] = Query(None, description="Start setup date"),
+    end_date: Optional[str] = Query(None, description="End setup date"),
+    capital_min: Optional[float] = Query(None, description="Min registered capital"),
+    capital_max: Optional[float] = Query(None, description="Max registered capital"),
+    limit: int = Query(20, le=100),
+    offset: int = Query(0, ge=0),
     current_user: auth_models.User = Depends(dependencies.get_current_user),
     db: Session = Depends(dependencies.get_db),
 ):
     """Search for companies with filters."""
-    # Convert Pydantic model to dict for service layer (or update service to accept Pydantic)
-    # The service expects params object or dict? Previous code showed dict access.
-    # Let's check service signature in next step or just pass the object if service handles it.
-    # I'll rely on the service update to handle the Pydantic object or dict.
+    params = schemas.CompanySearchParams(
+        q=q,
+        status=status,
+        start_date=start_date,
+        end_date=end_date,
+        capital_min=capital_min,
+        capital_max=capital_max,
+        limit=limit,
+        offset=offset
+    )
     return service.search_companies(db, params, current_user)
 
 

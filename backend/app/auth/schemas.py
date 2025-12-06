@@ -152,4 +152,4 @@ class PasswordChange(BaseModel):
 
 class WechatLoginRequest(BaseModel):
     login_code: str = Field(..., min_length=1, max_length=128, description="wx.login 返回的 code")
-    phone_code: str = Field(..., min_length=1, max_length=128, description="getRealtimePhoneNumber 返回的 code")
+    phone_code: Optional[str] = Field(None, min_length=1, max_length=128, description="getRealtimePhoneNumber 返回的 code (可选，用于静默登录)")
