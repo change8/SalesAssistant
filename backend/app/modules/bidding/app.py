@@ -9,10 +9,10 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from BiddingAssistant.backend.app import create_app as create_bidding_app
+# from BiddingAssistant.backend.app import create_app as create_bidding_app
 from backend.app.auth import service as auth_service
 from backend.app.core.database import SessionLocal
-from backend.app.modules.bidding.task_bridge import build_task_observer
+# from backend.app.modules.bidding.task_bridge import build_task_observer
 from backend.app.modules.tasks.schemas import TaskType
 from backend.app.modules.tasks.service import TaskService
 
@@ -71,17 +71,24 @@ def _create_task_metadata(request: Request, context: Dict[str, Any]) -> Dict[str
 
 def get_bidding_subapp() -> FastAPI:
     """Return the original BiddingAssistant FastAPI应用（加入鉴权中间件）。"""
+    
+    # Stubbed due to missing BiddingAssistant module
+    app = FastAPI()
+    @app.get("/")
+    def index():
+        return {"message": "Bidding Assistant Module Placeholder"}
+    return app
 
-    task_observer = build_task_observer()
-    bidding_app = create_bidding_app(
-        job_observers=[task_observer],
-        task_factory=_create_task_metadata,
-    )
+    # task_observer = build_task_observer()
+    # bidding_app = create_bidding_app(
+    #     job_observers=[task_observer],
+    #     task_factory=_create_task_metadata,
+    # )
 
-    def _is_public(request: Request) -> bool:
-        path = request.url.path
-        # 允许访问内置静态和 web 页面（我们 iframe 内部直接使用本地副本，保留该逻辑以防需要）。
-        return path.startswith("/web") or path.startswith("/static") or path in {"/", ""}
+    # def _is_public(request: Request) -> bool:
+    #     path = request.url.path
+    #     # 允许访问内置静态和 web 页面（我们 iframe 内部直接使用本地副本，保留该逻辑以防需要）。
+    #     return path.startswith("/web") or path.startswith("/static") or path in {"/", ""}
 
-    bidding_app.add_middleware(JWTAuthMiddleware, exempt=_is_public)
-    return bidding_app
+    # bidding_app.add_middleware(JWTAuthMiddleware, exempt=_is_public)
+    # return bidding_app
