@@ -62,15 +62,16 @@ class EmployeeCertificate(ContractsBase):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     employee_id: Mapped[int] = mapped_column(Integer, ForeignKey("employees.id"), nullable=False)
-    category: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    level: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # category: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     certificate_type: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     certificate_name: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    qualification_level: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # qualification_level: Mapped[Optional[str]] = mapped_column(Text, nullable=True) 
     authority: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     effective_date: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     expire_date: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     certificate_no: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    remarks: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # remarks: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Relationship
     employee: Mapped["Employee"] = relationship("Employee", back_populates="certificates")

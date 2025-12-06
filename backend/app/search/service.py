@@ -569,15 +569,15 @@ def search_employees(
                 'certificates': [
                     {
                         'id': cert.id,
-                        'category': cert.category,
+                        'category': None, # Removed from DB
                         'certificate_type': cert.certificate_type,
                         'certificate_name': cert.certificate_name,
-                        'qualification_level': cert.qualification_level,
+                        'qualification_level': cert.level, # mapped from 'level' column
                         'authority': cert.authority,
                         'effective_date': cert.effective_date,
                         'expire_date': cert.expire_date,
                         'certificate_no': cert.certificate_no,
-                        'remarks': cert.remarks
+                        'remarks': None # Removed from DB
                     }
                     for cert in certificates
                 ],
