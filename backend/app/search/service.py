@@ -193,20 +193,6 @@ def search_contracts(
             
             amount_raw = parse_amount_string(contract.contract_amount)
             
-            contracts_list.append({
-                'id': contract.id,
-                'contract_title': contract.title,
-                'contract_number': contract.contract_number,
-                'customer_name': contract.customer_name,
-                'contract_amount': convert_and_format(contract.contract_amount),
-                'contract_amount_raw': amount_raw,
-                'signing_date': contract.signed_at,
-                'contract_type': contract_type,
-                'contract_status': contract.status,
-                'project_code': contract.project_code,
-                'description': contract.description,
-                'tags': contract.tags,
-                'industry': contract.industry,
             # Safe parsing of raw_payload (stored as JSON string)
             payload = {}
             if contract.raw_payload:
@@ -416,16 +402,7 @@ def get_contract_by_id(db: Session, contract_id: int) -> Optional[dict]:
             if tags_list:
                 contract_type = tags_list[0]
 
-        return {
-            'id': contract.id,
-            'project_name': contract.title,
-            'contract_number': contract.contract_number,
-            'client_name': contract.customer_name,
-            'contract_amount': convert_and_format(contract.contract_amount), # Schema expects Decimal/float? No, schema says Decimal, but we can pass float/str usually
-            'signing_date': None, # Schema expects date, but DB has string. Need handling.
-            'project_description': contract.description,
-            'status': contract.status or 'active',
-            'contract_type': contract_type,
+        # Safe parsing of raw_payload (stored as JSON string)
         payload = {}
         if contract.raw_payload:
             if isinstance(contract.raw_payload, dict):
