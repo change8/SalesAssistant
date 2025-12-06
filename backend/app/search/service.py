@@ -245,8 +245,11 @@ def search_assets(
     Search assets (Intellectual Property) from contracts.db.
     Note: This now specifically targets IntellectualPropertyAsset for the 'assets' endpoint (IP tab).
     """
+    """
     if current_user:
-        _log_search_history(db, current_user.id, params.q, params.dict(exclude={'q', 'limit', 'offset'}))
+        filters_dict = params.dict(exclude={'q', 'limit', 'offset'})
+        filters_dict['type'] = 'intellectual_property'
+        _log_search_history(db, current_user.id, params.q, filters_dict)
 
     contracts_db = ContractsSessionLocal()
     
@@ -363,8 +366,10 @@ def search_qualifications(
     Search qualifications from contracts.db (QualificationAsset).
     """
     if current_user:
-        _log_search_history(db, current_user.id, params.q, params.dict(exclude={'q', 'limit', 'offset'}))
-
+        filters_dict = params.dict(exclude={'q', 'limit', 'offset'})
+        filters_dict['type'] = 'qualification'
+        _log_search_history(db, current_user.id, params.q, filters_dict)
+        
     contracts_db = ContractsSessionLocal()
     try:
         query = select(QualificationAsset)
@@ -549,7 +554,9 @@ def search_employees(
     Search employees from contracts.db with fuzzy matching and filters.
     """
     if current_user:
-        _log_search_history(db, current_user.id, params.q, params.dict(exclude={'q', 'limit', 'offset'}))
+        filters_dict = params.dict(exclude={'q', 'limit', 'offset'})
+        filters_dict['type'] = 'employee'
+        _log_search_history(db, current_user.id, params.q, filters_dict)
 
     from backend.app.search.employee_models import Employee, EmployeeEducation, EmployeeCertificate
     
@@ -795,6 +802,12 @@ def search_companies(
 ) -> Dict[str, Any]:
     """Search for companies based on filters."""
     contracts_db = ContractsSessionLocal()
+    
+    if current_user:
+        filters_dict = params.dict(exclude={'q', 'limit', 'offset'})
+        filters_dict['type'] = 'company'
+        _log_search_history(db, current_user.id, params.q, filters_dict)
+        
     try:
         query = select(Company)
 

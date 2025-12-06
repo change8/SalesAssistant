@@ -35,50 +35,34 @@ Page({
 
       const history = (res || []).map(item => {
         const filters = item.filters || {};
-        let type = 'contract'; // default
-        // Helper to guess type from filters or query
-        // Actually backend `_log_search_history` doesn't strictly save "type" unless we put it in filters.
-        // Let's check how we logged it.
-        // We logged: `filters=params.dict(exclude={'q',...})`
-        // But for Company we logged `{"type": "company", "filters": ...}`
-
+        let tab = 'contracts';
         let displayType = '搜索';
         let icon = '🔍';
-        let tab = 'contracts';
-        let query = item.query || '全部';
 
-        // Check if filters has type
+        // 1. Use backend "type" if available (most reliable)
         if (filters.type) {
-          // Company logged as type: company
           if (typeMap[filters.type]) {
             displayType = typeMap[filters.type].label;
             icon = typeMap[filters.type].icon;
             if (filters.type === 'company') tab = 'company';
+            if (filters.type === 'contract') tab = 'contracts';
+            if (filters.type === 'qualification') tab = 'qualifications';
+            if (filters.type === 'intellectual_property') tab = 'ip';
+            if (filters.type === 'employee') tab = 'personnel';
           }
         } else {
-          // Guess from keys or default to contract
-          // Contract params: customer, contract_type...
-          // Asset params: category...
-          if (filters.customer || filters.contract_type || filters.project_code) {
-            displayType = '合同';
-            icon = '📝';
-            tab = 'contracts';
+          // Fallback Logic (Legacy records)
+          if (filters.customer || filters.contract_type || filters.project_code || filters.is_fp) {
+            displayType = '合同'; icon = '📝'; tab = 'contracts';
           } else if (filters.category === 'qualification' || filters.qualification_type) {
-            displayType = '资质';
-            icon = '🏆';
-            tab = 'qualifications';
+            displayType = '资质'; icon = '🏆'; tab = 'qualifications';
           } else if (filters.category === 'intellectual_property' || filters.business_type) {
-            displayType = '知产';
-            icon = '💼';
-            tab = 'ip';
-          } else if (filters.certificate_name || filters.degree) {
-            displayType = '人员';
-            icon = '👥';
-            tab = 'personnel';
+            displayType = '知产'; icon = '💼'; tab = 'ip';
+          } else if (filters.certificate_name || filters.degree || filters.status) { // Employee params
+            // Note: 'status' is ambiguous (Contract or Emp), but usually contract has other fields.
+            displayType = '人员'; icon = '👥'; tab = 'personnel';
           } else if (filters.operating_state) {
-            displayType = '公司';
-            icon = '🏢';
-            tab = 'company';
+            displayType = '公司'; icon = '🏢'; tab = 'company';
           }
         }
 
@@ -102,13 +86,28 @@ Page({
   },
 
   formatFilterTags(filters) {
-    // Helper to show readable tags from filters
     const tags = [];
+    // Contracts
+    if (filters.is_fp === true || filters.is_fp === 'true') tags.push('只看FP');
     if (filters.customer) tags.push(`客户:${filters.customer}`);
     if (filters.contract_type) tags.push(filters.contract_type);
+    if (filters.contract_amount) tags.push(filters.contract_amount); // Corrected from undefined variable if any
+
+    // Qualifications / IP
+    if (filters.qualification_type) tags.push(filters.qualification_type);
+    if (filters.business_type) tags.push(filters.business_type);
+    if (filters.is_expired === false || filters.is_expired === 'false') tags.push('未过期');
+
+    // Company
     if (filters.company) tags.push(filters.company);
+    if (filters.operating_state) tags.push(filters.operating_state);
+
+    // Employees
     if (filters.name) tags.push(filters.name);
-    return tags.slice(0, 2); // Show max 2 tags
+    if (filters.degree) tags.push(filters.degree);
+    if (filters.certificate_name) tags.push(filters.certificate_name);
+
+    return tags.slice(0, 3); // Show max 3 tags
   },
 
   onHistoryTap(e) {

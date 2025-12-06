@@ -51,11 +51,12 @@
             <text class="history-type">{{item.displayType}}</text>
             <text class="history-query">{{item.query || '无关键词'}}</text>
           </view>
-          <view class="history-tags">
+          <view class="history-tags" wx:if="{{item.tags && item.tags.length > 0}}">
             <text class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this">{{tag}}</text>
-            <text class="history-time">{{item.time}}</text>
           </view>
         </view>
+        <!-- Time and Arrow on the right -->
+        <view class="history-time">{{item.time}}</view>
         <view class="history-arrow">></view>
       </view>
     </block>

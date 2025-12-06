@@ -148,8 +148,8 @@ page {
 /* History Item */
 .history-item {
   display: flex;
-  align-items: center;
-  padding: 32rpx;
+  align-items: center; /* Center items vertically */
+  padding: 24rpx 32rpx; /* Reduced vertical padding */
   border-bottom: 1rpx solid #f3f4f6;
   transition: all 0.2s;
 }
@@ -173,10 +173,15 @@ page {
   font-size: 36rpx;
   margin-right: 24rpx;
   color: #6b7280;
+  flex-shrink: 0; /* Prevent icon shrinking */
 }
 
 .history-content {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden; /* For ellipsizing if needed */
 }
 
 .history-title {
@@ -186,44 +191,51 @@ page {
 }
 
 .history-type {
-  font-size: 24rpx;
+  font-size: 20rpx;
   color: #3366ff;
   background: rgba(51, 102, 255, 0.1);
-  padding: 2rpx 12rpx;
-  border-radius: 8rpx;
+  padding: 2rpx 10rpx;
+  border-radius: 6rpx;
   margin-right: 12rpx;
   font-weight: 500;
+  flex-shrink: 0;
 }
 
 .history-query {
-  font-size: 30rpx;
+  font-size: 28rpx;
   color: #1f2937;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .history-tags {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
+  gap: 8rpx; /* Gap between tags */
 }
 
 .history-tags .tag {
-  font-size: 22rpx;
+  font-size: 20rpx;
   color: #6b7280;
   background: #f3f4f6;
-  padding: 4rpx 12rpx;
+  padding: 2rpx 12rpx;
   border-radius: 20rpx;
-  margin-right: 12rpx;
 }
 
+/* Time on the far right, vertically centered */
 .history-time {
   font-size: 22rpx;
   color: #9ca3af;
-  margin-left: auto; /* Push to right if tags wrap, or inline */
+  margin-left: 16rpx;
+  flex-shrink: 0;
 }
 
 .history-arrow {
   color: #d1d5db;
-  font-size: 28rpx;
-  margin-left: 16rpx;
+  font-size: 24rpx;
+  margin-left: 12rpx;
+  flex-shrink: 0;
 }
