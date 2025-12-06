@@ -29,3 +29,10 @@ frontend/miniapp/config.js
 frontend/miniapp/project.private.config.json
 deploy.sh
 
+
+# User data (Sensitive)
+data/pre-user.xlsx
+
+# Documentation backups
+data/*-old.md
+data/*_old*.md
