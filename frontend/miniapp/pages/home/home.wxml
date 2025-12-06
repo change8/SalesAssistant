@@ -40,12 +40,28 @@
     </view>
   </view>
 
-  <!-- Recent Activity -->
-  <view class="section-title">最近使用</view>
+  <!-- Recent Activity (History) -->
+  <view class="section-title">历史查询</view>
   <view class="recent-activity">
-    <view class="empty-state">
-      <view class="empty-icon">📋</view>
-      <view class="empty-text">暂无最近活动</view>
+    <block wx:if="{{searchHistory.length > 0}}">
+      <view class="history-item" wx:for="{{searchHistory}}" wx:key="id" bindtap="onHistoryTap" data-item="{{item}}">
+        <view class="history-icon">{{item.icon}}</view>
+        <view class="history-content">
+          <view class="history-title">
+            <text class="history-type">{{item.displayType}}</text>
+            <text class="history-query">{{item.query || '无关键词'}}</text>
+          </view>
+          <view class="history-tags">
+            <text class="tag" wx:for="{{item.tags}}" wx:for-item="tag" wx:key="*this">{{tag}}</text>
+            <text class="history-time">{{item.time}}</text>
+          </view>
+        </view>
+        <view class="history-arrow">></view>
+      </view>
+    </block>
+    <view class="empty-state" wx:else>
+      <view class="empty-icon">🕒</view>
+      <view class="empty-text">暂无搜索历史</view>
     </view>
   </view>
 </view>

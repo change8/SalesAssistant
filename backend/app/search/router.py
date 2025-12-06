@@ -283,3 +283,14 @@ def get_qualification(qual_id: int, db: Session = Depends(get_db)):
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Qualification not found")
     return qual
+    return qual
+
+
+@router.get("/history")
+def get_search_history(
+    limit: int = Query(20, le=50),
+    db: Session = Depends(get_db),
+    current_user: auth_models.User = Depends(dependencies.get_current_user)
+):
+    """Get recent search history."""
+    return service.get_search_history(db, current_user.id, limit)
