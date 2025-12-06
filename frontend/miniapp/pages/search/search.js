@@ -37,6 +37,11 @@ Page({
             capitalMin: '',
             capitalMax: ''
         },
+        // Initialize Options to prevent crash
+        contractTypeOptions: ['不限', '固定金额', '时间资源', '计件计量', '转售业务', '混合模式'],
+        ipCategoryOptions: ['不限', '软件著作权', '软件产品', '专利', '技术查新', '域名', '商标', 'APP', '小程序'],
+        businessTypeOptions: ['不限', '无', 'ITO业务', '教育业务', '通力业务', '投资业务', '云网业务', '智慧业务', '资产项目', '海外及其他业务', '研究院业务', '网络业务', '体外资产项目'],
+
         // Quick Tags State
         quickTags: {
             fp: false,
@@ -48,7 +53,15 @@ Page({
         },
         // Detail Popup State
         showDetail: false,
-        selectedContract: null
+        selectedContract: null,
+        showCompanyDetail: false,
+        selectedCompany: null,
+        showQualDetail: false,
+        selectedQual: null,
+        showIPDetail: false,
+        selectedIP: null,
+        showPersonnelDetail: false,
+        selectedPersonnel: null
     },
 
     onLoad(options) {
@@ -155,7 +168,7 @@ Page({
         const field = e.currentTarget.dataset.field;
         const value = e.detail.value;
         this.setData({
-            [`filters.${field} `]: value
+            [`filters.${field}`]: value
         });
     },
 
@@ -165,7 +178,7 @@ Page({
         const currentValue = this.data.filters[field];
         // Toggle if same value, else set new value
         this.setData({
-            [`filters.${field} `]: currentValue === value ? '' : value
+            [`filters.${field}`]: currentValue === value ? '' : value
         });
     },
 
@@ -173,7 +186,7 @@ Page({
         this.setData({
             filters: {
                 industry: '',
-                type: '',
+                contractTypeIndex: 0,
                 customer: '',
                 status: '',
                 minAmount: '',
@@ -185,12 +198,14 @@ Page({
                 companyName: '',
                 companyNumber: '',
                 ipCategoryIndex: 0,
-                businessTypeIndex: 0
+                businessTypeIndex: 0,
+                companyStatus: '',
+                setupDateStart: '',
+                setupDateEnd: '',
+                capitalMin: '',
+                capitalMax: ''
             },
-            hasActiveFilters: false,
-            contractTypeOptions: ['不限', '固定金额', '时间资源', '计件计量', '转售业务', '混合模式'],
-            ipCategoryOptions: ['不限', '软件著作权', '软件产品', '专利', '技术查新', '域名', '商标', 'APP', '小程序'],
-            businessTypeOptions: ['不限', '无', 'ITO业务', '教育业务', '通力业务', '投资业务', '云网业务', '智慧业务', '资产项目', '海外及其他业务', '研究院业务', '网络业务', '体外资产项目']
+            hasActiveFilters: false
         });
         this.checkActiveFilters();
     },
@@ -218,13 +233,6 @@ Page({
             text = `名称: ${item.qualification_name} \n公司: ${item.company_name} \n类型: ${item.business_type || '-'} `;
         } else if (this.data.activeTab === 4) { // Company
             text = `公司名称: ${item.name}\n公司编号: ${item.code || '-'}\n统一信用代码: ${item.nuccn || '-'}`;
-        } else if (type === 'group') {
-            const val = e.currentTarget.dataset.value;
-            const current = this.data.quickTags.group;
-            this.setData({
-                'quickTags.group': current === val ? null : val
-            });
-            this.performSearch();
         } else { // Personnel
             text = `姓名: ${item.name} \n工号: ${item.employee_no || '-'} \n公司: ${item.company || '-'} `;
         }
@@ -292,9 +300,7 @@ Page({
 
     // 执行搜索
     async performSearch() {
-        // Allow empty query if filters are present? 
-        // For now, keep requirement for query or just search if filters exist.
-        // Let's allow empty query if filters are set.
+        // Allow empty query if filters are set.
         const { searchQuery, activeTab, filters, quickTags } = this.data;
 
         // Check if any filter is active
@@ -302,7 +308,7 @@ Page({
             quickTags.fp || quickTags.time || quickTags.amount || quickTags.status ||
             quickTags.group || quickTags.ipCategory;
 
-        if (!searchQuery.trim() && !hasFilter) {
+        if (!searchQuery.trim() && !hasFilter && activeTab !== 4) {
             wx.showToast({ title: '请输入搜索关键词', icon: 'none' });
             return;
         }
@@ -310,14 +316,31 @@ Page({
         this.setData({ loading: true, page: 0, results: [] });
 
         try {
+            // DEBUG: Show Params
+            console.log(`Searching Tab ${activeTab} with query: ${searchQuery}`);
+
             const result = await this.searchByTab(activeTab, searchQuery, 0);
+
+            // DEBUG: Alert Result Count (Remove before production)
+            // wx.showModal({
+            //    title: `Tab ${activeTab} Result`,
+            //    content: `Count: ${result.results ? result.results.length : 0}\nTotal: ${result.total}`,
+            //    showCancel: false
+            // });
+
             const processedResults = this.processResults(result.results || []);
+
+            if (processedResults.length === 0) {
+                // wx.showToast({ title: '暂无数据', icon: 'none' });
+            }
+
             this.setData({
                 results: processedResults,
                 hasMore: (result.total || 0) > this.data.limit,
                 loading: false
             });
         } catch (error) {
+            console.error("Search Error:", error);
             this.setData({ loading: false });
             wx.showToast({ title: '搜索失败', icon: 'none' });
         }
@@ -354,8 +377,8 @@ Page({
                 return await api.searchContracts(params);
 
             case 1: // Qualifications
-                if (quickTags.group === '1100') params.company = '1100';
-                if (quickTags.notExpired) params.is_expired = 'false';
+                if (quickTags.group === '1100') params.company_code = '1100'; // Corrected to company_code
+                if (quickTags.notExpired) params.is_expired = 'false'; // Corrected to string 'false' for query param if backend expects str, but requests usually handles params. Let's keep it consistent.
 
                 // Business Type
                 const qualBusType = this.data.businessTypeOptions[filters.businessTypeIndex];
@@ -364,7 +387,7 @@ Page({
                 return await api.searchQualifications(params);
 
             case 2: // IP
-                if (quickTags.group) params.company = quickTags.group;
+                if (quickTags.group === '1100') params.company_code = '1100'; // Corrected
                 if (quickTags.notExpired) params.is_expired = 'false';
                 if (filters.companyName) params.company_name = filters.companyName;
                 if (filters.companyNumber) params.company_number = filters.companyNumber;
@@ -571,5 +594,63 @@ Page({
             data: text,
             success: () => wx.showToast({ title: '已复制全部', icon: 'success' })
         });
+    },
+
+    // --- Qual Detail Popup ---
+    showQualDetail(e) {
+        this.setData({
+            selectedQual: e.currentTarget.dataset.item,
+            showQualDetail: true
+        });
+    },
+    closeQualDetail() {
+        this.setData({
+            showQualDetail: false,
+            selectedQual: null
+        });
+    },
+    copyQualFull(e) {
+        const item = e.currentTarget.dataset.item;
+        const text = `资质名称: ${item.qualification_name}\n公司: ${item.company_name}\n公司编号: ${item.company_code || '-'}\n类型: ${item.qualification_type || item.business_type || '-'}\n级别: ${item.qualification_level || '-'}\n编号: ${item.certificate_number || '-'}\n注册号: ${item.registration_no || '-'}\n发证机构: ${item.issue_organization || '-'}\n到期时间: ${item.expire_date || '-'} `;
+        wx.setClipboardData({ data: text });
+    },
+
+    // --- IP Detail Popup ---
+    showIPDetail(e) {
+        this.setData({
+            selectedIP: e.currentTarget.dataset.item,
+            showIPDetail: true
+        });
+    },
+    closeIPDetail() {
+        this.setData({
+            showIPDetail: false,
+            selectedIP: null
+        });
+    },
+    copyIPFull(e) {
+        const item = e.currentTarget.dataset.item;
+        const text = `知产名称: ${item.qualification_name}\n公司: ${item.company_name}\n公司编号: ${item.company_code || '-'}\n证书编号: ${item.certificate_number || '-'}\n专利类别: ${item.patent_category || '-'}\n发明人: ${item.inventor || '-'}\n申请日期: ${item.application_date || '-'}`;
+        wx.setClipboardData({ data: text });
+    },
+
+    // --- Personnel Detail Popup ---
+    showPersonnelDetail(e) {
+        this.setData({
+            selectedPersonnel: e.currentTarget.dataset.item,
+            showPersonnelDetail: true
+        });
+    },
+    closePersonnelDetail() {
+        this.setData({
+            showPersonnelDetail: false,
+            selectedPersonnel: null
+        });
+    },
+    copyPersonnelFull(e) {
+        const item = e.currentTarget.dataset.item;
+        let certs = (item.certificates || []).map(c => `${c.certificate_name} (${c.expire_date || '-'})`).join('\n');
+        const text = `姓名: ${item.name}\n工号: ${item.employee_no || '-'}\n公司: ${item.company || '-'}\n学历: ${item.degree || '-'}\n学校: ${item.school || '-'}\n\n证书:\n${certs}`;
+        wx.setClipboardData({ data: text });
     }
 });

@@ -7,7 +7,6 @@ Page({
     isLoggedIn: false
   },
   onShow() {
-    wx.setNavigationBarTitle({ title: '我的' });
     const hasToken = !!getToken();
     this.setData({ isLoggedIn: hasToken });
     if (hasToken) {

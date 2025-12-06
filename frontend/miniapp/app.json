@@ -12,7 +12,7 @@
     "pages/about/about"
   ],
   "window": {
-    "navigationBarTitleText": "销售助手",
+    "navigationBarTitleText": "冷不丁梆梆就是查",
     "navigationBarBackgroundColor": "#3366FF",
     "navigationBarTextStyle": "white",
     "backgroundTextStyle": "light"
@@ -30,7 +30,7 @@
       },
       {
         "pagePath": "pages/search/search",
-        "text": "梆梆",
+        "text": "梆梆查",
         "iconPath": "assets/search.png",
         "selectedIconPath": "assets/search-active.png"
       },

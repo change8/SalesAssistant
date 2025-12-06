@@ -91,6 +91,8 @@ class QualificationSearchParams(BaseModel):
     q: Optional[str] = Field(None, description="Search query (fuzzy)")
     qualification_type: Optional[str] = Field(None, description="Filter by type")
     status: Optional[str] = Field(None, description="Filter by status")
+    company_code: Optional[str] = Field(None, description="Filter by company code")
+    is_expired: Optional[bool] = Field(None, description="Filter by expiration status (False = Not Expired)")
     limit: int = Field(default=50, le=100, description="Max results")
     offset: int = Field(default=0, ge=0, description="Offset for pagination")
 
@@ -120,7 +122,9 @@ class AssetSearchParams(BaseModel):
     q: Optional[str] = Field(None, description="Search query (fuzzy)")
     category: Optional[str] = Field(None, description="Filter by category: qualification or intellectual_property")
     company: Optional[str] = Field(None, description="Filter by company name")
+    company_code: Optional[str] = Field(None, description="Filter by company code")
     business_type: Optional[str] = Field(None, description="Filter by business type (e.g., patent, copyright)")
+    is_expired: Optional[bool] = Field(None, description="Filter by expiration status (False = Not Expired)")
     limit: int = Field(default=50, le=100, description="Max results")
     offset: int = Field(default=0, ge=0, description="Offset for pagination")
 

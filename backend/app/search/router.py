@@ -116,6 +116,8 @@ def search_assets(
     q: Optional[str] = Query(None, description="Search query"),
     category: Optional[str] = Query(None, description="Filter by category (qualification or intellectual_property)"),
     company: Optional[str] = Query(None, description="Filter by company"),
+    company_code: Optional[str] = Query(None, description="Filter by company code"),
+    is_expired: Optional[bool] = Query(None, description="Filter by expiration (false=active)"),
     limit: int = Query(50, le=100, description="Max results"),
     offset: int = Query(0, ge=0, description="Offset"),
     db: Session = Depends(get_db),
@@ -131,6 +133,8 @@ def search_assets(
         q=q,
         category=category,
         company=company,
+        company_code=company_code,
+        is_expired=is_expired,
         limit=limit,
         offset=offset
     )
@@ -150,6 +154,8 @@ def search_qualifications(
     q: Optional[str] = Query(None, description="Search query"),
     qualification_type: Optional[str] = Query(None, description="Filter by type"),
     status: Optional[str] = Query(None, description="Filter by status"),
+    company_code: Optional[str] = Query(None, description="Filter by company code"),
+    is_expired: Optional[bool] = Query(None, description="Filter by expiration (false=active)"),
     limit: int = Query(50, le=100, description="Max results"),
     offset: int = Query(0, ge=0, description="Offset"),
     db: Session = Depends(get_db),
@@ -165,6 +171,8 @@ def search_qualifications(
         q=q,
         qualification_type=qualification_type,
         status=status,
+        company_code=company_code,
+        is_expired=is_expired,
         limit=limit,
         offset=offset
     )

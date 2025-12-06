@@ -1,7 +1,14 @@
 <view class="card about-card">
   <view class="section-title">关于项目</view>
-  <text class="about-text">冷不丁梆梆就是查</text>
+  <text class="about-text">一切 for 军哥
+做了一个月
+很累
+但是为了让华哥轻松一些，值得
+爱你呦，剑哥！</text>
   <view class="icp">
     <text>ICP 备案：京ICP备2025147783号</text>
+    <view class="icp-row" style="margin-top: 5px;">
+        <text>小程序备案：滇ICP备2025073855号-1X</text>
+    </view>
   </view>
 </view>

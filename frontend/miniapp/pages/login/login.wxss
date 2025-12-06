@@ -15,6 +15,29 @@ page {
   font-size: 36rpx;
   font-weight: 600;
   margin-bottom: 40rpx;
+  text-align: center;
+}
+
+.logo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: -90rpx; /* Overlap effect */
+  position: relative;
+  z-index: 10;
+}
+
+.logo {
+  width: 180rpx;
+  height: 180rpx;
+  border-radius: 50%;
+  border: 8rpx solid #fff;
+  box-shadow: 0 4rpx 16rpx rgba(0,0,0,0.1);
+  background-color: #fff;
+}
+
+.login-card {
+    padding-top: 100rpx !important; /* Space for logo */
 }
 
 .form-group {

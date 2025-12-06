@@ -10,7 +10,6 @@ Page({
   onShow() {
     this.updateUserInfo();
     this.updateGreeting();
-    wx.setNavigationBarTitle({ title: '销售助手' });
   },
 
   updateUserInfo() {

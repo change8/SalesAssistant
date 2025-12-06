@@ -1,22 +1,29 @@
-const app = getApp();
+const config = require('../config.js');
 
 function getApiBase() {
-  return app?.globalData?.apiBase || '';
+  return config.apiBaseUrl ? config.apiBaseUrl.replace(/\/$/, '') : '';
 }
 
 function getToken() {
-  return app?.globalData?.token || '';
+  const app = getApp();
+  return app && app.globalData ? app.globalData.token : '';
 }
 
 function setToken(token) {
-  app.globalData.token = token;
+  const app = getApp();
+  if (app && app.globalData) {
+    app.globalData.token = token;
+  }
   wx.setStorageSync('sa_token', token);
 }
 
 function clearToken() {
-  app.globalData.token = '';
+  const app = getApp();
+  if (app && app.globalData) {
+    app.globalData.token = '';
+    app.globalData.userInfo = null;
+  }
   wx.removeStorageSync('sa_token');
-  app.globalData.userInfo = null;
   wx.removeStorageSync('sa_user');
 }
 

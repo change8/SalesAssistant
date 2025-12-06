@@ -125,9 +125,26 @@ def search_contracts(
             filtered_results = []
             for contract in all_results:
                 if contract.tags:
-                    # Check if '固定金额' exists in tags (exact match in list)
-                    tags_list = [t.strip() for t in contract.tags.split(',')]
+                    # Robust splitting for comma (English/Chinese) and space
+                    tags_list = [t.strip() for t in re.split(r'[,，\s]+', contract.tags) if t.strip()]
+                    
+                    # Strict FP: 
+                    # 1. Must contain '固定金额'
+                    # 2. Must NOT contain '混合', '时间', 'Resource', 'TM'
+                    # 3. Ideally '固定金额' is the primary tag (first one)
+                    
+                    is_fixed = False
                     if '固定金额' in tags_list:
+                        is_fixed = True
+                    
+                    # Exclusion criteria
+                    exclusions = ['混合模式', '时间资源', 'TM', 'T&M', 'Resource', 'Staffing']
+                    for ex in exclusions:
+                        if any(ex in t for t in tags_list):
+                            is_fixed = False
+                            break
+                    
+                    if is_fixed:
                         filtered_results.append(contract)
             all_results = filtered_results
         
@@ -162,19 +179,11 @@ def search_contracts(
                     relevance = 4
                 else:
                     relevance = 5
-                # Secondary sort: signed_at descending (None values last)
-                # Use a string "9999-99-99" for None to maybe put it last? Or "0000"
-                # We want descending, so newer dates first.
-                signed_date = str(contract.signed_at) if contract.signed_at else '0000-00-00'
-                return (relevance, signed_date)
+                return relevance
             
-            # Sort: Relevance ASC (1 is best), then Date DESC
-            # Python sort is stable. We can do multi-pass or key tuple.
-            # Key tuple: (relevance, date) -> Sort ASC involves problem for date DESC
-            # So: (relevance, negative_timestamp)? Or just use reverse=False and invert date?
-            # Easiest: Sort by Date DESC first, then stable sort by Relevance ASC.
+            # Sort: Relevance ASC, then Date DESC
             all_results.sort(key=lambda x: str(x.signed_at) if x.signed_at else '0000', reverse=True)
-            all_results.sort(key=lambda x: sort_key(x)[0], reverse=False)
+            all_results.sort(key=lambda x: sort_key(x), reverse=False)
         else:
             # No query: just sort by date descending
             all_results.sort(key=lambda x: str(x.signed_at) if x.signed_at else '0000', reverse=True)
@@ -187,7 +196,7 @@ def search_contracts(
         for contract in paginated:
             contract_type = None
             if contract.tags:
-                tags_list = [t.strip() for t in contract.tags.split(',')]
+                tags_list = [t.strip() for t in re.split(r'[,，\s]+', contract.tags) if t.strip()]
                 if tags_list:
                     contract_type = tags_list[0]
             
@@ -265,6 +274,17 @@ def search_assets(
         if params.company:
             query = query.where(IntellectualPropertyAsset.company_name.like(f"%{params.company}%"))
             
+        if params.company_code:
+            query = query.where(IntellectualPropertyAsset.company_code == params.company_code)
+            
+        # Filter (Not) Expired
+        if params.is_expired is not None:
+            today = datetime.now().strftime('%Y-%m-%d')
+            if params.is_expired: # True = Only Expired
+                query = query.where(IntellectualPropertyAsset.issue_date < today) # Note: IP usually uses issue_date or specific expire logic? Assuming issue_date for simplicity or skip if not applicable for IP
+            else: # False = Not Expired
+                 pass
+
         # Filter by business_type (patent, copyright, trademark)
         if params.business_type:
             type_map = {
@@ -302,9 +322,22 @@ def search_assets(
                 'id': asset.id,
                 'category': 'intellectual_property',
                 'company_name': asset.company_name,
+                'company_code': asset.company_code,
                 'business_type': asset.business_type,
                 'qualification_name': asset.knowledge_name, # Map knowledge_name to qualification_name for schema compatibility
                 'qualification_level': None,
+                'certificate_number': asset.certificate_number,
+                
+                # Full Mapping for Detail Popup
+                'patent_category': asset.patent_category,
+                'knowledge_category': asset.knowledge_category,
+                'inventor': asset.inventor,
+                'issue_date': asset.issue_date,
+                'application_date': asset.application_date,
+                'registration_no': asset.registration_no,
+                'internal_id': asset.internal_id,
+                'property_summary': asset.property_summary,
+                
                 'expire_date': None,
                 'next_review_date': None,
                 'download_url': asset.download_url,
@@ -349,33 +382,84 @@ def search_qualifications(
         if params.qualification_type:
              query = query.where(QualificationAsset.qualification_name.like(f"%{params.qualification_type}%"))
         
+        if params.company_code:
+            query = query.where(QualificationAsset.company_code == params.company_code)
+            
         if params.status:
             query = query.where(QualificationAsset.status == params.status)
+            
+        if params.is_expired is not None:
+            today = datetime.now().strftime('%Y-%m-%d')
+            if params.is_expired: # True = Expired
+                query = query.where(QualificationAsset.expire_date < today)
+            else: # False = Not Expired (Future or Null)
+                query = query.where(
+                    or_(
+                        QualificationAsset.expire_date >= today,
+                        QualificationAsset.expire_date == None
+                    )
+                )
         
-        # Get total count
-        count_query = select(func.count()).select_from(query.subquery())
-        total = contracts_db.execute(count_query).scalar()
-        
-        # Sort by expire_date
-        query = query.order_by(QualificationAsset.expire_date.asc().nullslast())
-        
-        # Pagination
-        query = query.offset(params.offset).limit(params.limit)
+        # Fetch All for In-Memory Sorting (Relevance)
+        # Note: If dataset matches sort criteria, we can do it in SQL.
+        # But 'Relevance' is hard in SQL LIKE.
+        # Let's fetch all matched candidates (assuming < 1000) then sort.
+        # Or just fetch all then sort. 
+        # Given "ISO" might return many, let's execute query then sort in Python.
         
         results = contracts_db.execute(query).scalars().all()
         
+        # Relevance Sorting
+        if params.q:
+            query_lower = params.q.lower()
+            def qual_sort_key(q):
+                name_lower = (q.qualification_name or '').lower()
+                if query_lower == name_lower:
+                    relevance = 1
+                elif name_lower.startswith(query_lower):
+                    relevance = 2
+                elif query_lower in name_lower:
+                    relevance = 3
+                elif query_lower in (q.company_name or '').lower():
+                    relevance = 4
+                else:
+                    relevance = 5
+                return relevance
+            
+            # Sort: Relevance ASC, then Expire Date ASC (nulls last)
+            # results.sort(key=lambda x: str(x.expire_date) if x.expire_date else '9999', reverse=False)
+            results.sort(key=lambda x: qual_sort_key(x))
+            
+        else:
+             # Default Sort: Expire Date ASC
+             results.sort(key=lambda x: str(x.expire_date) if x.expire_date else '9999', reverse=False)
+
+        total = len(results)
+        
+        # Pagination
+        paginated = results[params.offset : params.offset + params.limit]
+        
         # Map to schema
         qual_list = []
-        for q in results:
+        for q in paginated:
             qual_list.append({
                 'id': q.id,
                 'qualification_name': q.qualification_name,
                 'qualification_type': q.business_type, # Map business_type to qualification_type
                 'qualification_level': q.qualification_level,
+                'company_name': q.company_name,
+                'company_code': q.company_code,
                 'certificate_number': q.certificate_number,
                 'issue_organization': q.issuer,
-                'issue_date': None, # String to date conversion needed if schema enforces date
-                'expire_date': None, # String to date conversion needed
+                
+                # Full Mapping for Detail Popup
+                'issue_date': q.issue_date, 
+                'expire_date': q.expire_date,
+                'start_date': q.issue_date,
+                'registration_no': q.registration_no,
+                'next_review_date': q.next_review_date,
+                'remark': q.remark,
+                
                 'scope': None,
                 'status': q.status or 'valid',
                 'created_at': q.created_at,
@@ -398,7 +482,7 @@ def get_contract_by_id(db: Session, contract_id: int) -> Optional[dict]:
         amount_raw = parse_amount_string(contract.contract_amount)
         contract_type = None
         if contract.tags:
-            tags_list = [t.strip() for t in contract.tags.split(',')]
+            tags_list = [t.strip() for t in re.split(r'[,，\s]+', contract.tags) if t.strip()]
             if tags_list:
                 contract_type = tags_list[0]
 
@@ -530,6 +614,31 @@ def search_employees(
                 select(EmployeeCertificate).where(EmployeeCertificate.employee_id == emp.id)
             ).scalars().all()
             
+            # --- DEDUPLICATION LOGIC ---
+            # Remove duplicate certificates by name, keeping the one with the latest expire_date (or none)
+            unique_certs_map = {}
+            for cert in certificates:
+                name = cert.certificate_name
+                # If we've seen this cert name before
+                if name in unique_certs_map:
+                    existing = unique_certs_map[name]
+                    # Logic: favor one with expire_date over one without? Or latest date?
+                    # If existing has expire date and new doesn't, keep existing.
+                    # If new has expire date and existing doesn't, keep new.
+                    # If both have dates, keep later one.
+                    # If neither, keep random.
+                    
+                    if cert.expire_date and not existing.expire_date:
+                        unique_certs_map[name] = cert
+                    elif cert.expire_date and existing.expire_date:
+                        if cert.expire_date > existing.expire_date:
+                            unique_certs_map[name] = cert
+                else:
+                    unique_certs_map[name] = cert
+            
+            # Use deduplicated list
+            final_certificates = list(unique_certs_map.values())
+            
             employees_list.append({
                 'id': emp.id,
                 'employee_no': emp.employee_no,
@@ -579,7 +688,7 @@ def search_employees(
                         'certificate_no': cert.certificate_no,
                         'remarks': None # Removed from DB
                     }
-                    for cert in certificates
+                    for cert in final_certificates
                 ],
                 'created_at': emp.created_at,
                 'updated_at': emp.updated_at

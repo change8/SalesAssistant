@@ -18,12 +18,9 @@ function searchContracts(params) {
  */
 function searchQualifications(params) {
     return request({
-        url: '/search/assets',
+        url: '/search/qualifications',
         method: 'GET',
-        data: {
-            category: 'qualification',
-            ...params
-        }
+        data: params
     });
 }
 

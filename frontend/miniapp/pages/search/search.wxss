@@ -12,19 +12,26 @@ view, text, scroll-view, input, button {
   padding: 24rpx;
 }
 
-/* Tabs (Sticky Top - Capsule Style) */
+/* Sticky Header Wrapper */
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #f8faff; /* Match page background */
+  padding-bottom: 0; 
+  /* ensure context for children */
+}
+
+/* Tabs (Inside Sticky Header) */
 .tabs {
   display: flex;
   background: #f3f4f6;
   padding: 8rpx;
   margin: -24rpx -24rpx 24rpx -24rpx; /* Cover container padding */
-  position: sticky;
-  top: 0;
-  z-index: 100;
   height: auto;
   align-items: center;
-  border-bottom: none; /* Remove separator */
-  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.05);
+  border-bottom: none; 
+  box-shadow: none; /* Shadow handled by header if needed */
 }
 
 .tab-item {
