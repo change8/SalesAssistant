@@ -245,7 +245,7 @@ def search_assets(
     Search assets (Intellectual Property) from contracts.db.
     Note: This now specifically targets IntellectualPropertyAsset for the 'assets' endpoint (IP tab).
     """
-    """
+
     if current_user:
         filters_dict = params.dict(exclude={'q', 'limit', 'offset'})
         filters_dict['type'] = 'intellectual_property'
