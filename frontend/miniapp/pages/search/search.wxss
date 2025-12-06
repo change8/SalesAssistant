@@ -296,6 +296,19 @@ view, text, scroll-view, input, button {
   gap: 12rpx;
 }
 
+.cert-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8rpx 20rpx;
+  background: #fdf2f8; 
+  color: #db2777;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+  line-height: 1; /* Fix vertical alignment */
+  border: 1rpx solid rgba(219, 39, 119, 0.1);
+}
+
 .cert-title {
   font-size: 24rpx;
   color: #9ca3af;

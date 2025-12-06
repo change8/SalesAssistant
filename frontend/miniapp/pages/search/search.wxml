@@ -231,8 +231,9 @@
              <text class="info-label">所属公司:</text>
              <text class="info-value">{{item.company || '-'}}</text>
            </view>
+           <!-- Certificates -->
            <view wx:if="{{item.certificates && item.certificates.length > 0}}" class="certificates">
-            <text wx:for="{{item.certificates}}" wx:for-item="cert" wx:key="id" class="tag tag-warning">
+            <text wx:for="{{item.certificates}}" wx:for-item="cert" wx:key="id" class="cert-tag">
               {{cert.certificate_name}}
             </text>
           </view>

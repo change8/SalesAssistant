@@ -143,14 +143,11 @@ def search_contracts(
             filtered_results = []
             for contract in all_results:
                 if contract.tags:
-                    # Robust splitting for comma (English/Chinese) and space
-                    tags_list = [t.strip() for t in re.split(r'[,，\s]+', contract.tags) if t.strip()]
+                    # Robust splitting: replace full-width comma, then split by comma or space
+                    clean_tags = contract.tags.replace('，', ',')
+                    tags_list = [t.strip() for t in re.split(r'[,，\s]+', clean_tags) if t.strip()]
                     
-                    # Strict FP: 
-                    # 1. Must contain '固定金额'
-                    # 2. Must NOT contain '混合', '时间', 'Resource', 'TM'
-                    # 3. Ideally '固定金额' is the primary tag (first one)
-                    
+                    # Strict FP: tags_list[0] == '固定金额'
                     if tags_list and tags_list[0] == '固定金额':
                         filtered_results.append(contract)
             all_results = filtered_results
