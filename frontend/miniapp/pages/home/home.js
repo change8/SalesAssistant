@@ -67,14 +67,18 @@ Page({
         }
 
         // Format time
-        const time = new Date(item.search_time).toLocaleDateString();
+        // Format time
+        const d = new Date(item.search_time);
+        const datePart = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        const timePart = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}`;
 
         return {
           ...item,
           displayType,
           icon,
           tab,
-          time,
+          datePart,
+          timePart,
           tags: this.formatFilterTags(filters)
         };
       });

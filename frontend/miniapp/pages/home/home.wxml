@@ -56,7 +56,11 @@
           </view>
         </view>
         <!-- Time and Arrow on the right -->
-        <view class="history-time">{{item.time}}</view>
+        <!-- Time and Arrow on the right -->
+        <view class="history-time" style="display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2;">
+          <text>{{item.datePart}}</text>
+          <text style="font-size: 22rpx; color: #9ca3af;">{{item.timePart}}</text>
+        </view>
         <view class="history-arrow">></view>
       </view>
     </block>

@@ -8,7 +8,7 @@ Page({
         placeholderText: '合同名称、行业、客户名称、合同编号..',
         results: [],
         loading: false,
-        hasMore: false,
+        hasMore: true,
         page: 0,
         limit: 20,
         // Filter State
@@ -112,8 +112,7 @@ Page({
         this.setData({
             activeTab: index,
             results: [],
-            page: 0,
-            results: [],
+            hasMore: true,
             page: 0,
             filters: { // Reset filters
                 industry: '', contractTypeIndex: 0, customer: '', status: '', minAmount: '', maxAmount: '',
@@ -129,6 +128,10 @@ Page({
         this.updatePlaceholder(index);
 
         // Auto-search for Company tab (Index 4)
+        this.setData({
+            hasActiveFilters: false // Reset flag
+        });
+
         if (index === 4) {
             this.performSearch();
         }
@@ -356,6 +359,7 @@ Page({
         };
 
         // Construct params specifically for each tab to avoid filter polling
+        // Construct params specifically for each tab to avoid filter polling
         switch (tabIndex) {
             case 0: // Contracts
                 if (quickTags.fp) params.is_fp = 'true';
@@ -368,17 +372,20 @@ Page({
                 }
                 if (quickTags.amount) params.min_amount = parseInt(quickTags.amount) * 10000;
 
-                // Contract Filters
+                // Contract Filters (Drawer)
                 const cType = this.data.contractTypeOptions[filters.contractTypeIndex];
                 if (cType && cType !== '不限') params.contract_type = cType;
                 if (filters.industry) params.industry = filters.industry;
                 if (filters.customer) params.customer = filters.customer;
+                if (filters.status) params.status = filters.status; // Explicit Status Filter
+                if (filters.minAmount) params.min_amount = parseFloat(filters.minAmount) * 10000;
+                if (filters.maxAmount) params.max_amount = parseFloat(filters.maxAmount) * 10000;
 
                 return await api.searchContracts(params);
 
             case 1: // Qualifications
                 if (quickTags.group === '1100') params.company_code = '1100'; // Corrected to company_code
-                if (quickTags.notExpired) params.is_expired = 'false'; // Corrected to string 'false' for query param if backend expects str, but requests usually handles params. Let's keep it consistent.
+                if (quickTags.notExpired) params.is_expired = 'false';
 
                 // Business Type
                 const qualBusType = this.data.businessTypeOptions[filters.businessTypeIndex];
@@ -395,14 +402,15 @@ Page({
                 // IP Category (Priority: Filter Picker > Quick Tag)
                 const ipCat = this.data.ipCategoryOptions[filters.ipCategoryIndex];
                 if (ipCat && ipCat !== '不限') {
-                    params.qualification_type = ipCat;
+                    params.business_type = ipCat; // Backend checks business_type
                 } else if (quickTags.ipCategory) {
                     const map = {
                         'patent': '专利',
+                        'software_product': '软件产品',
                         'copyright': '软件著作权',
                         'trademark': '商标'
                     };
-                    params.qualification_type = map[quickTags.ipCategory] || quickTags.ipCategory;
+                    params.business_type = map[quickTags.ipCategory] || quickTags.ipCategory;
                 }
 
                 // Business Type
@@ -414,15 +422,16 @@ Page({
             case 3: // Personnel
                 if (filters.personnelCompany) params.company = filters.personnelCompany;
                 if (filters.personnelStatus) params.status = filters.personnelStatus;
-                // Add other personnel specific filters if any
+                if (filters.personnelDegree) params.degree = filters.personnelDegree;
+                if (filters.personnelCertificate) params.certificate_name = filters.personnelCertificate;
                 return await api.searchPersonnel(params);
 
             case 4: // Company
-                if (filters.companyStatus) params.operating_state = filters.companyStatus;
-                if (filters.setupDateStart) params.setup_date_start = filters.setupDateStart;
-                if (filters.setupDateEnd) params.setup_date_end = filters.setupDateEnd;
-                if (filters.capitalMin) params.registered_capital_min = filters.capitalMin;
-                if (filters.capitalMax) params.registered_capital_max = filters.capitalMax;
+                if (filters.companyStatus) params.operating_state = filters.companyStatus; // Updated to companyStatus
+                if (filters.setupDateStart) params.start_date = filters.setupDateStart; // Corrected param name start_date
+                if (filters.setupDateEnd) params.end_date = filters.setupDateEnd; // Corrected param name end_date
+                if (filters.capitalMin) params.capital_min = parseFloat(filters.capitalMin); // Corrected param name
+                if (filters.capitalMax) params.capital_max = parseFloat(filters.capitalMax); // Corrected param name
 
                 return await api.searchCompanies(params);
 

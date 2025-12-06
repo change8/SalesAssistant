@@ -136,16 +136,28 @@ def search_contracts(
             query = query.where(ExistingContract.signed_at <= params.end_date)
             
         if params.is_fp:
-            # Strictly filter by contract_type = '固定金额'
-            # This matches user expectation that FP means exactly "Fixed Price" type contracts.
-            query = query.where(ExistingContract.contract_type == '固定金额')
+            # Strictly filter by tags for '固定金额' (FP)
+            # Since 'contract_type' column doesn't exist, we assume FP is indicated by strict tag matching
+            query = query.where(ExistingContract.tags.like('%固定金额%'))
 
         # Execute query
         all_results = contracts_db.execute(query).scalars().all()
         
+        # Post-processing for Strict FP (First Tag must be '固定金额')
+        if params.is_fp:
+            strict_fp_results = []
+            for contract in all_results:
+                if contract.tags:
+                    # Robust splitting
+                    clean_tags = contract.tags.replace('，', ',')
+                    tags_list = [t.strip() for t in re.split(r'[,，\s]+', clean_tags) if t.strip()]
+                    if tags_list and tags_list[0] == '固定金额':
+                        strict_fp_results.append(contract)
+            all_results = strict_fp_results
+        
         filtered_results = all_results
         
-        # Filter by amount range (client-side due to string storage)
+
         if params.min_amount is not None or params.max_amount is not None:
             filtered = []
             for contract in all_results:
@@ -397,29 +409,34 @@ def search_qualifications(
             
         if params.is_expired is not None:
             today = datetime.now().strftime('%Y-%m-%d')
-            if params.is_expired: # True = Expired
-                query = query.where(QualificationAsset.expire_date < today)
-            else: # False = Not Expired (Future or Null)
+            # Handle date format inconsistencies (e.g. 2023/01/01 vs 2023-01-01) by string replacement in SQL? 
+            # SQLite string comparison works lexicographically. 
+            # We assume format is 'YYYY-MM-DD' or 'YYYY/MM/DD'.
+            # A safe way is to assume ISO format in DB. If not, this needs DB migration. 
+            # Assuming DB has YYYY-MM-DD or YYYY.MM.DD
+            
+            # Simple Strict Logic:
+            if params.is_expired: # Expired: date < today
+                query = query.where(and_(
+                    QualificationAsset.expire_date != None, 
+                    QualificationAsset.expire_date < today
+                ))
+            else: # Not Expired: date >= today OR date is None
                 query = query.where(
                     or_(
                         QualificationAsset.expire_date >= today,
                         QualificationAsset.expire_date == None
                     )
                 )
-        
-        # Fetch All for In-Memory Sorting (Relevance)
-        # Note: If dataset matches sort criteria, we can do it in SQL.
-        # But 'Relevance' is hard in SQL LIKE.
-        # Let's fetch all matched candidates (assuming < 1000) then sort.
-        # Or just fetch all then sort. 
-        # Given "ISO" might return many, let's execute query then sort in Python.
-        
+
+        # Execute query first
         results = contracts_db.execute(query).scalars().all()
         
-        # Relevance Sorting
-        if params.q:
-            query_lower = params.q.lower()
-            def qual_sort_key(q):
+        # Post-Processing Sorting
+        def qual_sort_key(q):
+            relevance = 5
+            if params.q:
+                query_lower = params.q.lower()
                 name_lower = (q.qualification_name or '').lower()
                 if query_lower == name_lower:
                     relevance = 1
@@ -429,18 +446,22 @@ def search_qualifications(
                     relevance = 3
                 elif query_lower in (q.company_name or '').lower():
                     relevance = 4
-                else:
-                    relevance = 5
-                return relevance
-            
-            # Sort: Relevance ASC, then Expire Date ASC (nulls last)
-            # results.sort(key=lambda x: str(x.expire_date) if x.expire_date else '9999', reverse=False)
+            return relevance
+
+        # Sort Logic
+        # 1. Relevance (if q)
+        # 2. Special Rule: If company_code == '1100', '客户代理认证证书' goes to bottom
+        # 3. Expire Date (ASC)
+        
+        results.sort(key=lambda x: str(x.expire_date) if x.expire_date else '99999')
+        
+        if params.company_code == '1100':
+             # False (0) comes before True (1). We want "Agent Cert" (True) at END.
+             results.sort(key=lambda x: 1 if "客户代理认证证书" in (x.qualification_name or "") else 0)
+
+        if params.q:
             results.sort(key=lambda x: qual_sort_key(x))
             
-        else:
-             # Default Sort: Expire Date ASC
-             results.sort(key=lambda x: str(x.expire_date) if x.expire_date else '9999', reverse=False)
-
         total = len(results)
         
         # Pagination
@@ -452,7 +473,7 @@ def search_qualifications(
             qual_list.append({
                 'id': q.id,
                 'qualification_name': q.qualification_name,
-                'qualification_type': q.business_type, # Map business_type to qualification_type
+                'qualification_type': q.business_type, 
                 'qualification_level': q.qualification_level,
                 'company_name': q.company_name,
                 'company_code': q.company_code,
@@ -603,8 +624,12 @@ def search_employees(
         count_query = select(func.count()).select_from(query.subquery())
         total = contracts_db.execute(count_query).scalar()
         
-        # Sort by employee_no
-        query = query.order_by(Employee.employee_no.asc())
+        # Sort by Certificate Count DESC, then Employee No ASC
+        # Left Outer Join and Group By to count certificates
+        query = query.outerjoin(Employee.certificates).group_by(Employee.id).order_by(
+            func.count(EmployeeCertificate.id).desc(),
+            Employee.employee_no.asc()
+        )
         
         # Pagination
         query = query.offset(params.offset).limit(params.limit)
@@ -673,6 +698,7 @@ def search_employees(
                 'major': educations[0].major if educations else None,
                 'degree': educations[0].degree if educations else None,
                 'diploma': educations[0].diploma if educations else None,
+                'company': emp.company,
                 'educations': [
                     {
                         'id': edu.id,

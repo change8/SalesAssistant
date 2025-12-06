@@ -33,7 +33,7 @@
     </view>
 
     <!-- Quick Tags -->
-    <scroll-view scroll-x class="quick-tags" enable-flex>
+    <scroll-view scroll-x class="quick-tags" enable-flex wx:if="{{activeTab < 3}}">
       <!-- Contract Tags -->
       <block wx:if="{{activeTab === 0}}">
         <view class="chip {{quickTags.fp ? 'active' : ''}}" bindtap="toggleQuickTag" data-type="fp">只看 FP</view>
@@ -53,7 +53,7 @@
       <!-- IP Tags -->
       <block wx:if="{{activeTab === 2}}">
          <view class="chip {{quickTags.group === '1100' ? 'active' : ''}}" bindtap="toggleQuickTag" data-type="group" data-value="1100">只看集团</view>
-        <view class="chip {{quickTags.notExpired ? 'active' : ''}}" bindtap="toggleQuickTag" data-type="notExpired">未过期</view>
+        <view class="chip {{quickTags.ipCategory === 'software_product' ? 'active' : ''}}" bindtap="toggleQuickTag" data-type="ipCategory" data-value="software_product">软件产品</view>
         <view class="chip {{quickTags.ipCategory === 'patent' ? 'active' : ''}}" bindtap="toggleQuickTag" data-type="ipCategory" data-value="patent">专利</view>
         <view class="chip {{quickTags.ipCategory === 'copyright' ? 'active' : ''}}" bindtap="toggleQuickTag" data-type="ipCategory" data-value="copyright">软著</view>
         <view class="chip {{quickTags.ipCategory === 'trademark' ? 'active' : ''}}" bindtap="toggleQuickTag" data-type="ipCategory" data-value="trademark">商标</view>
@@ -63,6 +63,13 @@
 
   <!-- Results -->
   <view class="results">
+    <!-- Load More / Bottom Line (Moved to bottom usually, but WXML structure puts logic here?) -->
+    <!-- Wait, Structure is: Loading -> Empty -> Block(Results) -> LoadMore? -->
+    <!-- Current file has LoadMore separate or missing? -->
+    <!-- Using view_file I don't see load-more at the bottom of results container? -->
+    <!-- Ah, I need to see where the previous load-more code was. -->
+    <!-- It was passed in view_file around lines 336 in STYLES, but in WXML? -->
+    <!-- I need to scroll to bottom of WXML. -->
     <!-- Loading -->
     <view wx:if="{{loading && results.length === 0}}" class="loading">
       <text>加载中...</text>
@@ -78,7 +85,6 @@
         <text wx:if="{{activeTab === 0}}">可筛选 2015--2025 十年内所有合同</text>
         <text wx:elif="{{activeTab === 1}}">可筛选所有资质</text>
         <text wx:elif="{{activeTab === 2}}">可筛选所有知识产权</text>
-        <text wx:elif="{{activeTab === 3}}">仅有小部分人员信息，若搜索不到相关证书，请联系投标管理部“陈晨、张妍”进行查询</text>
       </view>
     </view>
 
@@ -90,7 +96,6 @@
             <text wx:if="{{item.short_type}}" class="tag-mini">{{item.short_type}}</text>
             <text class="title">{{item.contract_title || item.project_name || '未命名合同'}}</text>
           </view>
-          <view class="copy-btn" catchtap="copyItem" data-item="{{item}}">复制</view>
         </view>
         <view class="card-body">
           <view class="info">
@@ -98,13 +103,12 @@
               <text class="info-label">🏢 客户:</text>
               <text class="info-value">{{item.display_customer}}</text>
             </view>
-            <view class="info-row">
-              <text class="info-label">💰 金额:</text>
-              <text class="info-value amount-text">{{item.contract_amount || '-'}}</text>
-            </view>
-            <view class="info-row">
-              <text class="info-label">📅 签订:</text>
-              <text class="info-value">{{item.signing_date || '-'}}</text>
+            <view class="info-row" style="display:flex; justify-content:space-between; align-items:center;">
+              <view style="display:flex;">
+                <text class="info-label">📅 签订:</text>
+                <text class="info-value">{{item.signing_date || '-'}}</text>
+              </view>
+              <view class="copy-btn" catchtap="copyItem" data-item="{{item}}">复制</view>
             </view>
           </view>
         </view>
@@ -233,11 +237,12 @@
            </view>
            <!-- Certificates -->
            <view wx:if="{{item.certificates && item.certificates.length > 0}}" class="certificates">
-            <text wx:for="{{item.certificates}}" wx:for-item="cert" wx:key="id" class="cert-tag">
-              {{cert.certificate_name}}
-            </text>
-          </view>
+             <text wx:for="{{item.certificates}}" wx:for-item="cert" wx:key="id" class="cert-tag">{{cert.certificate_name}}</text>
+           </view>
         </view>
+      </view>
+      <view class="search-helper" style="text-align:center; margin-top:32rpx; padding:0 40rpx;" wx:if="{{!loading && results.length < 2 && activeTab === 3}}">
+        <text>公司人员数据库不开放，此数据库中仅有过往投标使用的不到百人的小部分人员信息，若搜索不到相关证书，请联系投标管理部“陈晨、张妍”进行查询</text>
       </view>
     </block>
 
@@ -248,7 +253,6 @@
            <view class="title-row">
             <text class="title">{{item.name || '未命名公司'}}</text>
           </view>
-          <view class="copy-btn" catchtap="copyItem" data-item="{{item}}">复制</view>
         </view>
         <view class="card-body">
            <view class="tags">
@@ -266,8 +270,20 @@
             </view>
           </view>
         </view>
+
       </view>
     </block>
+
+    <!-- Load More -->
+    <view class="load-more-section" style="padding-bottom: 40rpx;">
+        <view wx:if="{{hasMore}}" class="load-more">
+            <button wx:if="{{!loading}}" class="load-more-btn" bindtap="loadMore">加载更多</button>
+            <text wx:else>加载中...</text>
+        </view>
+        <view wx:elif="{{results.length > 0 && !loading}}" class="load-more" style="padding:40rpx 0;">
+            <text style="color:#d1d5db; font-size:24rpx;">- 我是有底线的 -</text>
+        </view>
+    </view>
     
     <!-- Company Detail Popup -->
     <view class="detail-popup {{showCompanyDetail ? 'open' : ''}}" wx:if="{{activeTab === 4}}">
@@ -502,11 +518,7 @@
       </view>
     </view>
 
-    <!-- Load More -->
-    <view wx:if="{{hasMore}}" class="load-more">
-      <button wx:if="{{!loading}}" class="load-more-btn" bindtap="loadMore">加载更多</button>
-      <text wx:else>加载中...</text>
-    </view>
+
   </view>
 
   <!-- Filter Drawer -->
@@ -521,10 +533,7 @@
       <scroll-view scroll-y class="filter-body">
         <!-- Contract Filters -->
         <block wx:if="{{activeTab === 0}}">
-          <view class="filter-group">
-            <view class="filter-label">行业</view>
-            <input class="filter-input" placeholder="请输入行业" data-field="industry" bindinput="onFilterInput" value="{{filters.industry}}" />
-          </view>
+
           <view class="filter-group">
             <view class="filter-label">合同类型</view>
             <picker bindchange="bindContractTypeChange" value="{{filters.contractTypeIndex}}" range="{{contractTypeOptions}}">
@@ -588,9 +597,9 @@
           <view class="filter-group">
              <view class="filter-label">经营状态</view>
              <view class="tag-group">
-               <view class="filter-tag {{filters.status === '存续' ? 'active' : ''}}" data-field="status" data-value="存续" bindtap="onFilterTag">存续</view>
-               <view class="filter-tag {{filters.status === '在业' ? 'active' : ''}}" data-field="status" data-value="在业" bindtap="onFilterTag">在业</view>
-               <view class="filter-tag {{filters.status === '注销' ? 'active' : ''}}" data-field="status" data-value="注销" bindtap="onFilterTag">注销</view>
+               <view class="filter-tag {{filters.companyStatus === '存续' ? 'active' : ''}}" data-field="companyStatus" data-value="存续" bindtap="onFilterTag">存续</view>
+               <view class="filter-tag {{filters.companyStatus === '在业' ? 'active' : ''}}" data-field="companyStatus" data-value="在业" bindtap="onFilterTag">在业</view>
+               <view class="filter-tag {{filters.companyStatus === '注销' ? 'active' : ''}}" data-field="companyStatus" data-value="注销" bindtap="onFilterTag">注销</view>
              </view>
           </view>
           <view class="filter-group">
@@ -667,7 +676,7 @@
 
       <view class="filter-footer">
         <button class="reset-btn" bindtap="resetFilters">重置</button>
-        <button class="export-btn" bindtap="exportData" wx:if="{{activeTab === 0}}">导出</button>
+        <!-- Export removed -->
         <button class="apply-btn" bindtap="applyFilters">确认</button>
       </view>
     </view>

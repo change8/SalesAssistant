@@ -119,6 +119,7 @@ def search_assets(
     category: Optional[str] = Query(None, description="Filter by category (qualification or intellectual_property)"),
     company: Optional[str] = Query(None, description="Filter by company"),
     company_code: Optional[str] = Query(None, description="Filter by company code"),
+    business_type: Optional[str] = Query(None, description="Filter by business type"),
     is_expired: Optional[bool] = Query(None, description="Filter by expiration (false=active)"),
     limit: int = Query(50, le=100, description="Max results"),
     offset: int = Query(0, ge=0, description="Offset"),
@@ -136,6 +137,7 @@ def search_assets(
         category=category,
         company=company,
         company_code=company_code,
+        business_type=business_type,
         is_expired=is_expired,
         limit=limit,
         offset=offset
