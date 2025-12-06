@@ -573,11 +573,11 @@ def search_employees(
                 # it maps `school: emp.school`.
                 # If I removed `school` from `Employee` model, `emp.school` will fail.
                 # I MUST provide a value or remove the key.
-                # I will populate it from the "Highest" education (is_highest=1) or first one.
-                'school': next((e.school for e in educations if e.is_highest == 1), (educations[0].school if educations else None)),
-                'major': next((e.major for e in educations if e.is_highest == 1), (educations[0].major if educations else None)),
-                'degree': next((e.degree for e in educations if e.is_highest == 1), (educations[0].degree if educations else None)),
-                'diploma': next((e.diploma for e in educations if e.is_highest == 1), (educations[0].diploma if educations else None)),
+                # I will populate it from the first education record (assuming it's the relevant one).
+                'school': educations[0].school if educations else None,
+                'major': educations[0].major if educations else None,
+                'degree': educations[0].degree if educations else None,
+                'diploma': educations[0].diploma if educations else None,
                 'educations': [
                     {
                         'id': edu.id,
@@ -585,7 +585,7 @@ def search_employees(
                         'major': edu.major,
                         'school': edu.school,
                         'diploma': edu.diploma,
-                        'is_highest': edu.is_highest
+                        'is_highest': None # edu.is_highest is removed from DB schema
                     }
                     for edu in educations
                 ],

@@ -46,7 +46,8 @@ class EmployeeEducation(ContractsBase):
     major: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     school: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     diploma: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    is_highest: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, default=1)
+    diploma: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # is_highest: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, default=1)
 
     # Relationship
     employee: Mapped["Employee"] = relationship("Employee", back_populates="educations")
