@@ -127,7 +127,8 @@ def authenticate_user(db: Session, identifier: str, password: str) -> models.Use
             raise AuthenticationError("密码错误")
     except Exception as e:
         print(f"DEBUG: Error verifying password: {e}")
-        raise AuthenticationError(f"密码验证异常: {str(e)}")
+        # Return the inner error message directly if it's already an auth error
+        raise AuthenticationError(str(e))
 
     if not user.is_active:
         raise AuthenticationError("账号已被禁用")
