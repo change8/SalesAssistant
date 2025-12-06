@@ -4,7 +4,20 @@ Page({
   data: {
     phone: '',
     password: '',
-    loading: false
+    loading: false,
+    isPasswordVisible: false
+  },
+
+  togglePasswordVisibility() {
+    this.setData({
+      isPasswordVisible: !this.data.isPasswordVisible
+    });
+  },
+  onLoad() {
+    const sysInfo = wx.getSystemInfoSync();
+    this.setData({
+      statusBarHeight: sysInfo.statusBarHeight
+    });
   },
   onShow() {
     wx.setNavigationBarTitle({ title: '账号登录' });
@@ -48,7 +61,16 @@ Page({
       }, 500);
     } catch (error) {
       console.error('Login failed:', error);
-      wx.showToast({ title: error.message || '登录失败', icon: 'none', duration: 2000 });
+      // Handle both Error objects and Response objects (from request.js reject)
+      let msg = '登录失败';
+      if (error && error.data && error.data.detail) {
+        msg = error.data.detail;
+      } else if (error && error.message) {
+        msg = error.message;
+      } else if (error && error.errMsg) {
+        msg = error.errMsg;
+      }
+      wx.showToast({ title: msg, icon: 'none', duration: 2000 });
     } finally {
       this.setData({ loading: false });
     }
@@ -93,7 +115,7 @@ Page({
       setToken(data.access_token);
       wx.showToast({ title: '登录成功', icon: 'success' });
       setTimeout(() => {
-        wx.switchTab({ url: '/pages/tools/tools' });
+        wx.switchTab({ url: '/pages/home/home' });
       }, 500);
 
     } catch (error) {

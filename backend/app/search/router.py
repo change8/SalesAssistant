@@ -19,10 +19,6 @@ class SearchParams(BaseModel):
     page_size: int = 20
     filters: dict = {}
 
-class CompanySearchParams(BaseModel):
-    query: str
-    page: int = 1
-    page_size: int = 20
 
 
 @router.get("/contracts/export")
@@ -224,13 +220,16 @@ def search_employees(
 
 @router.post("/companies")
 def search_companies(
-    params: CompanySearchParams,
+    params: schemas.CompanySearchParams,
     current_user: auth_models.User = Depends(dependencies.get_current_user),
     db: Session = Depends(dependencies.get_db),
 ):
-    """Search for companies."""
-    search_params = params.dict()
-    return service.search_companies(db, search_params, current_user)
+    """Search for companies with filters."""
+    # Convert Pydantic model to dict for service layer (or update service to accept Pydantic)
+    # The service expects params object or dict? Previous code showed dict access.
+    # Let's check service signature in next step or just pass the object if service handles it.
+    # I'll rely on the service update to handle the Pydantic object or dict.
+    return service.search_companies(db, params, current_user)
 
 
 @router.get("/companies/{company_id}")

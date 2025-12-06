@@ -200,3 +200,30 @@ class EmployeeSearchParams(BaseModel):
     limit: int = Field(default=50, le=100, description="Max results")
     offset: int = Field(default=0, ge=0, description="Offset for pagination")
 
+
+# Company Schemas
+class CompanyRead(BaseModel):
+    id: int
+    name: str
+    code: Optional[str]
+    nuccn: Optional[str]
+    legal_person: Optional[str]
+    setup_date: Optional[str]
+    registered_capital: Optional[str]
+    operating_state: Optional[str]
+    registered_address: Optional[str]
+    business_scope: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+
+class CompanySearchParams(BaseModel):
+    q: Optional[str] = Field(None, description="Search query")
+    status: Optional[str] = Field(None, description="Operating status")
+    start_date: Optional[str] = Field(None, description="Setup date start")
+    end_date: Optional[str] = Field(None, description="Setup date end")
+    capital_min: Optional[float] = Field(None, description="Min registered capital")
+    capital_max: Optional[float] = Field(None, description="Max registered capital")
+    limit: int = Field(default=50, le=100)
+    offset: int = Field(default=0, ge=0)

@@ -111,23 +111,16 @@ def search_contracts(
         if params.industry:
             query = query.where(ExistingContract.industry.like(f"%{params.industry}%"))
         
-        # Amount filters (Client side filtering mostly, but can try basic SQL if format allows)
-        # Since amount is string, we skip SQL filtering for now and do it in python
-        
         # Date range filter
         if params.start_date:
             query = query.where(ExistingContract.signed_at >= params.start_date)
         if params.end_date:
             query = query.where(ExistingContract.signed_at <= params.end_date)
-        
-        # Get total count (approximation before python filtering)
-        # count_query = select(func.count()).select_from(query.subquery())
-        # total = contracts_db.execute(count_query).scalar()
-        
+            
         # Execute query
         all_results = contracts_db.execute(query).scalars().all()
         
-        # Apply FP filter
+        # Apply FP filter in Python
         if params.is_fp:
             filtered_results = []
             for contract in all_results:
@@ -169,13 +162,21 @@ def search_contracts(
                 else:
                     relevance = 5
                 # Secondary sort: signed_at descending (None values last)
-                signed_date = contract.signed_at or '0000-00-00'
+                # Use a string "9999-99-99" for None to maybe put it last? Or "0000"
+                # We want descending, so newer dates first.
+                signed_date = str(contract.signed_at) if contract.signed_at else '0000-00-00'
                 return (relevance, signed_date)
             
-            all_results.sort(key=sort_key, reverse=False)
+            # Sort: Relevance ASC (1 is best), then Date DESC
+            # Python sort is stable. We can do multi-pass or key tuple.
+            # Key tuple: (relevance, date) -> Sort ASC involves problem for date DESC
+            # So: (relevance, negative_timestamp)? Or just use reverse=False and invert date?
+            # Easiest: Sort by Date DESC first, then stable sort by Relevance ASC.
+            all_results.sort(key=lambda x: str(x.signed_at) if x.signed_at else '0000', reverse=True)
+            all_results.sort(key=lambda x: sort_key(x)[0], reverse=False)
         else:
             # No query: just sort by date descending
-            all_results.sort(key=lambda x: x.signed_at or '0000-00-00', reverse=True)
+            all_results.sort(key=lambda x: str(x.signed_at) if x.signed_at else '0000', reverse=True)
         
         # Pagination
         paginated = all_results[params.offset:params.offset + params.limit]
@@ -183,7 +184,6 @@ def search_contracts(
         # Convert to dicts for API response
         contracts_list = []
         for contract in paginated:
-            # Extract contract type from tags
             contract_type = None
             if contract.tags:
                 tags_list = [t.strip() for t in contract.tags.split(',')]
@@ -645,51 +645,82 @@ def export_contracts(
 
 def search_companies(
     db: Session,
-    params: Dict[str, Any],
+    params: schemas.CompanySearchParams,
     current_user: auth_models.User
 ) -> Dict[str, Any]:
     """Search for companies based on filters."""
-    # Use contracts_db session for querying companies
     contracts_db = ContractsSessionLocal()
     try:
         query = select(Company)
 
-        # Basic search query (searches name or code)
-        if params.get("query"):
-            search_term = f"%{params['query']}%"
+        # Multi-field Fuzzy Search
+        if params.q:
+            search_term = f"%{params.q}%"
             query = query.where(
                 or_(
                     Company.name.ilike(search_term),
                     Company.code.ilike(search_term),
+                    Company.nuccn.ilike(search_term),
+                    Company.legal_person.ilike(search_term)
                 )
             )
 
-        # Pagination
-        page = int(params.get("page", 1))
-        page_size = int(params.get("page_size", 20))
-        offset = (page - 1) * page_size
-
-        # Count total
-        count_query = select(func.count()).select_from(query.subquery())
-        total = contracts_db.scalar(count_query) or 0
-
-        # Apply limits
-        query = query.offset(offset).limit(page_size)
-        
-        # Execute
+        # Filters
+        if params.status:
+            query = query.where(Company.operating_state.ilike(f"%{params.status}%"))
+            
+        if params.start_date:
+            # Assuming format YYYY-MM-DD
+            query = query.where(Company.setup_date >= params.start_date)
+        if params.end_date:
+            query = query.where(Company.setup_date <= params.end_date)
+            
+        # Execute Query
         results = contracts_db.execute(query).scalars().all()
+        
+        # Python-side filtering for Registered Capital (Text)
+        if params.capital_min is not None or params.capital_max is not None:
+            filtered = []
+            for company in results:
+                # Parse "100万元", "50.5万", etc.
+                cap_val = 0.0
+                try:
+                    raw = company.registered_capital
+                    if raw:
+                        # Simple extraction of numbers
+                        nums = re.findall(r"[-+]?\d*\.\d+|\d+", raw)
+                        if nums:
+                            cap_val = float(nums[0])
+                except:
+                    pass
+                
+                # Check range
+                if params.capital_min is not None and cap_val < params.capital_min:
+                    continue
+                if params.capital_max is not None and cap_val > params.capital_max:
+                    continue
+                filtered.append(company)
+            results = filtered
 
-        # Log search history (using the main db session passed in arguments)
-        _log_search_history(db, current_user.id, params.get("query", ""), {
-            "page": page,
-            "type": "company"
+        total = len(results)
+        
+        # Sort by Setup Date Descending (Newest first)
+        results.sort(key=lambda x: str(x.setup_date) if x.setup_date else '0000', reverse=True)
+        
+        # Pagination in Python
+        paginated_items = results[params.offset : params.offset + params.limit]
+
+        # Log search history
+        _log_search_history(db, current_user.id, params.q or "", {
+            "type": "company",
+            "filters": params.dict(exclude={'q', 'limit', 'offset'})
         })
 
         return {
             "total": total,
-            "items": results,
-            "page": page,
-            "page_size": page_size
+            "items": paginated_items,
+            "page": (params.offset // params.limit) + 1,
+            "page_size": params.limit
         }
     finally:
         contracts_db.close()

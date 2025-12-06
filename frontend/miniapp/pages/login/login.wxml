@@ -3,14 +3,32 @@
   <view class="form-group">
     <input class="input" type="number" placeholder="请输入手机号" maxlength="11" value="{{phone}}" bindinput="onPhoneInput" />
   </view>
-  <view class="form-group">
-    <input class="input" type="password" placeholder="请输入密码" value="{{password}}" bindinput="onPasswordInput" />
-  </view>
+      <view class="input-group">
+        <text class="label">工号</text>
+        <view class="password-container">
+          <input
+            class="input password-input"
+            placeholder="请输入工号"
+            placeholder-class="placeholder"
+            password="{{!isPasswordVisible}}"
+            bindinput="onPasswordInput"
+            value="{{password}}"
+          />
+          <view class="eye-icon" bindtap="togglePasswordVisibility">
+             <!-- Simple SVG-like text or we can use base64 image in css. Let's use an image tag with base64 src in JS data or conditional rendering -->
+             <image class="icon" src="{{isPasswordVisible ? '/assets/icons/eye-open.png' : '/assets/icons/eye-closed.png'}}" wx:if="{{hasEyeAssets}}" />
+             <!-- Fallback if assets not ready, use text or look for assets.
+                  Wait, I don't have the pngs. I will use a view with a class and background image in CSS.
+             -->
+             <view class="eye-symbol {{isPasswordVisible ? 'open' : 'closed'}}"></view>
+          </view>
+        </view>
+      </view>
   <button class="btn" loading="{{loading}}" bindtap="onLogin">登录</button>
-  <!-- 
+  <!--
   <view class="helper">
     <text bindtap="onGoRegister" class="link">还没有账号？立即注册</text>
-  </view> 
+  </view>
   -->
 
   <view class="divider">

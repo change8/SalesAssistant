@@ -350,6 +350,7 @@
 
         <!-- Personnel Filters -->
         <block wx:if="{{activeTab === 3}}">
+          <!-- ... existing personnel filters ... -->
           <view class="filter-group">
             <view class="filter-label">状态</view>
             <view class="tag-group">
@@ -372,6 +373,42 @@
           <view class="filter-group">
             <view class="filter-label">证书名称</view>
             <input class="filter-input" placeholder="请输入证书名称" data-field="personnelCertificate" bindinput="onFilterInput" value="{{filters.personnelCertificate}}" />
+          </view>
+        </block>
+
+        <!-- Company Filters -->
+        <block wx:if="{{activeTab === 4}}">
+          <view class="filter-group">
+             <view class="filter-label">经营状态</view>
+             <view class="tag-group">
+               <view class="filter-tag {{filters.status === '存续' ? 'active' : ''}}" data-field="status" data-value="存续" bindtap="onFilterTag">存续</view>
+               <view class="filter-tag {{filters.status === '在业' ? 'active' : ''}}" data-field="status" data-value="在业" bindtap="onFilterTag">在业</view>
+               <view class="filter-tag {{filters.status === '注销' ? 'active' : ''}}" data-field="status" data-value="注销" bindtap="onFilterTag">注销</view>
+             </view>
+          </view>
+          <view class="filter-group">
+            <view class="filter-label">注册资本 (万)</view>
+            <view class="range-inputs">
+              <input class="filter-input small" placeholder="最小" type="number" data-field="capital_min" bindinput="onFilterInput" value="{{filters.capital_min}}" />
+              <text>-</text>
+              <input class="filter-input small" placeholder="最大" type="number" data-field="capital_max" bindinput="onFilterInput" value="{{filters.capital_max}}" />
+            </view>
+          </view>
+          <view class="filter-group">
+            <view class="filter-label">成立时间</view>
+            <view class="range-inputs">
+               <picker mode="date" data-field="start_date" bindchange="bindDateChange">
+                 <view class="filter-input small {{filters.start_date ? '' : 'placeholder'}}">
+                   {{filters.start_date || '开始日期'}}
+                 </view>
+               </picker>
+               <text>-</text>
+               <picker mode="date" data-field="end_date" bindchange="bindDateChange">
+                 <view class="filter-input small {{filters.end_date ? '' : 'placeholder'}}">
+                   {{filters.end_date || '结束日期'}}
+                 </view>
+               </picker>
+            </view>
           </view>
         </block>
 

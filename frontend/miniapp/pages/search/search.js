@@ -2,7 +2,7 @@ const api = require('../../utils/api');
 
 Page({
     data: {
-        tabs: ['合同搜索', '资质查询', '知识产权', '人员证书', '公司分支'],
+        tabs: ['查合同', '查资质', '查知产', '查人员', '查公司'],
         activeTab: 0,
         searchQuery: '',
         placeholderText: '合同名称、行业、客户名称、合同编号..',
@@ -24,7 +24,18 @@ Page({
             personnelStatus: '',
             personnelCompany: '',
             personnelDegree: '',
-            personnelCertificate: ''
+            personnelCertificate: '',
+            companyName: '',
+            companyNumber: '',
+            ipCategoryIndex: 0,
+            businessTypeIndex: 0,
+
+            // New Company Filters
+            companyStatus: '',
+            setupDateStart: '',
+            setupDateEnd: '',
+            capitalMin: '',
+            capitalMax: ''
         },
         // Quick Tags State
         quickTags: {
@@ -45,13 +56,15 @@ Page({
             const tabIndex = parseInt(options.tab) || 0;
             this.setData({ activeTab: tabIndex });
             this.updatePlaceholder(tabIndex);
-        }
-        if (options.q) {
+        } else if (options.q) {
             this.setData({ searchQuery: options.q });
             this.performSearch();
         }
-        // Initialize default tags if needed
-        // this.setData({ 'quickTags.group': '1100' }); // If we want to match PC default
+
+        // Auto-search for Company tab if active
+        if (this.data.activeTab === 4) {
+            this.performSearch();
+        }
     },
 
     onShow() {
@@ -61,13 +74,20 @@ Page({
                 'contracts': 0,
                 'qualifications': 1,
                 'ip': 2,
-                'personnel': 3
+                'personnel': 3,
+                'company': 4
             };
-            const tabIndex = tabMap[app.globalData.activeSearchTab];
+            const tabName = app.globalData.activeSearchTab;
+            const tabIndex = tabMap[tabName];
+
             if (tabIndex !== undefined) {
                 this.setData({ activeTab: tabIndex });
                 this.updatePlaceholder(tabIndex);
-                // Optional: Auto-focus or clear results if needed
+
+                // For Company tab, auto search if empty results
+                if (tabIndex === 4 && this.data.results.length === 0) {
+                    this.performSearch();
+                }
             }
             app.globalData.activeSearchTab = null; // Clear after use
         }
@@ -80,12 +100,12 @@ Page({
             activeTab: index,
             results: [],
             page: 0,
-            // Reset filters when switching tabs? Or keep them?
-            // Usually better to reset or hide incompatible filters.
-            // For simplicity, we keep state but UI hides irrelevant ones.
+            searchQuery: '' // Clear query when switching? User often prefers sticky query, but placeholders change. Let's clear for clarity.
         });
         this.updatePlaceholder(index);
-        if (this.data.searchQuery) {
+
+        // Auto-search for Company tab (Index 4)
+        if (index === 4) {
             this.performSearch();
         }
     },
@@ -95,7 +115,8 @@ Page({
             '合同名称、行业、客户名称、合同编号..',
             '资质名称、公司名称...',
             '知识产权名称、公司名称...',
-            '员工姓名、证书名称'
+            '员工姓名、证书名称',
+            '公司编码、公司名称、组织机构代码、法人'
         ];
         this.setData({ placeholderText: placeholders[index] || placeholders[0] });
     },
@@ -388,6 +409,13 @@ Page({
             'filters.businessTypeIndex': e.detail.value
         });
         this.performSearch();
+    },
+
+    bindDateChange(e) {
+        const field = e.currentTarget.dataset.field;
+        this.setData({
+            [`filters.${field}`]: e.detail.value
+        });
     },
 
     // 加载更多

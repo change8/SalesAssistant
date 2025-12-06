@@ -28,6 +28,11 @@
       <view class="action-title">查人员</view>
       <view class="action-desc">人员证书查询</view>
     </view>
+    <view class="action-card" bindtap="navigateToSearch" data-tab="company">
+      <view class="action-icon">🏢</view>
+      <view class="action-title">查公司</view>
+      <view class="action-desc">公司信息查询</view>
+    </view>
   </view>
 
   <!-- Recent Activity -->

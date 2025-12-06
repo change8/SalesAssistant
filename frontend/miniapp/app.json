@@ -30,7 +30,7 @@
       },
       {
         "pagePath": "pages/search/search",
-        "text": "搜索",
+        "text": "梆梆",
         "iconPath": "assets/search.png",
         "selectedIconPath": "assets/search-active.png"
       },
