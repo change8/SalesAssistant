@@ -138,7 +138,7 @@ def search_contracts(
                         is_fixed = True
                     
                     # Exclusion criteria
-                    exclusions = ['混合模式', '时间资源', 'TM', 'T&M', 'Resource', 'Staffing']
+                    exclusions = ['混合模式', '时间资源', 'TM', 'T&M', 'Resource', 'Staffing', '计件计量']
                     for ex in exclusions:
                         if any(ex in t for t in tags_list):
                             is_fixed = False
