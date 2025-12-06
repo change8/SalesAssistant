@@ -135,22 +135,15 @@ def search_contracts(
         if params.end_date:
             query = query.where(ExistingContract.signed_at <= params.end_date)
             
+        if params.is_fp:
+            # Strictly filter by contract_type = '固定金额'
+            # This matches user expectation that FP means exactly "Fixed Price" type contracts.
+            query = query.where(ExistingContract.contract_type == '固定金额')
+
         # Execute query
         all_results = contracts_db.execute(query).scalars().all()
         
-        # Apply FP filter in Python
-        if params.is_fp:
-            filtered_results = []
-            for contract in all_results:
-                if contract.tags:
-                    # Robust splitting: replace full-width comma, then split by comma or space
-                    clean_tags = contract.tags.replace('，', ',')
-                    tags_list = [t.strip() for t in re.split(r'[,，\s]+', clean_tags) if t.strip()]
-                    
-                    # Strict FP: tags_list[0] == '固定金额'
-                    if tags_list and tags_list[0] == '固定金额':
-                        filtered_results.append(contract)
-            all_results = filtered_results
+        filtered_results = all_results
         
         # Filter by amount range (client-side due to string storage)
         if params.min_amount is not None or params.max_amount is not None:

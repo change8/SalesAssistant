@@ -16,8 +16,12 @@ Page({
 
   async fetchSearchHistory() {
     try {
-      const api = require('../../utils/api.js');
-      const res = await api.request('/search/history?limit=10', { method: 'GET' });
+      const { request } = require('../../utils/request.js');
+      const res = await request({
+        url: '/search/history',
+        method: 'GET',
+        data: { limit: 10 }
+      });
 
       // Map tab index/name for display
       const typeMap = {
