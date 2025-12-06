@@ -289,8 +289,11 @@ view, text, scroll-view, input, button {
 /* Certificates */
 .certificates {
   margin-top: 24rpx;
-  padding-top: 24rpx;
+  padding-top: 16rpx;
   border-top: 1rpx solid #f3f4f6;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12rpx;
 }
 
 .cert-title {

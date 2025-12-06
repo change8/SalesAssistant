@@ -387,14 +387,23 @@ Page({
                 return await api.searchQualifications(params);
 
             case 2: // IP
-                if (quickTags.group === '1100') params.company_code = '1100'; // Corrected
+                if (quickTags.group === '1100') params.company_code = '1100';
                 if (quickTags.notExpired) params.is_expired = 'false';
                 if (filters.companyName) params.company_name = filters.companyName;
                 if (filters.companyNumber) params.company_number = filters.companyNumber;
 
-                // IP Category
+                // IP Category (Priority: Filter Picker > Quick Tag)
                 const ipCat = this.data.ipCategoryOptions[filters.ipCategoryIndex];
-                if (ipCat && ipCat !== '不限') params.qualification_type = ipCat;
+                if (ipCat && ipCat !== '不限') {
+                    params.qualification_type = ipCat;
+                } else if (quickTags.ipCategory) {
+                    const map = {
+                        'patent': '专利',
+                        'copyright': '软件著作权',
+                        'trademark': '商标'
+                    };
+                    params.qualification_type = map[quickTags.ipCategory] || quickTags.ipCategory;
+                }
 
                 // Business Type
                 const ipBusType = this.data.businessTypeOptions[filters.businessTypeIndex];

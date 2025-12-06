@@ -272,7 +272,12 @@ def search_assets(
             if params.is_expired: # True = Only Expired
                 query = query.where(IntellectualPropertyAsset.issue_date < today) # Note: IP usually uses issue_date or specific expire logic? Assuming issue_date for simplicity or skip if not applicable for IP
             else: # False = Not Expired
-                 pass
+                 query = query.where(
+                    or_(
+                        IntellectualPropertyAsset.issue_date >= today,
+                        IntellectualPropertyAsset.issue_date == None
+                    )
+                )
 
         # Filter by business_type (patent, copyright, trademark)
         if params.business_type:
@@ -850,7 +855,7 @@ def search_companies(
 
         return {
             "total": total,
-            "items": paginated_items,
+            "results": paginated_items,
             "page": (params.offset // params.limit) + 1,
             "page_size": params.limit
         }
