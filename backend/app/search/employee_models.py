@@ -22,12 +22,9 @@ class Employee(ContractsBase):
     age: Mapped[Optional[float]] = mapped_column(REAL, nullable=True)
     seniority_years: Mapped[Optional[float]] = mapped_column(REAL, nullable=True)
     working_years: Mapped[Optional[float]] = mapped_column(REAL, nullable=True)
-    school: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    major: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    degree: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    diploma: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # school/major/degree/diploma moved to EmployeeEducation
     company: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    industry_experience: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # industry_experience: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 

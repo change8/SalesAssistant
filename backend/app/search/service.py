@@ -453,12 +453,14 @@ def search_employees(
         # Fuzzy search on multiple fields
         if params.q:
             search_term = f"%{params.q}%"
-            query = query.outerjoin(Employee.certificates).where(
+            # Join both Educations and Certificates for search
+            # Use outer join to include employees without edu/cert records if name matches
+            query = query.outerjoin(Employee.educations).outerjoin(Employee.certificates).where(
                 or_(
                     Employee.name.like(search_term),
                     Employee.employee_no.like(search_term),
-                    Employee.school.like(search_term),
-                    Employee.major.like(search_term),
+                    EmployeeEducation.school.like(search_term),
+                    EmployeeEducation.major.like(search_term),
                     Employee.company.like(search_term),
                     EmployeeCertificate.certificate_name.like(search_term)
                 )
@@ -472,9 +474,9 @@ def search_employees(
         if params.company:
             query = query.where(Employee.company.like(f"%{params.company}%"))
         
-        # Filter by degree
+        # Filter by degree (requires join)
         if params.degree:
-            query = query.where(Employee.degree.like(f"%{params.degree}%"))
+            query = query.join(Employee.educations).where(EmployeeEducation.degree.like(f"%{params.degree}%"))
         
         # Filter by certificate (requires join to certificates table)
         if params.certificate_name:
@@ -516,12 +518,21 @@ def search_employees(
                 'age': emp.age,
                 'seniority_years': emp.seniority_years,
                 'working_years': emp.working_years,
-                'school': emp.school,
-                'major': emp.major,
-                'degree': emp.degree,
-                'diploma': emp.diploma,
-                'company': emp.company,
-                'industry_experience': emp.industry_experience,
+                'industry_experience': None, # Removed from model
+                # 'school': emp.educations[0].school if emp.educations else None, # Example logic
+                # For now let's just return what we have. The frontend iterates 'educations'.
+                # But let's keep the structure clean.
+                # Actually, previously `emp.school` was returning None anyway because it was empty in DB?
+                # The user says "build query based on data dictionary".
+                # If I look at the result mapping (lines 509-553 in original file),
+                # it maps `school: emp.school`.
+                # If I removed `school` from `Employee` model, `emp.school` will fail.
+                # I MUST provide a value or remove the key.
+                # I will populate it from the "Highest" education (is_highest=1) or first one.
+                'school': next((e.school for e in educations if e.is_highest == 1), (educations[0].school if educations else None)),
+                'major': next((e.major for e in educations if e.is_highest == 1), (educations[0].major if educations else None)),
+                'degree': next((e.degree for e in educations if e.is_highest == 1), (educations[0].degree if educations else None)),
+                'diploma': next((e.diploma for e in educations if e.is_highest == 1), (educations[0].diploma if educations else None)),
                 'educations': [
                     {
                         'id': edu.id,
