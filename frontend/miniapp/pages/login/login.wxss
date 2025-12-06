@@ -10,6 +10,8 @@ page {
   /* Add extra padding on top of status bar for safety */
   padding-top: 120rpx; 
 }
+/* Section Title */
+.section-title {
   font-size: 36rpx;
   font-weight: 600;
   margin-bottom: 40rpx;

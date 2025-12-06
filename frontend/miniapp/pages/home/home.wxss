@@ -9,54 +9,54 @@ page {
 
 /* Welcome Card */
 .welcome-card {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.85) 100%);
+  background: linear-gradient(135deg, #3366ff 0%, #6366f1 100%);
   border-radius: 32rpx;
   padding: 48rpx;
   margin-bottom: 48rpx;
-  box-shadow: 0 20rpx 40rpx rgba(51, 102, 255, 0.08);
-  border: 2rpx solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 20rpx 40rpx rgba(51, 102, 255, 0.2);
   position: relative;
   overflow: hidden;
+  color: white; /* All text white */
 }
 
-.welcome-greeting {
-  font-size: 28rpx;
-  color: #6b7280;
-  margin-bottom: 12rpx;
+/* Add subtle decorative circle */
+.welcome-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 400rpx;
+  height: 400rpx;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  pointer-events: none;
 }
 
-.welcome-name {
-  font-size: 48rpx;
-  font-weight: 700;
-  background: linear-gradient(135deg, #3366ff 0%, #6366f1 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+.welcome-header {
+  margin-bottom: 32rpx;
 }
 
-.welcome-section {
-  padding: 40rpx;
-  background: #3366FF; /* Use primary color background */
-  color: white;
-  border-radius: 0 0 40rpx 40rpx;
-  margin-bottom: 40rpx;
-}
-
-.welcome-text {
+.welcome-subtitle {
   font-size: 28rpx;
   opacity: 0.9;
-  margin-bottom: 16rpx;
+  margin-bottom: 12rpx;
+  font-weight: 500;
 }
 
 .user-name {
-  font-size: 48rpx;
-  font-weight: bold;
-  margin-bottom: 16rpx;
+  font-size: 56rpx;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
-.greeting-date {
-  font-size: 26rpx;
-  opacity: 0.8;
-  line-height: 1.4;
+.greeting-content {
+  font-size: 28rpx;
+  line-height: 1.6;
+  opacity: 0.9;
+  background: rgba(255, 255, 255, 0.15); /* More subtle background for text block */
+  padding: 24rpx;
+  border-radius: 16rpx;
+  backdrop-filter: blur(4px);
 }
 
 /* Section Title */

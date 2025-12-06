@@ -55,6 +55,11 @@ Page({
       });
 
       setToken(data.access_token);
+
+      // Fetch user info immediately
+      const userInfo = await request({ url: '/auth/me' });
+      wx.setStorageSync('sa_user', userInfo);
+
       wx.showToast({ title: '登录成功', icon: 'success' });
       setTimeout(() => {
         wx.switchTab({ url: '/pages/home/home' });
@@ -113,6 +118,11 @@ Page({
 
       // 3. Handle Success
       setToken(data.access_token);
+
+      // Fetch user info immediately
+      const userInfo = await request({ url: '/auth/me' });
+      wx.setStorageSync('sa_user', userInfo);
+
       wx.showToast({ title: '登录成功', icon: 'success' });
       setTimeout(() => {
         wx.switchTab({ url: '/pages/home/home' });

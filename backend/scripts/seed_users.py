@@ -72,7 +72,15 @@ def seed_users():
                 # Check existence
                 user = service.get_user_by_phone(db, phone)
                 if user:
-                    print(f"Skipping existing user: {name} ({phone})")
+                    print(f"Updating existing user: {name} ({phone})")
+                    user.full_name = name
+                    user.username = name # Also try to sync username if possible, or keep existing
+                    if email:
+                        user.email = email
+                    # Reset password only if needed? Better not to reset password for existing active users unless requested.
+                    # We only want to fix the profile info.
+                    db.add(user)
+                    count += 1
                     continue
 
                 print(f"Creating user: {name} ({phone})")

@@ -1,11 +1,13 @@
 <view class="container">
   <!-- Welcome Card -->
   <view class="welcome-card">
-  <view class="welcome-section">
-    <view class="welcome-text">欢迎回来</view>
-    <view class="user-name">{{userInfo.name}}，你好</view>
-    <view class="greeting-date">{{greetingDate}}</view>
-  </view>
+    <view class="welcome-header">
+      <view class="welcome-subtitle">欢迎回来</view>
+      <view class="user-name">{{userInfo.name}}，你好</view>
+    </view>
+    <view class="greeting-content">
+      <text>今天是 {{greeting.dateStr}}，{{greeting.weekDay}}，距离 {{greeting.nextYearShort}} 年 1 月 1 日还有 {{greeting.daysLeft}} 天，祝你度过开心的一天！</text>
+    </view>
   </view>
 
   <!-- Quick Actions -->

@@ -52,6 +52,17 @@ function searchPersonnel(params) {
     });
 }
 
+/**
+ * 搜索公司
+ */
+function searchCompanies(params) {
+    return request({
+        url: '/search/companies',
+        method: 'GET',
+        data: params
+    });
+}
+
 // ===== Bidding APIs =====
 
 /**
@@ -128,6 +139,7 @@ module.exports = {
     searchQualifications,
     searchIP,
     searchPersonnel,
+    searchCompanies,
     analyzeBidding,
     formatDate,
     formatAmount,

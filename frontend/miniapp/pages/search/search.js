@@ -100,7 +100,18 @@ Page({
             activeTab: index,
             results: [],
             page: 0,
-            searchQuery: '' // Clear query when switching? User often prefers sticky query, but placeholders change. Let's clear for clarity.
+            results: [],
+            page: 0,
+            filters: { // Reset filters
+                industry: '', contractTypeIndex: 0, customer: '', status: '', minAmount: '', maxAmount: '',
+                personnelStatus: '', personnelCompany: '', personnelDegree: '', personnelCertificate: '',
+                companyName: '', companyNumber: '', ipCategoryIndex: 0, businessTypeIndex: 0,
+                companyStatus: '', setupDateStart: '', setupDateEnd: '', capitalMin: '', capitalMax: ''
+            },
+            quickTags: { // Reset quickTags
+                fp: false, time: null, amount: null, status: null, group: null, ipCategory: null
+            },
+            searchQuery: '' // Clear query when switching
         });
         this.updatePlaceholder(index);
 
@@ -315,90 +326,74 @@ Page({
     // 根据标签搜索
     async searchByTab(tabIndex, query, offset) {
         const { filters, quickTags, limit } = this.data;
-        const params = {
+        let params = {
             q: query,
             limit: limit,
-            offset: offset,
-            ...filters // Pass all filters
+            offset: offset
         };
 
-        // Apply Quick Tags
-        if (quickTags.fp) params.is_fp = 'true';
-
-        if (quickTags.status === 'completed' && !params.status) {
-            params.status = '已完结';
-        }
-
-        if (quickTags.time) {
-            const years = parseInt(quickTags.time);
-            const date = new Date();
-            date.setFullYear(date.getFullYear() - years);
-            const dateStr = date.toISOString().split('T')[0];
-            if (!params.start_date) params.start_date = dateStr;
-        }
-
-        if (quickTags.amount) {
-            const amount = parseInt(quickTags.amount) * 10000;
-            if (!params.min_amount) params.min_amount = amount;
-        }
-
-        if (tabIndex === 0) { // Contracts
-            const cType = this.data.contractTypeOptions[filters.contractTypeIndex];
-            if (cType && cType !== '不限') {
-                params.contract_type = cType;
-            }
-        }
-
-        if (tabIndex === 1) { // Qualifications
-            if (quickTags.group === '1100') params.company = '1100';
-            if (quickTags.notExpired) params.is_expired = 'false';
-
-            // Business Type Filter
-            const busType = this.data.businessTypeOptions[filters.businessTypeIndex];
-            if (busType && busType !== '不限') {
-                params.business_type = busType;
-            }
-        }
-
-        if (tabIndex === 2) { // IP
-            if (quickTags.group) params.company = quickTags.group;
-            if (quickTags.notExpired) params.is_expired = 'false';
-
-            if (filters.companyName) params.company_name = filters.companyName;
-            if (filters.companyNumber) params.company_number = filters.companyNumber;
-
-            // IP Category Filter
-            const ipCat = this.data.ipCategoryOptions[filters.ipCategoryIndex];
-            if (ipCat && ipCat !== '不限') {
-                params.qualification_type = ipCat;
-            }
-
-            // Business Type Filter
-            const busType = this.data.businessTypeOptions[filters.businessTypeIndex];
-            if (busType && busType !== '不限') {
-                params.business_type = busType;
-            }
-
-            if (quickTags.ipCategory) {
-                const map = { 'patent': '专利', 'copyright': '软著', 'trademark': '商标' };
-                const term = map[quickTags.ipCategory];
-                if (term) {
-                    params.q = params.q ? `${params.q} ${term}` : term;
-                }
-            }
-        }
-
+        // Construct params specifically for each tab to avoid filter polling
         switch (tabIndex) {
-            case 0: // 合同
+            case 0: // Contracts
+                if (quickTags.fp) params.is_fp = 'true';
+                if (quickTags.status === 'completed') params.status = '已完结';
+                if (quickTags.time) {
+                    const years = parseInt(quickTags.time);
+                    const date = new Date();
+                    date.setFullYear(date.getFullYear() - years);
+                    params.start_date = date.toISOString().split('T')[0];
+                }
+                if (quickTags.amount) params.min_amount = parseInt(quickTags.amount) * 10000;
+
+                // Contract Filters
+                const cType = this.data.contractTypeOptions[filters.contractTypeIndex];
+                if (cType && cType !== '不限') params.contract_type = cType;
+                if (filters.industry) params.industry = filters.industry;
+                if (filters.customer) params.customer = filters.customer;
+
                 return await api.searchContracts(params);
-            case 1: // 资质
+
+            case 1: // Qualifications
+                if (quickTags.group === '1100') params.company = '1100';
+                if (quickTags.notExpired) params.is_expired = 'false';
+
+                // Business Type
+                const qualBusType = this.data.businessTypeOptions[filters.businessTypeIndex];
+                if (qualBusType && qualBusType !== '不限') params.business_type = qualBusType;
+
                 return await api.searchQualifications(params);
-            case 2: // 知产
+
+            case 2: // IP
+                if (quickTags.group) params.company = quickTags.group;
+                if (quickTags.notExpired) params.is_expired = 'false';
+                if (filters.companyName) params.company_name = filters.companyName;
+                if (filters.companyNumber) params.company_number = filters.companyNumber;
+
+                // IP Category
+                const ipCat = this.data.ipCategoryOptions[filters.ipCategoryIndex];
+                if (ipCat && ipCat !== '不限') params.qualification_type = ipCat;
+
+                // Business Type
+                const ipBusType = this.data.businessTypeOptions[filters.businessTypeIndex];
+                if (ipBusType && ipBusType !== '不限') params.business_type = ipBusType;
+
                 return await api.searchIP(params);
-            case 3: // 人员
+
+            case 3: // Personnel
+                if (filters.personnelCompany) params.company = filters.personnelCompany;
+                if (filters.personnelStatus) params.status = filters.personnelStatus;
+                // Add other personnel specific filters if any
                 return await api.searchPersonnel(params);
-            case 4: // 公司
+
+            case 4: // Company
+                if (filters.companyStatus) params.operating_state = filters.companyStatus;
+                if (filters.setupDateStart) params.setup_date_start = filters.setupDateStart;
+                if (filters.setupDateEnd) params.setup_date_end = filters.setupDateEnd;
+                if (filters.capitalMin) params.registered_capital_min = filters.capitalMin;
+                if (filters.capitalMax) params.registered_capital_max = filters.capitalMax;
+
                 return await api.searchCompanies(params);
+
             default:
                 return { results: [], total: 0 };
         }
