@@ -456,6 +456,14 @@ view, text, scroll-view, input, button {
 .filter-input.small {
   flex: 1;
   text-align: center;
+  color: #1f2937; /* Ensure text matches */
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.filter-input.small.placeholder {
+  color: #9ca3af; /* Match placeholder color */
 }
 
 .picker-view {

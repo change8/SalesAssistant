@@ -16,7 +16,7 @@
     <view class="section-title">账户信息</view>
     <view class="profile-row">
       <text class="label">用户名</text>
-      <text>{{user ? (user.full_name || '未填写') : '加载中'}}</text>
+      <text>{{user ? (user.full_name || user.username || '未填写') : '加载中'}}</text>
     </view>
     <view class="profile-row">
       <text class="label">手机号</text>

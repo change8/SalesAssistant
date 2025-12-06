@@ -325,7 +325,12 @@
           </view>
           <view class="filter-group">
             <view class="filter-label">合同类型</view>
-            <input class="filter-input" placeholder="请输入类型" data-field="type" bindinput="onFilterInput" value="{{filters.type}}" />
+            <picker bindchange="bindContractTypeChange" value="{{filters.contractTypeIndex}}" range="{{contractTypeOptions}}">
+              <view class="filter-input picker-view">
+                {{contractTypeOptions[filters.contractTypeIndex]}}
+                <text class="picker-arrow">▼</text>
+              </view>
+            </picker>
           </view>
           <view class="filter-group">
             <view class="filter-label">客户名称</view>
@@ -460,7 +465,7 @@
 
       <view class="filter-footer">
         <button class="reset-btn" bindtap="resetFilters">重置</button>
-        <button class="export-btn" bindtap="exportData">导出</button>
+        <button class="export-btn" bindtap="exportData" wx:if="{{activeTab === 0}}">导出</button>
         <button class="apply-btn" bindtap="applyFilters">确认</button>
       </view>
     </view>

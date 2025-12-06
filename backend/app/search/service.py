@@ -125,8 +125,9 @@ def search_contracts(
             filtered_results = []
             for contract in all_results:
                 if contract.tags:
+                    # Check if '固定金额' exists in tags (exact match in list)
                     tags_list = [t.strip() for t in contract.tags.split(',')]
-                    if tags_list and tags_list[0] == '固定金额':  # FP = Fixed Price
+                    if '固定金额' in tags_list:
                         filtered_results.append(contract)
             all_results = filtered_results
         

@@ -1,8 +1,11 @@
 <view class="container">
   <!-- Welcome Card -->
   <view class="welcome-card">
-    <view class="welcome-greeting">欢迎回来</view>
-    <view class="welcome-name">{{userInfo.name || '用户'}}</view>
+  <view class="welcome-section">
+    <view class="welcome-text">欢迎回来</view>
+    <view class="user-name">{{userInfo.name}}，你好</view>
+    <view class="greeting-date">{{greetingDate}}</view>
+  </view>
   </view>
 
   <!-- Quick Actions -->

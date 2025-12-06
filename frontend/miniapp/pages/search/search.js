@@ -16,7 +16,7 @@ Page({
         hasActiveFilters: false,
         filters: {
             industry: '',
-            type: '',
+            contractTypeIndex: 0,
             customer: '',
             status: '',
             minAmount: '',
@@ -43,7 +43,7 @@ Page({
             time: null, // '3', '5'
             amount: null, // '300', '500', ...
             status: null, // 'completed'
-            group: '1100', // Default for Quals? Or null? PC defaults to 1100 if checked. Let's default null.
+            group: null, // Default null to show all
             ipCategory: null // 'patent', 'copyright', 'trademark'
         },
         // Detail Popup State
@@ -177,6 +177,7 @@ Page({
                 businessTypeIndex: 0
             },
             hasActiveFilters: false,
+            contractTypeOptions: ['不限', '固定金额', '时间资源', '计件计量', '转售业务', '混合模式'],
             ipCategoryOptions: ['不限', '软件著作权', '软件产品', '专利', '技术查新', '域名', '商标', 'APP', '小程序'],
             businessTypeOptions: ['不限', '无', 'ITO业务', '教育业务', '通力业务', '投资业务', '云网业务', '智慧业务', '资产项目', '海外及其他业务', '研究院业务', '网络业务', '体外资产项目']
         });
@@ -341,6 +342,13 @@ Page({
             if (!params.min_amount) params.min_amount = amount;
         }
 
+        if (tabIndex === 0) { // Contracts
+            const cType = this.data.contractTypeOptions[filters.contractTypeIndex];
+            if (cType && cType !== '不限') {
+                params.contract_type = cType;
+            }
+        }
+
         if (tabIndex === 1) { // Qualifications
             if (quickTags.group === '1100') params.company = '1100';
             if (quickTags.notExpired) params.is_expired = 'false';
@@ -397,6 +405,13 @@ Page({
     },
 
     // --- Picker Handlers ---
+    bindContractTypeChange(e) {
+        this.setData({
+            'filters.contractTypeIndex': e.detail.value
+        });
+        this.performSearch(); // Optional: auto search on change
+    },
+
     bindIPCategoryChange(e) {
         this.setData({
             'filters.ipCategoryIndex': e.detail.value

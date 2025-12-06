@@ -33,6 +33,32 @@ page {
   -webkit-text-fill-color: transparent;
 }
 
+.welcome-section {
+  padding: 40rpx;
+  background: #3366FF; /* Use primary color background */
+  color: white;
+  border-radius: 0 0 40rpx 40rpx;
+  margin-bottom: 40rpx;
+}
+
+.welcome-text {
+  font-size: 28rpx;
+  opacity: 0.9;
+  margin-bottom: 16rpx;
+}
+
+.user-name {
+  font-size: 48rpx;
+  font-weight: bold;
+  margin-bottom: 16rpx;
+}
+
+.greeting-date {
+  font-size: 26rpx;
+  opacity: 0.8;
+  line-height: 1.4;
+}
+
 /* Section Title */
 .section-title {
   font-size: 34rpx;

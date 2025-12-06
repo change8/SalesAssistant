@@ -57,7 +57,7 @@ Page({
       setToken(data.access_token);
       wx.showToast({ title: '登录成功', icon: 'success' });
       setTimeout(() => {
-        wx.switchTab({ url: '/pages/tools/tools' });
+        wx.switchTab({ url: '/pages/home/home' });
       }, 500);
     } catch (error) {
       console.error('Login failed:', error);
